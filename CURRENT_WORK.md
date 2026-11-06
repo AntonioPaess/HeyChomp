@@ -393,3 +393,9 @@ Resultado do 123, universal e instalado. Em uma conversa por texto, gerou MVVM c
 Usuário autorizou commit e push da base HeyClicky do HeyChomp para depois integrar na develop. Checklist salvo no Obsidian, em Projects/Sieghart/HeyChomp - Testes pendentes para a develop.md, com seis pendências. Os pacotes do histórico Git que estavam só no iCloud foram baixados. Separar a base testada e a documentação de continuidade dos estudos e artefatos de outras frentes. Publicar a branch atual.
 
 Índice revisado com 144 arquivos na contagem com renomes. Inclui código, projeto Xcode, testes, scripts, README e documentação da base HeyClicky. Estudos de OpenBot, redesign e ESP32 ficaram fora da seleção. `git diff --cached --no-renames --check` passou. Esta publicação usa os testes já registrados do build 123 e deixa o checklist de aceite para a integração.
+
+## Resolução de conflitos do PR #11 — 06/11/2026
+
+O PR do HeyChomp no repositório renomeado `AntonioPaess/HeyChomp` aponta para `main`. A resolução combina a retomada do Keep Awake e o ciclo de vida do assistente espacial com a limpeza de monitores, tarefas e janelas do widget trazida pela `main`. A mesclagem preserva o plano `HeyChomp-Fast` com os 254 seletores da união dos dois lados.
+
+A compilação arm64 do app e do bundle de testes passou com `xcodebuild build-for-testing`. Passaram também os sete testes de manutenção do projeto e do índice de testes. Fast e Complete continuam no checklist do Obsidian, junto com o aceite manual. Atualizar apenas a branch de origem do PR. O usuário fará o merge final.
