@@ -18,6 +18,7 @@ struct CompanionResponseCard: View {
     static let height: CGFloat = 164
     var needsScreenPermission = false
     var retryScreen: (() -> Void)? = nil
+    var isRetryingScreen = false
     let response: CompanionResponse
     let language: String
     let speaks: Bool
@@ -99,7 +100,7 @@ struct CompanionResponseCard: View {
         (needsScreenPermission ? 244 : height) + (reviewingAction ? 38 : 0)
     }
     @ViewBuilder private var replyContent: some View {
-        if needsScreenPermission { ScreenPermissionHelp(language: language, retry: retryScreen) }
+        if needsScreenPermission { ScreenPermissionHelp(language: language, retry: retryScreen, isRetrying: isRetryingScreen) }
         else {
             Text((try? AttributedString(markdown: response.text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(response.text))
                 .font(.system(size: 13)).foregroundStyle(CompanionStyle.ink.opacity(0.9))

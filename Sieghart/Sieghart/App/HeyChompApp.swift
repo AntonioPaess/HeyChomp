@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct SieghartApp: App {
+struct HeyChompApp: App {
     @NSApplicationDelegateAdaptor(ResidentAppDelegate.self) private var appDelegate
     @StateObject private var sensor: SensorViewModel
     @StateObject private var assistant: AssistantViewModel
@@ -57,7 +57,7 @@ struct SieghartApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Sieghart", id: "main") {
+        WindowGroup("HeyChomp", id: "main") {
             ContentView()
                 .environmentObject(sensor)
                 .environmentObject(assistant)
@@ -83,9 +83,9 @@ struct SieghartApp: App {
                 .environmentObject(notch.audio)
         } label: {
             if let image = CompanionArtwork.menuBarImage(for: preferences.avatar) {
-                Image(nsImage: image).accessibilityLabel("Sieghart — \(preferences.avatar.name)")
+                Image(nsImage: image).accessibilityLabel("HeyChomp — \(preferences.avatar.name)")
             } else {
-                Image(systemName: "face.smiling").accessibilityLabel("Sieghart")
+                Image(systemName: "face.smiling").accessibilityLabel("HeyChomp")
             }
         }
         .menuBarExtraStyle(.window)

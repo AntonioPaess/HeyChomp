@@ -35,7 +35,7 @@ struct CompanionRoutineShelf: View {
                     Text(en ? "Calendar briefing" : "Resumo da agenda").tag(CompanionRoutine.Kind.briefing)
                     Text(en ? "Web research" : "Pesquisa na web").tag(CompanionRoutine.Kind.research)
                 }
-                TextField(en ? "What should Sieg prepare?" : "O que o Sieg deve preparar?", text: $prompt, axis: .vertical).lineLimit(2...5).textFieldStyle(.roundedBorder)
+                TextField(en ? "What should Chomp prepare?" : "O que o Chomp deve preparar?", text: $prompt, axis: .vertical).lineLimit(2...5).textFieldStyle(.roundedBorder)
                 DatePicker(en ? "Time" : "Horário", selection: $time, displayedComponents: .hourAndMinute)
                 Text(en ? "The routine is created switched off. Enable it when you want it to begin. Three consecutive failures pause it." : "A rotina é criada desligada. Ative quando quiser começar. Três falhas consecutivas a pausam.").font(.caption).foregroundStyle(.secondary)
                 HStack {

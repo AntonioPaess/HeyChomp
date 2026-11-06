@@ -180,7 +180,7 @@ final class SpeechAnalyzerPipeline: VoiceCapturing {
     func prepareAccess() async throws {
         let speechStatus = SFSpeechRecognizer.authorizationStatus()
         if speechStatus == .notDetermined {
-            guard await SpeechAuthorizationBridge.request() == .authorized else {
+            guard try await SpeechAuthorizationBridge.request() == .authorized else {
                 throw VoiceCaptureFailure.speechAccess
             }
         } else if speechStatus != .authorized {
@@ -189,7 +189,7 @@ final class SpeechAnalyzerPipeline: VoiceCapturing {
 
         let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
         if micStatus == .notDetermined {
-            guard await AVCaptureDevice.requestAccess(for: .audio) else {
+            guard try await MicrophoneAuthorizationBridge.request() else {
                 throw VoiceCaptureFailure.microphoneAccess
             }
         } else if micStatus != .authorized {

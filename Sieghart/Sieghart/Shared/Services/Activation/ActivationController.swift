@@ -24,6 +24,8 @@ final class ActivationController: ObservableObject {
     @Published private(set) var lastShortcutActivation: Date?
     @Published private(set) var lastShortcutSource = ""
     @Published private(set) var voiceStatus = "Voice is off"
+    @Published private(set) var voicePermissionIssue: VoiceCaptureFailure?
+    var voicePermissionSettingsURL: URL? { (voicePermissionIssue ?? conversation.permissionIssue)?.permissionSettingsURL }
     @Published private(set) var transcript = ""
     @Published private(set) var isListening = false
     @Published private(set) var isPreparing = false
@@ -82,6 +84,7 @@ final class ActivationController: ObservableObject {
     private var modifierTracker = ModifierShortcutTracker()
     private var deliveryGate = ShortcutDeliveryGate()
     private let voiceCapture: any VoiceCapturing
+    private var voicePreparationTask: Task<Void, Never>?
     let conversation = VoiceConversationController()
     private var conversationObservation: AnyCancellable?
     var isConversing: Bool { conversation.isActive || conversation.isPreparing }
@@ -440,16 +443,21 @@ final class ActivationController: ObservableObject {
 
     // Onboarding can request access without starting recognition or audio.
     func prepareVoiceAccess() async -> String {
+        voicePermissionIssue = nil
         do { try await voiceCapture.prepareAccess(); return "Voice access is ready" }
-        catch { return error.localizedDescription }
+        catch { voicePermissionIssue = error as? VoiceCaptureFailure; return error.localizedDescription }
     }
 
     /// Keyboard activation is push-to-talk; on-screen controls remain explicit.
     func pressVoiceShortcut(at eventTime: TimeInterval = ProcessInfo.processInfo.systemUptime) {
-        if isConversing { conversation.stop() }
         guard !voiceShortcutHeld, recordingShortcut == nil else { return }
+        // Validate delivery before interrupting the active response. A delayed
+        // press from before the last release must have no effect on this turn.
+        var nextGesture = voiceGesture
+        guard nextGesture.press(at: eventTime) else { return }
+        if isConversing { conversation.stop() }
         if isVoiceBusy { cancelVoiceCommand() }
-        guard voiceGesture.press(at: eventTime) else { return }
+        voiceGesture = nextGesture
         heldVoiceCapture = true
         startHeldShortcutWatch(pressedAt: eventTime)
         toggleListening()
@@ -500,8 +508,10 @@ final class ActivationController: ObservableObject {
         commandAcknowledged = false
         transcript = ""
         voiceStatus = "Checking microphone and speech access…"
+        voicePermissionIssue = nil
         notch.showVoice(resetCollapse: true)
-        Task { await startListening(generation: generation) }
+        voicePreparationTask?.cancel()
+        voicePreparationTask = Task { await startListening(generation: generation) }
     }
 
     private func startListening(generation: Int) async {
@@ -517,6 +527,7 @@ final class ActivationController: ObservableObject {
         do { try await voiceCapture.prepareAccess() }
         catch {
             guard generation == voiceRequestGeneration else { return }
+            voicePermissionIssue = error as? VoiceCaptureFailure
             voiceStatus = error.localizedDescription
             return
         }
@@ -611,7 +622,7 @@ final class ActivationController: ObservableObject {
         voiceRetryPending = true
         isPreparing = true
         voiceStatus = "Preparing the microphone…"
-        Task { @MainActor [weak self] in
+        voicePreparationTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(350))
             guard !Task.isCancelled, let self, generation == self.voiceRequestGeneration else { return }
             await self.startListening(generation: generation)
@@ -642,6 +653,8 @@ final class ActivationController: ObservableObject {
         heldShortcutWatchTask?.cancel(); heldShortcutWatchTask = nil
         heldVoiceCapture = false
         voiceRequestGeneration += 1
+        voicePreparationTask?.cancel(); voicePreparationTask = nil
+        voicePermissionIssue = nil
         notch.spatialAssistant.cancelVoiceResponse()
         notch.spatialAssistant.screenInteraction.cancel()
         voiceRetryPending = false
@@ -679,6 +692,8 @@ final class ActivationController: ObservableObject {
     // Recognition text is never evaluated as code or an external instruction.
     func executeVoiceCommand(_ text: String) {
         voiceRequestGeneration += 1
+        voicePreparationTask?.cancel(); voicePreparationTask = nil
+        voicePermissionIssue = nil
         feedbackTask?.cancel()
         processingFeedbackTask?.cancel(); processingFeedbackTask = nil
         isPresentingVoiceProcessing = false
@@ -767,9 +782,9 @@ final class ActivationController: ObservableObject {
             assistant.startBreak(); voiceStatus = assistant.interval == .focus ? "Finish a focus session before starting its break" : "Break started"
             succeeded = assistant.interval != .focus
         case .show:
-            voiceStatus = "Sieghart shown"; commandAcknowledged = true; notch.show(); scheduleFeedback(closeWidget: false); return
+            voiceStatus = "HeyChomp shown"; commandAcknowledged = true; notch.show(); scheduleFeedback(closeWidget: false); return
         case .hide:
-            voiceStatus = "Sieghart tucked away"; voicePresented = false; transcript = ""; notch.hide(); return
+            voiceStatus = "HeyChomp tucked away"; voicePresented = false; transcript = ""; notch.hide(); return
         case .configure:
             voiceStatus = "Choose your focus settings"; commandAcknowledged = true; notch.showFocusSetup(); scheduleFeedback(closeWidget: false); return
         case .aiLimits:

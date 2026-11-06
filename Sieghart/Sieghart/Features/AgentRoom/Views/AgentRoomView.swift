@@ -84,7 +84,7 @@ private struct LocalAgentRoomView: View {
                 .padding(.vertical, 4)
                 .background(.ultraThinMaterial, in: Capsule())
                 .overlay { Capsule().strokeBorder(Color.white.opacity(0.10), lineWidth: 0.7) }
-                .help(chat.configuration.mode.explanation)
+                .help(Text(LocalizedStringKey(chat.configuration.mode.explanation)))
 
                 Button { settings = true } label: {
                     Image(systemName: "slider.horizontal.3")
@@ -193,7 +193,7 @@ private struct LocalChatRooms: View {
                             )
                     )
                     .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }.buttonStyle(.plain).disabled(chat.loading).accessibilityLabel(en ? "Create a new conversation with Sieg" : "Criar uma nova conversa com o Sieg")
+                }.buttonStyle(.plain).disabled(chat.loading).accessibilityLabel(en ? "Create a new conversation with Chomp" : "Criar uma nova conversa com o Chomp")
             }
             if let notice = chat.notice {
                 Text(notice)
@@ -203,7 +203,7 @@ private struct LocalChatRooms: View {
                     .textSelection(.enabled)
             }
             if chat.conversations.isEmpty {
-                Text(chat.loading ? (en ? "Reading saved conversations…" : "Lendo suas conversas…") : (en ? "Start with Sieg. Your specialists are a conversation away." : "Comece com o Sieg. Seus especialistas estão a uma conversa de distância."))
+                Text(chat.loading ? (en ? "Reading saved conversations…" : "Lendo suas conversas…") : (en ? "Start with Chomp. Your specialists are a conversation away." : "Comece com o Chomp. Seus especialistas estão a uma conversa de distância."))
                     .font(AdaRoomTheme.bodyFont(size: 11.5))
                     .foregroundStyle(CompanionStyle.muted)
             }

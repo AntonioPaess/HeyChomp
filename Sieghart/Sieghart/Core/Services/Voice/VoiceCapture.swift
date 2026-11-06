@@ -175,13 +175,79 @@ final class SpeechAudioFeed: @unchecked Sendable {
 // must not inherit the main actor of the UI that initiated the request.
 enum SpeechAuthorizationBridge {
     nonisolated static func request(
+        timeout: Duration = .seconds(20),
         using requester: @Sendable (@escaping @Sendable (SFSpeechRecognizerAuthorizationStatus) -> Void) -> Void = { callback in
             SFSpeechRecognizer.requestAuthorization(callback)
         }
-    ) async -> SFSpeechRecognizerAuthorizationStatus {
-        await withCheckedContinuation { continuation in
-            requester { @Sendable status in continuation.resume(returning: status) }
+    ) async throws -> SFSpeechRecognizerAuthorizationStatus {
+        try await VoiceAccessRequest.perform(timeout: timeout, timeoutError: .speechPermissionTimedOut, using: requester)
+    }
+}
+
+enum MicrophoneAuthorizationBridge {
+    nonisolated static func request(
+        timeout: Duration = .seconds(20),
+        using requester: @Sendable (@escaping @Sendable (Bool) -> Void) -> Void = { callback in
+            AVCaptureDevice.requestAccess(for: .audio, completionHandler: callback)
         }
+    ) async throws -> Bool {
+        try await VoiceAccessRequest.perform(timeout: timeout, timeoutError: .microphonePermissionTimedOut, using: requester)
+    }
+}
+
+// Native permission callbacks cannot be cancelled. Resume the caller exactly
+// once and discard callbacks arriving after its cancellation or deadline.
+enum VoiceAccessRequest {
+    nonisolated static func perform<Answer: Sendable>(
+        timeout: Duration, timeoutError: VoiceCaptureFailure,
+        using requester: @Sendable (@escaping @Sendable (Answer) -> Void) -> Void
+    ) async throws -> Answer {
+        let wait = VoiceAccessWait<Answer>()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                wait.install(continuation)
+                guard !Task.isCancelled else { wait.finish(.failure(CancellationError())); return }
+                guard wait.isPending else { return }
+                let deadline = Task.detached {
+                    do { try await Task.sleep(for: timeout) } catch { return }
+                    wait.finish(.failure(timeoutError))
+                }
+                wait.install(deadline: deadline)
+                requester { @Sendable answer in wait.finish(.success(answer)) }
+            }
+        } onCancel: {
+            wait.finish(.failure(CancellationError()))
+        }
+    }
+}
+
+// All mutable state is protected by lock. Resume/cancel happen outside the lock
+// because continuation delivery may immediately run the awaiting operation.
+private final class VoiceAccessWait<Answer: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var result: Result<Answer, any Error>?
+    private var continuation: CheckedContinuation<Answer, any Error>?
+    private var deadline: Task<Void, Never>?
+    var isPending: Bool { lock.lock(); defer { lock.unlock() }; return result == nil }
+    func install(_ continuation: CheckedContinuation<Answer, any Error>) {
+        lock.lock()
+        if let result { lock.unlock(); continuation.resume(with: result) }
+        else { self.continuation = continuation; lock.unlock() }
+    }
+    func install(deadline: Task<Void, Never>) {
+        lock.lock()
+        if result != nil { lock.unlock(); deadline.cancel() }
+        else { self.deadline = deadline; lock.unlock() }
+    }
+    func finish(_ result: Result<Answer, any Error>) {
+        lock.lock()
+        guard self.result == nil else { lock.unlock(); return }
+        self.result = result
+        let continuation = continuation, deadline = deadline
+        self.continuation = nil; self.deadline = nil
+        lock.unlock()
+        deadline?.cancel()
+        continuation?.resume(with: result)
     }
 }
 
@@ -203,8 +269,9 @@ enum VoiceCaptureEvent: Sendable {
 }
 extension VoiceCapturing { func useVoiceProcessing(_ enabled: Bool) {} }
 
-enum VoiceCaptureFailure: LocalizedError {
+enum VoiceCaptureFailure: LocalizedError, Sendable, Equatable {
     case speechAccess, microphoneAccess, unavailable, inputUnavailable, voiceProcessingUnavailable
+    case speechPermissionTimedOut, microphonePermissionTimedOut
     var errorDescription: String? {
         switch self {
         case .speechAccess: "Allow speech recognition in System Settings"
@@ -212,6 +279,17 @@ enum VoiceCaptureFailure: LocalizedError {
         case .unavailable: "Speech recognition is unavailable"
         case .inputUnavailable: "No microphone input is available"
         case .voiceProcessingUnavailable: "Conversation echo cancellation is unavailable for this device. Use hold-to-talk or choose another audio device."
+        case .speechPermissionTimedOut: "Speech permission did not finish. Open Speech Recognition in System Settings, then try again."
+        case .microphonePermissionTimedOut: "Microphone permission did not finish. Open Microphone in System Settings, then try again."
+        }
+    }
+    var permissionSettingsURL: URL? {
+        switch self {
+        case .speechAccess, .speechPermissionTimedOut:
+            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition")
+        case .microphoneAccess, .microphonePermissionTimedOut:
+            URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
+        default: nil
         }
     }
     var permitsInputRetry: Bool { if case .inputUnavailable = self { return true }; return false }
@@ -257,14 +335,14 @@ enum VoiceCaptureFailure: LocalizedError {
         }
         let speechStatus = SFSpeechRecognizer.authorizationStatus()
         if speechStatus == .notDetermined {
-            guard await SpeechAuthorizationBridge.request() == .authorized else { throw VoiceCaptureFailure.speechAccess }
+            guard try await SpeechAuthorizationBridge.request() == .authorized else { throw VoiceCaptureFailure.speechAccess }
         } else if speechStatus != .authorized {
             throw VoiceCaptureFailure.speechAccess
         }
 
         let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
         if micStatus == .notDetermined {
-            guard await AVCaptureDevice.requestAccess(for: .audio) else { throw VoiceCaptureFailure.microphoneAccess }
+            guard try await MicrophoneAuthorizationBridge.request() else { throw VoiceCaptureFailure.microphoneAccess }
         } else if micStatus != .authorized {
             throw VoiceCaptureFailure.microphoneAccess
         }
@@ -279,7 +357,7 @@ enum VoiceCaptureFailure: LocalizedError {
         guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: language)), recognizer.isAvailable else { throw VoiceCaptureFailure.unavailable }
         let token = generation
         let request = SFSpeechAudioBufferRecognitionRequest()
-        request.contextualStrings = ["Sieg", "Sig", "Sieghart", "Rita", "Ada", "Gantt", "Elinor", "Toni", "Keep Awake", "Pomodoro", "monitor do sistema", "memória RAM", "CPU", "GPU", "CarPlay", "CPMapTemplate", "CPInterfaceController", "CPTemplate", "CPTrip"]
+        request.contextualStrings = ["Chomp", "HeyChomp", "Hey Chomp", "Rita", "Ada", "Gantt", "Elinor", "Toni", "Keep Awake", "Pomodoro", "monitor do sistema", "memória RAM", "CPU", "GPU", "CarPlay", "CPMapTemplate", "CPInterfaceController", "CPTemplate", "CPTrip"]
         request.shouldReportPartialResults = true
         if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
         let engine = AVAudioEngine()

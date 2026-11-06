@@ -8,13 +8,13 @@
 "Allow modifier shortcuts in other apps" = "Permitir atalhos de modificadores em outros apps";
 "Allow notifications" = "Permitir notificações";
 "Allow playback-key detection" = "Permitir detecção das teclas de reprodução";
-"Allow read access to the repositories you want Ada to see. The token stays in Sieg’s Keychain and is never sent to the language model." = "Permita leitura dos repositórios que a Ada poderá consultar. O token fica no Chaves do Mac e não é enviado ao modelo.";
+"Allow read access to the repositories you want Ada to see. The token stays in Chomp’s Keychain and is never sent to the language model." = "Permita leitura dos repositórios que a Ada poderá consultar. O token fica no Chaves do Mac e não é enviado ao modelo.";
 "Allow screen access" = "Permitir acesso à tela";
 "An optional physical way to open or control focus." = "Uma forma física opcional de abrir o app ou controlar o foco.";
 "Any app" = "Qualquer app";
 "Appearance" = "Aparência";
 "Apple Intelligence settings" = "Ajustes da Apple Intelligence";
-"Applies to Sieghart’s windows and panels. Your Mac’s appearance stays unchanged." = "Aplica-se às janelas e painéis do Sieghart. A aparência do Mac permanece como você definiu.";
+"Applies to HeyChomp’s windows and panels. Your Mac’s appearance stays unchanged." = "Aplica-se às janelas e painéis do HeyChomp. A aparência do Mac permanece como você definiu.";
 "Arrange buttons around a visual preview and choose your widget size." = "Organize os botões na prévia e escolha o tamanho do widget.";
 "Audio" = "Áudio";
 "Audio permission" = "Permissão de áudio";
@@ -50,7 +50,7 @@
 "Choose files to move" = "Escolher arquivos para mover";
 "Choose folder" = "Escolher pasta";
 "Choose install destination" = "Escolher destino da instalação";
-"Choose the language for your commands and Sieg’s replies." = "Escolha o idioma dos pedidos e das respostas do Sieg.";
+"Choose the language for your commands and Chomp’s replies." = "Escolha o idioma dos pedidos e das respostas do Chomp.";
 "Clear" = "Limpar";
 "Clear history" = "Limpar histórico";
 "Click + to add a button. Drag buttons between the positions around the island. Click a button to change or remove it." = "Clique em + para adicionar. Arraste os botões entre as posições e clique em um deles para alterar ou remover.";
@@ -188,7 +188,7 @@
 "Read text" = "Ler texto";
 "Recent" = "Recentes";
 "Recent sessions" = "Sessões recentes";
-"Record any key combination to reveal Sieghart." = "Grave uma combinação de teclas para mostrar o Sieghart.";
+"Record any key combination to reveal HeyChomp." = "Grave uma combinação de teclas para mostrar o HeyChomp.";
 "Reduce Motion" = "Reduzir movimento";
 "Refresh" = "Atualizar";
 "Refresh the list" = "Atualizar lista";
@@ -219,7 +219,7 @@
 "Show" = "Mostrar";
 "Show companion" = "Mostrar companheiro";
 "Show in menu bar" = "Mostrar na barra de menus";
-"Sig is always your main companion. Tap a team member to explore their movements." = "O Sieg é seu companheiro principal. Clique em alguém da equipe para conhecer seus movimentos.";
+"Chomp is always your main companion. Tap a team member to explore their movements." = "O Chomp é seu companheiro principal. Clique em alguém da equipe para conhecer seus movimentos.";
 "Size" = "Tamanho";
 "Sound" = "Som";
 "Speak" = "Falar";
@@ -262,7 +262,7 @@
 "Window" = "Janela";
 "Window capture" = "Captura de janela";
 "Windows" = "Janelas";
-"You can always open Sieghart from the menu bar." = "Você também pode abrir o Sieghart pela barra de menus.";
+"You can always open HeyChomp from the menu bar." = "Você também pode abrir o HeyChomp pela barra de menus.";
 "Your Mac follows its normal sleep settings" = "Seu Mac segue as configurações normais de repouso";
 "Your companion drops in, waves hello and settles into the island." = "Seu companheiro chega, acena e se acomoda no widget.";
 "Your companion reacts on hover. Click to open the island." = "Seu companheiro reage ao mouse. Clique para abrir o widget.";
@@ -293,7 +293,7 @@
 "Undo annotation" = "Desfazer marcação";
 "Clear marks" = "Limpar marcações";
 "Keep awake for" = "Manter acordado por";
-"Stays active until you stop it or quit Sieghart." = "Permanece ativo até você interromper ou encerrar o Sieghart.";
+"Stays active until you stop it or quit HeyChomp." = "Permanece ativo até você interromper ou encerrar o HeyChomp.";
 "Closing the lid still follows macOS hardware rules. For closed-lid work, use a supported docked setup with power and an external display." = "Fechar a tampa segue as regras do Mac. Para trabalhar com a tampa fechada, conecte o carregador e um monitor externo compatível.";
 "GANTT · CALENDAR & ROUTINE" = "GANTT · AGENDA E ROTINA";
 "One commitment at a time." = "Um compromisso de cada vez.";
@@ -340,7 +340,7 @@
 "Meet the team" = "Conheça a equipe";
 "Files & downloads" = "Arquivos e downloads";
 "More tools" = "Mais ferramentas";
-"Open Sieghart" = "Abrir Sieghart";
+"Open HeyChomp" = "Abrir HeyChomp";
 "Quit" = "Encerrar";
 "Timer mode" = "Modo do relógio";
 "Count up at your own pace." = "Conte o tempo no seu ritmo.";
@@ -356,7 +356,7 @@
 "Selecting a mode leaves your clock alone. Start, pause or reset when you choose." = "Escolher um modo mantém o relógio atual. Inicie, pause ou reinicie quando quiser.";
 "Use Control + Option + V" = "Usar Control + Option + V";
 "A shortcut with a key works across apps without keyboard monitoring access." = "Um atalho com uma tecla funciona nos apps sem acesso ao monitoramento do teclado.";
-"Close this window to keep Sieghart and its shortcuts in the menu bar. Choose Quit to stop the app." = "Fechar esta janela mantém o Sieghart na barra de menus. Escolha Encerrar para sair do app.";
+"Close this window to keep HeyChomp and its shortcuts in the menu bar. Choose Quit to stop the app." = "Fechar esta janela mantém o HeyChomp na barra de menus. Escolha Encerrar para sair do app.";
 "Press your combination. Release modifier-only keys to save. Escape cancels." = "Pressione a combinação. Solte as teclas modificadoras para salvar. Esc cancela.";
 "Optional, off by default. Active only while Finder is in front. Moves and renames still need your review and confirmation." = "Opcional e desativado por padrão. Funciona com o Finder em primeiro plano. Revise e confirme antes de mover ou renomear arquivos.";
 "Glass in other windows and panels" = "Transparência nas janelas e painéis";
@@ -369,8 +369,8 @@
 "Smooth wheel scrolling" = "Rolagem suave com a roda";
 "Include trackpad and smooth-scroll mice" = "Incluir trackpad e mouses de rolagem suave";
 "Open Accessibility settings" = "Abrir ajustes de Acessibilidade";
-"Locate this copy of Sieghart" = "Localizar este Sieghart";
-"Enable this copy of Sieghart in macOS Privacy & Security, then return and click Retry." = "Autorize este Sieghart em Privacidade e Segurança do Mac, volte e clique em Tentar novamente.";
+"Locate this copy of HeyChomp" = "Localizar este HeyChomp";
+"Enable this copy of HeyChomp in macOS Privacy & Security, then return and click Retry." = "Autorize este HeyChomp em Privacidade e Segurança do Mac, volte e clique em Tentar novamente.";
 "Mouse acceleration" = "Aceleração do mouse";
 "Flat 1:1 pointer curve" = "Movimento linear do cursor (1:1)";
 "Restore original Mac acceleration" = "Restaurar aceleração original do Mac";
@@ -403,7 +403,7 @@
 "Also require confirmation for ⌘W (Close Window)" = "Confirmar também ⌘W (fechar janela)";
 "Press ⌘Q (or ⌘W) twice within 1.5 seconds in the active app to confirm." = "Pressione ⌘Q (ou ⌘W) duas vezes em até 1,5 segundo para confirmar no app ativo.";
 "Text expansion snippets" = "Atalhos de expansão de texto";
-"Trigger (e.g. ;sig)" = "Atalho (ex.: ;sig)";
+"Trigger (e.g. ;chomp)" = "Atalho (ex.: ;chomp)";
 "Replacement text" = "Texto expandido";
 "Extra mouse buttons" = "Botões extras do mouse";
 "Requires a mouse with extra buttons. Left, right and wheel clicks keep their normal behavior." = "Requer um mouse com botões extras. Os cliques esquerdo, direito e da roda mantêm seu funcionamento.";
@@ -419,7 +419,7 @@
 "Apple Cloud access" = "Acesso ao Apple Cloud";
 "Runs on this Mac when Apple Intelligence is available" = "Executa neste Mac quando o Apple Intelligence está disponível";
 "Apple Cloud reasoning for more involved questions" = "Raciocínio no Apple Cloud para perguntas mais complexas";
-"Sieg keeps your conversations together. Ada helps with code and mathematics; screen access and online tools use their own permissions." = "O Sieg reúne suas conversas. A Ada ajuda com código e matemática; acesso à tela e ferramentas online usam permissões próprias.";
+"Chomp keeps your conversations together. Ada helps with code and mathematics; screen access and online tools use their own permissions." = "O Chomp reúne suas conversas. A Ada ajuda com código e matemática; acesso à tela e ferramentas online usam permissões próprias.";
 "Ada + GitHub" = "Ada e GitHub";
 "Your code, with a little context." = "Seu código, com contexto.";
 "Ada can read your repository overview, open pull requests, requested reviews and CI status when you ask about GitHub." = "A Ada pode consultar seus repositórios, pull requests abertos, revisões solicitadas e verificações quando você perguntar sobre o GitHub.";
@@ -439,7 +439,7 @@
 "Dimming" = "Escurecimento";
 "Restore dimming" = "Restaurar escurecimento";
 "Sleep displays" = "Apagar telas";
-"Reconnect only devices Sieghart disconnected. Bluetooth stays on; keyboards and pointing devices may be disconnected too." = "Reconecta apenas os dispositivos desconectados pelo Sieghart. O Bluetooth permanece ativo; teclados e mouses também podem ser desconectados.";
+"Reconnect only devices HeyChomp disconnected. Bluetooth stays on; keyboards and pointing devices may be disconnected too." = "Reconecta apenas os dispositivos desconectados pelo HeyChomp. O Bluetooth permanece ativo; teclados e mouses também podem ser desconectados.";
 "Applies only to a new Music launch within two seconds of a detected playback key. Existing Music sessions are left running." = "Vale para a abertura do Música em até dois segundos após uma tecla de reprodução. Sessões já abertas continuam funcionando.";
 "Hidden apps" = "Apps ocultos";
 "Show hidden audio apps" = "Mostrar apps de áudio ocultos";
@@ -513,12 +513,12 @@
 "Tools" = "Ferramentas";
 "Island pages" = "Páginas do widget";
 "Your companion" = "Seu companheiro";
-"Interact with Sieghart" = "Interagir com o Sieghart";
-"Say hello. Repeated taps make Sieghart grumpy, then sleepy. Tap again to wake." = "Diga oi. Toques repetidos deixam o Sieg irritado e depois sonolento. Toque novamente para acordar.";
+"Interact with Chomp" = "Interagir com o Chomp";
+"Say hello. Repeated taps make Chomp grumpy, then sleepy. Tap again to wake." = "Diga oi. Toques repetidos deixam o Chomp irritado e depois sonolento. Toque novamente para acordar.";
 "Dismiss spatial overlay" = "Fechar desenho na tela";
 "Almost!" = "Quase lá!";
 "Open timer controls" = "Abrir controles do timer";
-"Sig leads. Every specialist has a character of their own." = "O Sieg coordena. Cada especialista tem sua personalidade.";
+"Chomp leads. Every specialist has a character of their own." = "O Chomp coordena. Cada especialista tem sua personalidade.";
 "Movement" = "Movimento";
 "Replay" = "Repetir";
 "A movement preview. File transfers and specialist integrations will be connected as their tools become available." = "Uma prévia dos movimentos da sua equipe.";
@@ -533,7 +533,7 @@
 "Paste" = "Colar";
 "Paste into your previous app. Requires Accessibility access." = "Cole no app anterior. Requer acesso à Acessibilidade.";
 "Delete saved copy" = "Apagar cópia salva";
-"This removes saved copies and pins from Sieghart. Your current system clipboard is unchanged." = "Apaga cópias salvas e fixadas no Sieghart. A área de transferência atual do Mac permanece igual.";
+"This removes saved copies and pins from HeyChomp. Your current system clipboard is unchanged." = "Apaga cópias salvas e fixadas no HeyChomp. A área de transferência atual do Mac permanece igual.";
 "PREVIEW" = "PRÉVIA";
 "Image preview unavailable" = "Prévia da imagem indisponível";
 "File references only. The files stay in their original locations." = "Os arquivos permanecem em suas pastas originais; apenas as referências são salvas.";
@@ -579,7 +579,7 @@
 "Direct paste is ready" = "Pronto para colar diretamente";
 "Paste requested" = "Colagem solicitada";
 "Copied — paste with ⌘V" = "Copiado · cole com ⌘V";
-"Allow Sieghart in Accessibility, then return here" = "Autorize o Sieghart em Acessibilidade e volte aqui";
+"Allow HeyChomp in Accessibility, then return here" = "Autorize o HeyChomp em Acessibilidade e volte aqui";
 "Keep a file nearby." = "Deixe um arquivo por perto.";
 "Files stay on this Mac." = "Os arquivos ficam neste Mac.";
 "Shelf" = "Prateleira";
@@ -606,12 +606,12 @@
 "No results" = "Nenhum resultado";
 "Talk to…" = "Conversar com…";
 "Working…" = "Trabalhando…";
-"Start with Sieg" = "Comece com o Sieg";
+"Start with Chomp" = "Comece com o Chomp";
 
 "Your companion, one shortcut away." = "Seu companheiro a um atalho de distância.";
 "Choose a personality and its rhythm." = "Conheça sua equipe e o ritmo de cada um.";
 "Say “open Safari”, “search for Swift tutorials” or “pesquise receitas”. Hold the voice shortcut to speak, then release to send." = "Diga “abre o Safari”, “pesquise tutoriais de Swift” ou faça uma pergunta. Segure o atalho de voz para falar e solte para enviar.";
-"Keep the microphone on for a conversation. You can interrupt Sieg; Stop ends listening. Hold-to-talk remains available separately." = "Mantenha o microfone ativo para conversar e interromper o Sieg. Parar encerra a escuta. O atalho de segurar para falar continua disponível.";
+"Keep the microphone on for a conversation. You can interrupt Chomp; Stop ends listening. Hold-to-talk remains available separately." = "Mantenha o microfone ativo para conversar e interromper o Chomp. Parar encerra a escuta. O atalho de segurar para falar continua disponível.";
 "English by default. Choose Portuguese for the team's introduction." = "Escolha o idioma da apresentação da equipe.";
 "Reverse both scroll axes." = "Inverta os dois eixos de rolagem.";
 "Hold a modifier to redirect vertical scrolling sideways." = "Segure uma tecla modificadora para rolar na horizontal.";
@@ -690,8 +690,74 @@
 "Timer reset" = "Timer reiniciado";
 "Finish a focus session before starting its break" = "Conclua uma sessão de foco antes de iniciar a pausa";
 "Break started" = "Pausa iniciada";
-"Sieghart shown" = "Sieghart aberto";
-"Sieghart tucked away" = "Sieghart recolhido";
+"HeyChomp shown" = "HeyChomp aberto";
+"HeyChomp tucked away" = "HeyChomp recolhido";
 "Choose your focus settings" = "Escolha os ajustes de foco";
 "Here are your AI limits" = "Aqui estão seus limites de IA";
 "Opening your search…" = "Abrindo sua pesquisa…";
+
+"Uses Apple Private Cloud Compute for reasoning. Your messages, recent context and requested tool results are processed online by Apple. Requires macOS 27 and Apple’s app entitlement." = "Usa o Private Cloud Compute da Apple para raciocínio. Suas mensagens, o contexto recente e os resultados das ferramentas solicitadas são processados online pela Apple. Requer macOS 27 e a autorização da Apple para o app.";
+
+"Uses the new AFM 3 model supplied by macOS 27 on this Mac. No cloud model fallback. Official thinking is not supported in this mode. GitHub requests are online only when you connect GitHub." = "Usa o modelo AFM 3 fornecido pelo macOS 27 neste Mac, sem recorrer a um modelo na nuvem. Este modo não oferece o recurso oficial de raciocínio. Solicitações ao GitHub usam a internet somente quando você conecta sua conta.";
+
+"macOS could not confirm the keep-awake protection" = "O macOS não confirmou a proteção do Keep Awake";
+"Screen reading could not be resumed. Ask again." = "Não consegui retomar essa leitura. Faça o pedido novamente.";
+
+/* Chat recovery and dynamic audio interface */
+"Model unavailable" = "Modelo indisponível";
+"Technical details" = "Detalhes técnicos";
+"Dismiss notice" = "Dispensar aviso";
+"Local history could not be read. The original file is preserved." = "Não consegui ler o histórico local. O arquivo original foi preservado.";
+"Local history could not be saved." = "Não consegui salvar o histórico local.";
+"This chat is available in memory, but local history could not be saved." = "A conversa continua aberta, mas não consegui salvar o histórico local.";
+"This document could not be read. Try a different file." = "Não consegui ler esse documento. Tente outro arquivo.";
+"Stop the current reply before changing Ada's model." = "Interrompa a resposta atual antes de trocar o modelo da Ada.";
+"You have 20 local chats. Delete a chat before creating another." = "Você tem 20 conversas locais. Remova uma antes de criar outra.";
+"This chat has reached its local history limit. Start a new chat to continue." = "Esta conversa atingiu o limite do histórico local. Abra outra para continuar.";
+"Reply stopped. Your request has been preserved." = "Resposta interrompida. Seu pedido foi preservado.";
+"The reply took too long. Your request has been preserved; you can try again." = "A resposta demorou além do limite. Seu pedido foi preservado; você pode tentar novamente.";
+"There is no room for a specialist chat. Delete a chat and try again." = "Não há espaço para abrir a conversa do especialista. Remova uma conversa e tente novamente.";
+"An Apple model reply is already in progress. Wait for it or stop it first." = "Já há uma resposta em andamento. Aguarde ou interrompa para continuar.";
+"Write a message before sending." = "Escreva uma mensagem antes de enviar.";
+"This message is too large for the Apple model. Try a shorter question or a smaller code excerpt." = "Esta mensagem é muito longa para o modelo da Apple. Envie uma pergunta ou um trecho de código menor.";
+"This conversation exceeds the Apple model’s context. Start a new chat or send a shorter message." = "Esta conversa excede o contexto do modelo da Apple. Abra outra conversa ou envie uma mensagem menor.";
+"The Apple model returned an empty reply. Your message has been kept so you can retry." = "O modelo da Apple não retornou uma resposta. Sua mensagem foi preservada para tentar novamente.";
+"Checking the Apple model…" = "Verificando o modelo da Apple…";
+"The on-device model is unavailable." = "O modelo local está indisponível.";
+"The new Apple Foundation Models require macOS 27 or later." = "Os novos modelos da Apple exigem macOS 27 ou posterior.";
+"The new Apple Foundation Models require macOS 27 or later. Update macOS to use this chat; the previous model is not used as a fallback." = "Os novos modelos da Apple exigem macOS 27 ou posterior. Atualize o macOS para usar esta conversa; o modelo anterior não é usado como alternativa.";
+"Apple Thinking requires an app build signed with Apple's approved Private Cloud Compute entitlement. This build does not include that entitlement. On-device chat remains available on macOS 27 when Apple Intelligence is ready." = "O Apple Thinking exige uma versão do app autorizada pela Apple para usar o Private Cloud Compute. Esta versão não tem essa autorização. A conversa local continua disponível no macOS 27 quando o Apple Intelligence estiver pronto.";
+"Apple's cloud model does not currently provide the reasoning and tools required by Ada." = "O modelo na nuvem da Apple ainda não oferece o raciocínio e as ferramentas de que a Ada precisa.";
+"Apple Private Cloud Compute requires an Apple Intelligence eligible device and region." = "O Private Cloud Compute exige um dispositivo e uma região compatíveis com o Apple Intelligence.";
+"Apple Private Cloud Compute is not ready. Check Apple Intelligence and your network connection." = "O Private Cloud Compute ainda não está pronto. Verifique o Apple Intelligence e sua conexão com a internet.";
+"Apple Private Cloud Compute is currently unavailable." = "O Private Cloud Compute está indisponível no momento.";
+"The new AFM 3 model is not installed or ready. Update Apple Intelligence; Ada will not use the previous model." = "O novo modelo AFM 3 ainda não está instalado ou pronto. Atualize o Apple Intelligence; a Ada não usará o modelo anterior.";
+"The installed Apple model does not provide Ada's required tool support." = "O modelo instalado não oferece as ferramentas de que a Ada precisa.";
+"This Mac or region does not support the on-device Apple Intelligence model." = "Este Mac ou esta região não é compatível com o modelo local do Apple Intelligence.";
+"Enable Apple Intelligence in System Settings to use the new on-device model." = "Ative o Apple Intelligence nos Ajustes do Sistema para usar o novo modelo local.";
+"Apple Intelligence is preparing its new on-device model. Try again when it is ready." = "O Apple Intelligence está preparando o novo modelo local. Tente novamente quando estiver pronto.";
+"The on-device Apple model is unavailable. Check Apple Intelligence in System Settings." = "O modelo local da Apple está indisponível. Verifique o Apple Intelligence nos Ajustes do Sistema.";
+"Apple's usage limit was reached. Try again later or choose the on-device mode in Ada settings." = "O limite de uso da Apple foi atingido. Tente mais tarde ou escolha o modo local nos ajustes da Ada.";
+"The selected Apple model does not support this capability. Check the model and thinking mode in Ada settings." = "O modelo escolhido não oferece esta função. Verifique o modelo e o modo de raciocínio nos ajustes da Ada.";
+"Apple model is not enabled in this preview." = "O modelo da Apple está desativado nesta prévia.";
+"No output device" = "Nenhuma saída de áudio";
+"No input device" = "Nenhuma entrada de áudio";
+"Fixed" = "Fixo";
+"Waiting" = "Aguardando";
+"Allow system audio in the macOS prompt. Audio stays local and isn't saved." = "Permita o áudio do sistema no aviso do macOS. O áudio fica neste Mac e não é salvo.";
+"Adjust an app below 100% to mix it on this output." = "Reduza o volume de um app abaixo de 100% para mixá-lo nesta saída.";
+
+/* Voice permission recovery */
+"Speech permission did not finish. Open Speech Recognition in System Settings, then try again." = "A permissão de fala não foi concluída. Abra Reconhecimento de Fala nos Ajustes do Sistema e tente novamente.";
+"Microphone permission did not finish. Open Microphone in System Settings, then try again." = "A permissão do microfone não foi concluída. Abra Microfone nos Ajustes do Sistema e tente novamente.";
+"Open voice permission" = "Abrir permissão de voz";
+"Allow speech recognition in System Settings" = "Permita o reconhecimento de fala nos Ajustes do Sistema";
+"Allow microphone access in System Settings" = "Permita o acesso ao microfone nos Ajustes do Sistema";
+"Voice access is ready" = "O acesso à voz está pronto";
+"Conversation ended" = "Conversa encerrada";
+
+"Saved to your library." = "Salvo na sua biblioteca.";
+"This reply could not be saved." = "Não foi possível salvar esta resposta.";
+"The original chat is no longer available. Your saved result is preserved." = "A conversa original não está mais disponível. Seu resultado salvo foi preservado.";
+"This saved result is no longer available." = "Este resultado salvo não está mais disponível.";
+"The original document is unavailable. You can still export its extracted text." = "O documento original está indisponível. Você ainda pode exportar o texto extraído.";

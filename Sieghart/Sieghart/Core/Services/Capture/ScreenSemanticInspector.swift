@@ -76,6 +76,8 @@ final class ScreenSemanticInspector: ScreenSemanticInspecting {
 
     /// Parses whether a spoken or typed request asks Sig to read or explain what is on the screen.
     nonisolated static func isScreenInspectionIntent(_ transcript: String) -> Bool {
+        let request = SearchVoiceParser.requestText(transcript)
+        guard !SearchVoiceParser.hasSearchIntent(request), !SearchVoiceParser.hasNegatedIntent(request) else { return false }
         let normalized = transcript
             .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US"))
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -102,7 +104,35 @@ final class ScreenSemanticInspector: ScreenSemanticInspecting {
             "explain this", "translate this", "summarize this", "selected area", "regiao selecionada",
             "me guie", "me guia", "passo a passo na tela", "guide me", "walk me through"
         ]
-        return patterns.contains { normalized.contains($0) }
+        if patterns.contains(where: { normalized.contains($0) }) || referencesVisibleContent(normalized) { return true }
+        let reads = normalized.range(of: #"\b(?:leia|ler|le|leia-me|read|expli\w*|explain|traduz\w*|translate|resum\w*|summarize)\b"#, options: .regularExpression) != nil
+        let screen = normalized.range(of: #"\b(?:tela|screen|display)\b"#, options: .regularExpression) != nil
+        return reads && screen
+    }
+
+    /// Deictic source references require observed content, not a guessed class
+    /// or an invented example. Output location alone (“on my screen”) does not.
+    nonisolated static func referencesVisibleContent(_ request: String) -> Bool {
+        let text = request.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .init(identifier: "en_US"))
+        let source = #"(?:classe|codigo|funcao|metodo|trecho|componente|texto|documento|pagina|diagrama)"#
+        let englishSource = #"(?:class|code|function|method|snippet|component|text|document|page|diagram)"#
+        let patterns = [
+            #"\b(?:essa|esta|dessa|desta|esse|este|desse|deste)\s+"# + source + #"\b"#,
+            #"\b(?:this|that)\s+"# + englishSource + #"\b"#,
+            #"\b"# + source + #"\s+(?:que\s+(?:esta|ta|aparece)|visivel|abert[ao]|selecionad\w*)\b"#,
+            #"\b(?:visible|selected|open|current)\s+"# + englishSource + #"\b"#,
+            #"\b"# + englishSource + #"\s+that\s+is\s+(?:visible|selected|open)\b"#,
+            #"\b(?:of|from)\s+(?:the|my)\s+"# + englishSource + #"\s+on\s+(?:the|my)\s+screen\b"#,
+            #"\bd[oa]\s+"# + source + #"\s+(?:n[ao]|d[ao])\s+(?:minha\s+)?tela\b"#
+        ]
+        return patterns.contains { text.range(of: $0, options: .regularExpression) != nil }
+    }
+
+    /// Capture excludes our windows; AX must exclude our own chat as well or
+    /// its selected/editor text would take priority over the external pixels.
+    nonisolated static func isExternalElement(_ element: AXUIElement) -> Bool {
+        var owner: pid_t = 0
+        return AXUIElementGetPid(element, &owner) == .success && owner > 0 && owner != ProcessInfo.processInfo.processIdentifier
     }
 
     func inspectAtCursor(query: String) async -> ScreenSemanticReading {
@@ -148,7 +178,7 @@ final class ScreenSemanticInspector: ScreenSemanticInspecting {
                 Float(desktopTop - mouseAppKit.y),
                 &elementRef
             )
-            if status == .success, let element = elementRef {
+            if status == .success, let element = elementRef, Self.isExternalElement(element) {
                 if let axRole = Self.stringAttribute(kAXRoleAttribute as CFString, of: element), !axRole.isEmpty {
                     role = axRole
                 }
@@ -339,8 +369,8 @@ enum ScreenInspectionFailure: Error, Equatable, Sendable {
     func message(english: Bool) -> String {
         switch self {
         case .permission: return english
-            ? "Allow Sieghart in System Settings → Privacy & Security → Screen & System Audio Recording, then try again."
-            : "Permita o Sieghart em Ajustes do Sistema → Privacidade e Segurança → Gravação de Tela e Áudio do Sistema e tente novamente."
+            ? "Allow HeyChomp in System Settings → Privacy & Security → Screen & System Audio Recording, then try again."
+            : "Permita o HeyChomp em Ajustes do Sistema → Privacidade e Segurança → Gravação de Tela e Áudio do Sistema e tente novamente."
         case .unavailable: return english ? "Screen capture is unavailable right now." : "A captura da tela não está disponível agora."
         case .captureFailed: return english ? "I couldn't capture your screen. Check screen recording permission and try again." : "Não consegui capturar sua tela. Confira a permissão de gravação da tela e tente novamente."
         case .cancelled: return english ? "Screen reading cancelled." : "Leitura da tela cancelada."

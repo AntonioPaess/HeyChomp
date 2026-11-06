@@ -218,3 +218,50 @@ extension MacContractsTests {
         }
     }
 }
+
+
+extension MacContractsTests {
+    @MainActor @Suite(.tags(.localChat, .isolated)) struct LocalChatArtifactTests {
+        @Test("G30.04 · Saving and reopening a reply follows its chat and message, without inference")
+        func savedSource() async throws {
+            let reply = LocalChatMessage(role: .assistant, text: "Useful answer")
+            let origin = LocalChatConversation(persona: .sig, title: "Original", messages: [reply])
+            let other = LocalChatConversation(persona: .ada, title: "Other")
+            let engine = IntegrationLocalEngine()
+            let model = LocalChatViewModel(generator: engine, store: MemoryLocalChatStore([origin, other]))
+            defer { model.shutdown() }
+            model.artifactLibrary = CompanionArtifactLibrary()
+            await model.prepare(); model.select(other.id); model.draft = "Keep my draft"
+            let result = try #require(model.saveReply(reply.id, in: origin.id))
+            #expect(model.selectedID == other.id && model.draft == "Keep my draft" && engine.calls == 0)
+            #expect(model.revealSource(of: result) && model.selectedID == origin.id)
+            #expect(model.messageFocus?.messageID == reply.id)
+            let firstFocus = model.messageFocus
+            #expect(model.revealSource(of: result) && model.messageFocus != firstFocus)
+            model.select(other.id)
+            #expect(model.messageFocus == nil && model.draft == "Keep my draft")
+            await model.delete(origin.id)
+            #expect(!model.revealSource(of: result) && model.artifactLibrary?.items.count == 1)
+            #expect(model.saveReply(reply.id, in: origin.id) == nil && engine.calls == 0)
+        }
+        @Test("G30.04 · A streaming reply cannot be exported, while a completed earlier reply can")
+        func streamingAdmission() async throws {
+            let reply = LocalChatMessage(role: .assistant, text: "Earlier answer")
+            let origin = LocalChatConversation(persona: .sig, title: "Original", messages: [reply])
+            let engine = IntegrationLocalEngine(), gate = IntegrationGate(); engine.gate = gate
+            let model = LocalChatViewModel(generator: engine, store: MemoryLocalChatStore([origin]))
+            model.artifactLibrary = CompanionArtifactLibrary()
+            try await withLocalChatResources([model], gates: [gate]) {
+                await model.prepare(); model.draft = "Next question"; model.send(to: origin.id)
+                try await IntegrationWait.until { gate.entered }
+                let streaming = try #require(model.selected?.messages.last)
+                #expect(!model.canSaveReply(streaming.id, in: origin.id))
+                #expect(model.saveReply(streaming.id, in: origin.id) == nil)
+                #expect(model.saveReply(reply.id, in: origin.id) != nil)
+                gate.release(); try await IntegrationWait.until { model.generatingID == nil }
+                #expect(model.saveReply(streaming.id, in: origin.id) != nil)
+                #expect(model.artifactLibrary?.items.count == 2)
+            }
+        }
+    }
+}

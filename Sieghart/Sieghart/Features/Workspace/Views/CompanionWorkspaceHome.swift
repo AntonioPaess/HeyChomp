@@ -25,7 +25,7 @@ struct CompanionWorkspaceHome: View {
                     Text(en ? "Ask a question, bring a task or pick up where you left off." : "Tire uma dúvida, traga uma tarefa ou retome de onde parou.").font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted)
                 }
                 Spacer()
-                Button(action: speak) { Label(en ? "Talk to Sieg" : "Falar com o Sieg", systemImage: "mic.fill") }.buttonStyle(CompanionButtonStyle(primary: true))
+                Button(action: speak) { Label(en ? "Talk to Chomp" : "Falar com o Chomp", systemImage: "mic.fill") }.buttonStyle(CompanionButtonStyle(primary: true))
             }
             Text(en ? "Your team" : "Sua equipe").font(WorkspaceTypography.section)
             HStack(spacing: 10) {
@@ -79,7 +79,7 @@ struct CompanionWorkspaceHome: View {
                 }.font(WorkspaceTypography.body).padding(11).modifier(WorkspaceSurface(radius: 11))
             }
             if conversations.isEmpty {
-                WorkspaceEmptyState(title: en ? "A conversation starts here" : "Uma conversa começa aqui", detail: en ? "Choose Sieg or a specialist above. Your history stays close by." : "Escolha o Sieg ou um especialista acima. Seu histórico fica sempre por perto.", symbol: "bubble.left.and.bubble.right")
+                WorkspaceEmptyState(title: en ? "A conversation starts here" : "Uma conversa começa aqui", detail: en ? "Choose Chomp or a specialist above. Your history stays close by." : "Escolha o Chomp ou um especialista acima. Seu histórico fica sempre por perto.", symbol: "bubble.left.and.bubble.right")
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 12)], spacing: 12) {
                 ForEach(conversations) { conversation in
@@ -106,7 +106,10 @@ struct CompanionWorkspaceHome: View {
             }
             CompanionTaskShelf(journal: coordinator.taskJournal, language: language, resume: { coordinator.resumeTask($0) }, pause: { coordinator.pauseTask($0) }).companionCard()
             CompanionRoutineShelf(routines: coordinator.routines, language: language)
-            CompanionArtifactShelf(library: coordinator.artifacts, language: language)
+            CompanionArtifactShelf(library: coordinator.artifacts, language: language, openSource: { item in
+                if chat.revealSource(of: item) { room.page = .chat; openChat(); return true }
+                return false
+            })
             if coordinator.screenAccessIssue == .permission { ScreenPermissionHelp(language: language).companionCard() }
             HStack {
                 Button(en ? "Learn the gestures" : "Aprender os gestos") { tutorial = true }

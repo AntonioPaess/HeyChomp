@@ -160,7 +160,7 @@ struct ScreenSelection: Equatable, Sendable {
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) }) ?? NSScreen.main else { return }
         if pointerPanel == nil {
             let panel = SpatialCanvasPanel(screenFrame: .init(x: 0, y: 0, width: 184, height: 58))
-            panel.contentView = NSHostingView(rootView: ListeningPointerView(model: self))
+            panel.host(ListeningPointerView(model: self))
             panel.level = .popUpMenu
             pointerPanel = panel
         }
@@ -173,7 +173,7 @@ struct ScreenSelection: Equatable, Sendable {
         if phase == .listening {
             if selectionPanel == nil {
                 let panel = SpatialCanvasPanel(screenFrame: frame)
-                panel.contentView = NSHostingView(rootView: ListeningSelectionView(model: self))
+                panel.host(ListeningSelectionView(model: self))
                 panel.ignoresMouseEvents = false
                 panel.level = .statusBar
                 selectionPanel = panel
@@ -196,7 +196,7 @@ private struct ListeningPointerView: View {
         case .listening: return en ? "Listening" : "Escutando"
         case .thinking: return en ? "Thinking" : "Pensando"
         case .speaking: return en ? "Speaking" : "Falando"
-        case .idle: return "Sieg"
+        case .idle: return "Chomp"
         }
     }
     var body: some View {

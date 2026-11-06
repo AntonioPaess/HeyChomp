@@ -29,7 +29,8 @@ import IOKit.pwr_mgt
     func startLifecycle(center: NotificationCenter = NSWorkspace.shared.notificationCenter, resumeForUpdate: Bool = false) {
         guard notifications.isEmpty else { return }
         notificationCenter = center
-        for name in [NSWorkspace.willSleepNotification, NSWorkspace.didWakeNotification] {
+        for name in [NSWorkspace.willSleepNotification, NSWorkspace.didWakeNotification,
+                     NSWorkspace.screensDidWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
             notifications.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
                 let sleeps = note.name == NSWorkspace.willSleepNotification
                 MainActor.assumeIsolated { self?.setSleeping(sleeps) }
@@ -74,9 +75,16 @@ import IOKit.pwr_mgt
             status = suspended ? "Paused while your Mac sleeps" : "Waiting for your power, display or app conditions"
             return
         }
-        if token != nil && tokenKeepsDisplay != request.keepDisplay { relinquish() }
+        if let token, tokenKeepsDisplay != request.keepDisplay || !backend.isHeld(token, display: request.keepDisplay) { relinquish() }
         if token == nil {
-            do { token = try backend.acquire(display: request.keepDisplay); tokenKeepsDisplay = request.keepDisplay; holding = true; error = nil }
+            do {
+                let acquired = try backend.acquire(display: request.keepDisplay)
+                guard backend.isHeld(acquired, display: request.keepDisplay) else {
+                    backend.release(acquired)
+                    throw UtilityFailure(message: "macOS could not confirm the keep-awake protection")
+                }
+                token = acquired; tokenKeepsDisplay = request.keepDisplay; holding = true; error = nil
+            }
             catch { self.error = error.localizedDescription; status = "Couldn't keep your Mac awake"; onReaction?(false); return }
         }
         status = request.keepDisplay ? "Mac and display stay awake" : "Mac stays awake; display may sleep"

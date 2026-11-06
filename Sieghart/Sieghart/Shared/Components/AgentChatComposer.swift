@@ -16,6 +16,7 @@ struct AgentChatComposer: NSViewRepresentable {
     func updateNSView(_ field: AgentChatEditor, context: Context) {
         field.changed = { text = $0 }; field.submit = submit
         field.placeholderString = placeholder
+        field.setAccessibilityLabel(placeholder)
         field.update(text: text, focusID: focusID)
     }
 }
@@ -28,11 +29,10 @@ final class AgentChatEditor: NSTextField, NSTextFieldDelegate {
         super.init(frame: frame)
         delegate = self; isEditable = true; isSelectable = true
         isBordered = false; drawsBackground = false; focusRingType = .none
-        font = .systemFont(ofSize: 13); textColor = .white
+        font = .systemFont(ofSize: 13); textColor = .labelColor
         usesSingleLineMode = true; lineBreakMode = .byTruncatingTail
         cell?.isScrollable = true
         target = self; action = #selector(sendDraft)
-        setAccessibilityLabel("Message to the selected conversation")
         setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         setContentHuggingPriority(.defaultLow, for: .horizontal)
     }

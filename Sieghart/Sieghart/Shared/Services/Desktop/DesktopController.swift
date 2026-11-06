@@ -61,7 +61,7 @@ import Combine
     }
     func allowAccess() {
         requestAccess(); configureMonitor(); dockSpaces.configureZoomInterceptor()
-        status = trusted() ? "Accessibility is allowed. Refresh the list to choose a window." : "Enable this copy of Sieghart in macOS Privacy & Security, then return and refresh."
+        status = trusted() ? "Accessibility is allowed. Refresh the list to choose a window." : "Enable this copy of HeyChomp in macOS Privacy & Security, then return and refresh."
     }
     func refresh() {
         guard permitted() else { return }

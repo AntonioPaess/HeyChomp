@@ -28,6 +28,18 @@ final class SpatialCanvasPanel: NSPanel {
         ]
     }
 
+    func host<Content: View>(_ content: Content) {
+        // The panel's frame drives sizing. Keep SwiftUI out of the window's
+        // minimum and maximum size calculation while the drawing changes.
+        let container = NSView(frame: CGRect(origin: .zero, size: frame.size))
+        let hosting = NSHostingView(rootView: content)
+        hosting.sizingOptions = []
+        hosting.frame = container.bounds
+        hosting.autoresizingMask = [.width, .height]
+        container.addSubview(hosting)
+        contentView = container
+    }
+
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 }
@@ -99,7 +111,7 @@ struct SpatialCanvasOverlay: View {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(laserCyan)
-                            Text("Sig · \(drawing.shape.displayTitle)")
+                            Text("Chomp · \(drawing.shape.displayTitle)")
                                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.white)
                         }

@@ -178,7 +178,7 @@ struct AdaChatSettingsView: View {
                         .strokeBorder(CompanionStyle.edge.opacity(0.10), lineWidth: 0.8)
                 }
 
-            Text("Sieg keeps your conversations together. Ada helps with code and mathematics; screen access and online tools use their own permissions.")
+            Text("Chomp keeps your conversations together. Ada helps with code and mathematics; screen access and online tools use their own permissions.")
                 .font(AdaRoomTheme.bodyFont(size: 11))
                 .foregroundStyle(CompanionStyle.muted)
                 .fixedSize(horizontal: false, vertical: true)

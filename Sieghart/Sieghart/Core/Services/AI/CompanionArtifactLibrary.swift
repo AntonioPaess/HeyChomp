@@ -16,6 +16,23 @@ struct CompanionArtifact: Identifiable, Codable, Equatable, Sendable {
     var diagram: CanvasDiagram?
     var elements: [CanvasElement]? = nil
     var originalFilename: String? = nil
+    var sourceChatID: String? = nil
+    var sourceMessageID: String? = nil
+}
+
+enum CompanionArtifactFormat: Equatable { case original, extractedText }
+struct CompanionArtifactFile {
+    let name: String
+    let data: Data
+}
+enum CompanionArtifactFailure: Error, LocalizedError {
+    case missingResult, missingOriginal
+    var errorDescription: String? {
+        switch self {
+        case .missingResult: "This saved result is no longer available."
+        case .missingOriginal: "The original document is unavailable. You can still export its extracted text."
+        }
+    }
 }
 
 struct CompanionDocument: Sendable {
@@ -73,6 +90,41 @@ struct CompanionDocument: Sendable {
     }
     static var productionDirectory: URL { FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Sieghart/Artifacts") }
     func report(_ error: Error) { issue = error.localizedDescription }
+    func clearIssue() { issue = nil }
+    /// Unlike the display parser, saving must never fall back to a thought-only
+    /// response. An unfinished thought also cannot become an exported result.
+    static func replyText(_ text: String) -> String {
+        var visible = text
+        while let start = visible.range(of: "<think>", options: .caseInsensitive) {
+            guard let end = visible.range(of: "</think>", options: .caseInsensitive, range: start.upperBound..<visible.endIndex) else {
+                visible = String(visible[..<start.lowerBound]); break
+            }
+            visible.removeSubrange(start.lowerBound..<end.upperBound)
+        }
+        return visible.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    static func codeBlocks(in text: String) -> [(language: String, code: String)] {
+        AgentMarkdown.parse(replyText(text)).compactMap {
+            if case .codeBlock(let language, let code) = $0, !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return (language, code) }
+            return nil
+        }
+    }
+    @discardableResult func saveReply(_ message: LocalChatMessage, in conversation: LocalChatConversation, codeBlock: Int? = nil) -> CompanionArtifact? {
+        guard message.role == .assistant, conversation.messages.contains(message) else { return nil }
+        let visible = Self.replyText(message.text)
+        guard !visible.isEmpty else { return nil }
+        var content = visible, ext = "md", kind = CompanionArtifact.Kind.text
+        var sourceID = "chat.\(conversation.id).\(message.id)", title = String(conversation.title.prefix(140))
+        if let codeBlock {
+            let blocks = Self.codeBlocks(in: message.text)
+            guard blocks.indices.contains(codeBlock) else { return nil }
+            let block = blocks[codeBlock]
+            content = block.code; ext = Self.codeExtension(block.language); kind = .code
+            sourceID += ".code.\(codeBlock)"; title += " · \(codeBlock + 1)"
+        }
+        return upsert(sourceID: sourceID, title: title, kind: kind, content: content, ext: ext,
+            sourceChatID: conversation.id, sourceMessageID: message.id)
+    }
     func saveCanvas(_ canvas: GeneratedCanvas) {
         guard (try? canvas.validated()) != nil else { return }
         let kind: CompanionArtifact.Kind = canvas.isCode ? .code : .diagram
@@ -92,15 +144,17 @@ struct CompanionDocument: Sendable {
     func saveDocument(_ document: CompanionDocument) {
         upsert(sourceID: "document.\(UUID())", title: document.name, kind: .document, content: document.text, ext: "txt", original: document.originalData, originalExtension: document.originalExtension)
     }
-    private func upsert(sourceID: String, title: String, kind: CompanionArtifact.Kind, content: String, ext: String, diagram: CanvasDiagram? = nil, elements: [CanvasElement]? = nil, original: Data? = nil, originalExtension: String? = nil) {
-        guard validStorage, content.utf8.count <= 500_000, title.count <= 160 else { return }
+    @discardableResult private func upsert(sourceID: String, title: String, kind: CompanionArtifact.Kind, content: String, ext: String, diagram: CanvasDiagram? = nil, elements: [CanvasElement]? = nil, original: Data? = nil, originalExtension: String? = nil, sourceChatID: String? = nil, sourceMessageID: String? = nil) -> CompanionArtifact? {
+        guard validStorage, content.utf8.count <= 500_000, !title.isEmpty, title.count <= 160 else { return nil }
         let existing = items.first { $0.sourceID == sourceID }
-        if let existing, existing.content == content, existing.title == title, existing.diagram == diagram, existing.elements == elements { return }
+        if let existing, existing.content == content, existing.title == title, existing.kind == kind,
+           (existing.filename as NSString).pathExtension == ext, existing.diagram == diagram, existing.elements == elements,
+           existing.sourceChatID == sourceChatID, existing.sourceMessageID == sourceMessageID { issue = nil; return existing }
         let id = existing?.id ?? UUID()
         let record = CompanionArtifact(id: id, sourceID: sourceID, title: title, kind: kind, content: content,
-            filename: "\(id).\(ext)", date: Date(), diagram: diagram, elements: elements, originalFilename: originalExtension.map { "\(id).\($0)" })
+            filename: "\(id).\(ext)", date: Date(), diagram: diagram, elements: elements, originalFilename: originalExtension.map { "\(id).\($0)" }, sourceChatID: sourceChatID, sourceMessageID: sourceMessageID)
         var next = items.filter { $0.id != id }; next.insert(record, at: 0)
-        guard Self.valid(next) else { issue = "A biblioteca está cheia. Os resultados existentes foram preservados."; return }
+        guard Self.valid(next) else { issue = "A biblioteca está cheia. Os resultados existentes foram preservados."; return nil }
         do {
             if let directory {
                 try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
@@ -110,27 +164,69 @@ struct CompanionDocument: Sendable {
                 if record.originalFilename != record.filename { try Data(content.utf8).write(to: directory.appendingPathComponent(record.filename), options: .atomic) }
                 try data.write(to: directory.appendingPathComponent("index.json"), options: .atomic)
             }
-            items = next
-        } catch { issue = "Não foi possível salvar o resultado: \(error.localizedDescription)" }
+            items = next; issue = nil
+            return record
+        } catch { issue = "Não foi possível salvar o resultado: \(error.localizedDescription)"; return nil }
     }
     func url(for item: CompanionArtifact) -> URL? {
-        guard items.contains(where: { $0.id == item.id && $0.filename == item.filename }), let directory,
-              FileManager.default.fileExists(atPath: directory.appendingPathComponent(item.originalFilename ?? item.filename).path) else { return nil }
-        return directory.appendingPathComponent(item.originalFilename ?? item.filename)
+        guard let stored = items.first(where: { $0.id == item.id }), let directory else { return nil }
+        let url = directory.appendingPathComponent(stored.originalFilename ?? stored.filename)
+        guard let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey]),
+              values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? Int.max) <= 10_000_000 else { return nil }
+        return url
     }
-    func export(_ item: CompanionArtifact) {
-        let panel = NSSavePanel(); panel.nameFieldStringValue = Self.safeTitle(item.originalFilename != nil ? (item.title as NSString).deletingPathExtension : item.title) + "." + ((item.originalFilename ?? item.filename) as NSString).pathExtension
-        panel.canCreateDirectories = true
-        guard panel.runModal() == .OK, let destination = panel.url else { return }
-        do {
-            if item.originalFilename != nil, let source = url(for: item) { try Data(contentsOf: source).write(to: destination, options: .atomic) }
-            else { try Data(item.content.utf8).write(to: destination, options: .atomic) }
+    func file(for item: CompanionArtifact, format: CompanionArtifactFormat = .original) throws -> CompanionArtifactFile {
+        guard let stored = items.first(where: { $0.id == item.id }) else { throw CompanionArtifactFailure.missingResult }
+        let title = stored.originalFilename == nil ? stored.title : (stored.title as NSString).deletingPathExtension
+        if stored.originalFilename != nil, format == .original {
+            guard let source = url(for: stored) else { throw CompanionArtifactFailure.missingOriginal }
+            let handle = try FileHandle(forReadingFrom: source); defer { try? handle.close() }
+            let bytes = try handle.read(upToCount: 10_000_001) ?? Data()
+            guard bytes.count <= 10_000_000 else { throw CocoaError(.fileReadTooLarge) }
+            return .init(name: Self.safeTitle(title) + "." + source.pathExtension, data: bytes)
         }
-        catch { issue = error.localizedDescription }
+        let ext = format == .extractedText ? "txt" : (stored.filename as NSString).pathExtension
+        return .init(name: Self.safeTitle(title) + "." + ext, data: Data(stored.content.utf8))
+    }
+    func write(_ item: CompanionArtifact, to destination: URL, format: CompanionArtifactFormat = .original) throws {
+        try file(for: item, format: format).data.write(to: destination, options: .atomic)
+    }
+    /// A human-readable, disposable representation. Generated files are rebuilt
+    /// from the committed index; a missing original is never replaced by text.
+    func representationURL(for item: CompanionArtifact) throws -> URL {
+        let representation = try file(for: item)
+        let base = directory ?? FileManager.default.temporaryDirectory.appendingPathComponent("Sieghart-Artifact-Exports")
+        let folder = base.appendingPathComponent(".exports/\(item.id.uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let url = folder.appendingPathComponent(representation.name)
+        try representation.data.write(to: url, options: .atomic)
+        return url
+    }
+    func dragProvider(for item: CompanionArtifact) -> NSItemProvider {
+        do {
+            let url = try representationURL(for: item)
+            // Match the files shelf: offer a file URL so Finder can copy the
+            // named file and other apps can open it by its extension.
+            let provider = NSItemProvider(object: url as NSURL)
+            provider.suggestedName = url.lastPathComponent
+            return provider
+        } catch { report(error); return NSItemProvider() }
+    }
+    func export(_ item: CompanionArtifact, format: CompanionArtifactFormat = .original) {
+        do {
+            let representation = try file(for: item, format: format)
+            let panel = NSSavePanel(); panel.nameFieldStringValue = representation.name
+            panel.allowedContentTypes = UTType(filenameExtension: (representation.name as NSString).pathExtension).map { [$0] } ?? []
+            panel.canCreateDirectories = true
+            guard panel.runModal() == .OK, let destination = panel.url else { return }
+            try representation.data.write(to: destination, options: .atomic); issue = nil
+        }
+        catch { report(error) }
     }
     static func safeTitle(_ title: String) -> String {
         let clean = title.components(separatedBy: CharacterSet.alphanumerics.union(.init(charactersIn: " -_")).inverted).joined(separator: " ")
-        return String(clean.trimmingCharacters(in: .whitespaces).prefix(80)).isEmpty ? "Sieg" : String(clean.prefix(80))
+        let name = String(clean.trimmingCharacters(in: .whitespaces).prefix(80)).trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? "Chomp" : name
     }
     private static func valid(_ values: [CompanionArtifact]) -> Bool {
         let outputTypes = ["txt", "md", "svg", "swift", "py", "js", "ts", "json", "html", "css", "c", "cpp", "java"]
@@ -151,7 +247,7 @@ struct CompanionDocument: Sendable {
         }
     }
     private static func codeExtension(_ name: String) -> String {
-        ["swift": "swift", "python": "py", "javascript": "js", "typescript": "ts", "json": "json", "html": "html", "css": "css", "c": "c", "c++": "cpp", "java": "java"][name.lowercased()] ?? "txt"
+        ["swift": "swift", "python": "py", "py": "py", "javascript": "js", "js": "js", "typescript": "ts", "ts": "ts", "json": "json", "html": "html", "css": "css", "c": "c", "c++": "cpp", "java": "java"][name.lowercased()] ?? "txt"
     }
 }
 

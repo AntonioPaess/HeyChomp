@@ -50,7 +50,9 @@ enum FocusVoiceParser {
             return .ask(question: query)
         }
         guard !negatedRequest else { return nil }
-        if has(["open", "launch", "abrir", "abra", "abre"]) && !has(["sieghart", "companion", "widget", "companheiro"]) {
+        let open = has(["open", "launch", "abrir", "abra", "abre"])
+        let companion = has(["heychomp", "chomp", "sieghart", "companion", "widget", "companheiro"])
+        if open && !companion {
             guard !has(["and", "then", "search", "pesquisar", "pesquise", "depois", "tambem"]), !text.contains(" e ") else { return nil }
             let pattern = #"^(?:please\s+|por favor\s+)?(?:open|launch|abrir|abra|abre)\s+(?:(?:the|o|a|app|aplicativo)\s+)*([\p{L}\p{N} ._-]+)[.!?]?$"#
             guard let expression = try? NSRegularExpression(pattern: pattern),
@@ -68,17 +70,14 @@ enum FocusVoiceParser {
         // Reject conflicting actions instead of choosing whichever substring wins.
         if [pause, resume, finish, reset].filter({ $0 }).count > 1 { return nil }
         if pause && has(startVerbs) { return nil }
-        if has(["hide", "close", "esconder", "fechar"]) && has(["show", "open", "mostrar", "abrir"]) { return nil }
+        if has(["hide", "close", "esconder", "fechar"]) && (open || has(["show", "mostrar"])) { return nil }
         if pause { return .pause }
         if reset { return .reset }
         if finish { return .finish }
         if resume { return .resume }
         if has(["configure", "settings", "adjust", "configurar", "ajustar"]) { return .configure }
         if has(["hide", "close", "esconder", "fechar", "recolher"]) { return .hide }
-        if has(["show", "open", "mostrar", "abrir"]) {
-            if has(["open", "abrir"]) && !has(["sieghart", "companion", "widget", "companheiro"]) { return nil }
-            return .show
-        }
+        if open || has(["show", "mostrar"]) { return .show }
         if (start || has(["take", "quero", "fazer", "preciso"])) && has(["break", "rest", "descanso", "intervalo"]) { return .startBreak }
         guard start else { return nil }
         guard !has(["hour", "hours", "hora", "horas", "seconds", "segundos"]) else { return nil }
@@ -109,7 +108,7 @@ enum SearchVoiceParser {
     private static let verb = #"(?:search(?:\s+the\s+web)?|look\s+up|google|pesquis[ae]|pesquisar|bus(?:que|ca|car)|procur(?:e|a|ar)|(?:fa[çc]a|fazer)\s+uma\s+pesquisa)"#
     static func requestText(_ transcript: String) -> String {
         let text = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-        return text.replacingOccurrences(of: #"^(?:hey\s+|oi\s+)?(?:sieg|sig|sieghart)[, :]+"#, with: "", options: [.regularExpression, .caseInsensitive])
+        return text.replacingOccurrences(of: #"^(?:hey\s+|oi\s+)?(?:heychomp|sieg|sig|sieghart|chomp)[, :]+"#, with: "", options: [.regularExpression, .caseInsensitive])
     }
     static func hasNegatedIntent(_ text: String) -> Bool {
         text.range(of: #"^(?:please\s+|por favor\s+)?(?:n[ãa]o|don't|do not|never|not now)\b"#, options: [.regularExpression, .caseInsensitive]) != nil

@@ -16,7 +16,7 @@ import SwiftUI
     func present(member: CompanionAvatar, animates: Bool) {
         let window = self.window ?? NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 590),
                                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        window.title = "Sieghart · Meet your team"; window.isReleasedWhenClosed = false; window.delegate = self
+        window.title = "HeyChomp · Meet your team"; window.isReleasedWhenClosed = false; window.delegate = self
         window.contentView = NSHostingView(rootView: CompanionMotionStudio(initialMember: member, animates: animates, close: { [weak self] in self?.window?.close() }))
         if self.window == nil { window.center() }
         self.window = window

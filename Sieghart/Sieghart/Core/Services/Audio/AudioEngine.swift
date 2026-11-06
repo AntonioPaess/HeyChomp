@@ -117,7 +117,7 @@ struct AudioFailure: LocalizedError {
     let operation: String
     let status: OSStatus
     var errorDescription: String? {
-        if status == kAudioDevicePermissionsError { return "Allow Sieghart in System Settings → Privacy & Security → Screen & System Audio Recording, then retry the app mixer." }
+        if status == kAudioDevicePermissionsError { return "Allow HeyChomp in System Settings → Privacy & Security → Screen & System Audio Recording, then retry the app mixer." }
         return "\(operation) failed (\(status)). Check the selected audio device and retry."
     }
 }
@@ -196,7 +196,7 @@ private enum SystemAudioPermissionProbe {
         // An empty inclusion list taps no processes and can skip the privacy
         // request. A temporary unmuted global tap exercises the capture path.
         let description = CATapDescription(stereoGlobalTapButExcludeProcesses: [])
-        description.name = "Sieghart audio access"; description.isPrivate = true; description.muteBehavior = .unmuted
+        description.name = "HeyChomp audio access"; description.isPrivate = true; description.muteBehavior = .unmuted
         var tap: AudioObjectID = 0, device: AudioObjectID = 0
         var io: AudioDeviceIOProcID?
         defer {
@@ -206,7 +206,7 @@ private enum SystemAudioPermissionProbe {
         }
         try audioCheck(AudioHardwareCreateProcessTap(description, &tap), "Prepare system audio access")
         let spec: [String: Any] = [
-            kAudioAggregateDeviceNameKey: "Sieghart audio access",
+            kAudioAggregateDeviceNameKey: "HeyChomp audio access",
             kAudioAggregateDeviceUIDKey: UUID().uuidString,
             kAudioAggregateDeviceIsPrivateKey: true,
             kAudioAggregateDeviceTapListKey: [[kAudioSubTapUIDKey: description.uuid.uuidString, kAudioSubTapDriftCompensationKey: true]],
@@ -239,7 +239,7 @@ private final class ApplicationAudioRoute {
         // A stereo process mix includes all of an app's output streams, also
         // when a call changes a Bluetooth headset's stream/rate/channel layout.
         let description = CATapDescription(stereoMixdownOfProcesses: app.processes)
-        description.name = "Sieghart — \(app.name)"; description.isPrivate = true
+        description.name = "HeyChomp — \(app.name)"; description.isPrivate = true
         description.muteBehavior = .mutedWhenTapped
         do {
             try audioCheck(AudioHardwareCreateProcessTap(description, &tap), "Create app audio tap")
@@ -247,7 +247,7 @@ private final class ApplicationAudioRoute {
             try validatePCM(format)
             let spec: [String: Any] = [
                 kAudioAggregateDeviceUIDKey: UUID().uuidString,
-                kAudioAggregateDeviceNameKey: "Sieghart private mixer",
+                kAudioAggregateDeviceNameKey: "HeyChomp private mixer",
                 kAudioAggregateDeviceIsPrivateKey: true,
                 kAudioAggregateDeviceMainSubDeviceKey: device.uid,
                 kAudioAggregateDeviceSubDeviceListKey: [[kAudioSubDeviceUIDKey: device.uid, kAudioSubDeviceInputChannelsKey: 0]],
@@ -297,7 +297,7 @@ private final class ApplicationAudioRoute {
             let uid = string(id, kAudioDevicePropertyDeviceUID)
             guard !uid.isEmpty else { return nil }
             let name = string(id, kAudioObjectPropertyName)
-            guard name != "Sieghart private mixer", name != "Sieghart audio access" else { return nil }
+            guard name != "HeyChomp private mixer", name != "HeyChomp audio access" else { return nil }
             return AudioDeviceInfo(id: id, name: name, uid: uid, inputChannels: channels(id, input: true), outputChannels: channels(id, input: false), transport: scalar(id, kAudioDevicePropertyTransportType) ?? 0, sampleRate: scalar(id, kAudioDevicePropertyNominalSampleRate) ?? 0)
         }
         let output: UInt32 = scalar(AudioObjectID(kAudioObjectSystemObject), kAudioHardwarePropertyDefaultOutputDevice) ?? 0

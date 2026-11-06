@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		BC7BA7E6E5AB19E606D24FCF /* ResidentAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CE627BC4395D0AEA4CBFBB /* ResidentAppDelegate.swift */; };
-		B68545C9A2840F9920432C94 /* SieghartApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAEC82BF7B7723DDD83B0529 /* SieghartApp.swift */; };
+		B68545C9A2840F9920432C94 /* HeyChompApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAEC82BF7B7723DDD83B0529 /* HeyChompApp.swift */; };
 		B7431AF15CA274FFD1C58A31 /* KeyboardShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD93B14E17BA48ADBC4973F6 /* KeyboardShortcuts.swift */; };
 		BE0376B7D51B17FE2CD932E5 /* NotchGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4B4C42A60B26A73FBDDE20 /* NotchGeometry.swift */; };
 		BD3F41B261687BF95D9F61C3 /* TimerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC080930FA35CB07C4726113 /* TimerModels.swift */; };
@@ -497,9 +497,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A10000000000000000000003 /* Sieghart.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sieghart.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000003 /* HeyChomp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HeyChomp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B6CE627BC4395D0AEA4CBFBB /* ResidentAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResidentAppDelegate.swift; sourceTree = "<group>"; };
-		BAEC82BF7B7723DDD83B0529 /* SieghartApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SieghartApp.swift; sourceTree = "<group>"; };
+		BAEC82BF7B7723DDD83B0529 /* HeyChompApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeyChompApp.swift; sourceTree = "<group>"; };
 		BD93B14E17BA48ADBC4973F6 /* KeyboardShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcuts.swift; sourceTree = "<group>"; };
 		BB4B4C42A60B26A73FBDDE20 /* NotchGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchGeometry.swift; sourceTree = "<group>"; };
 		BC080930FA35CB07C4726113 /* TimerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerModels.swift; sourceTree = "<group>"; };
@@ -632,7 +632,7 @@
 		B0250D6DCC0B5A3D2DBE5CE9 /* AdaGitHubConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaGitHubConnectionView.swift; sourceTree = "<group>"; };
 		B48723602DB0DBA887A1A2A2 /* AppleChatConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleChatConfiguration.swift; sourceTree = "<group>"; };
 
-		CCF7D9FA6C726DDC7304B30A /* SieghartTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SieghartTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCF7D9FA6C726DDC7304B30A /* HeyChompTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HeyChompTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C8798C6636398F94DF56356A /* GitHubFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubFixtures.swift; sourceTree = "<group>"; };
 		CF0A4DE2EC6DF683A57EEDD4 /* IntegrationSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationSupport.swift; sourceTree = "<group>"; };
 		CED3CE060124CCEE36AEFE39 /* ProtocolPayloads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolPayloads.swift; sourceTree = "<group>"; };
@@ -679,8 +679,8 @@
 		C51275B690CA160E25558FEE /* AdaGitHubTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaGitHubTests.swift; sourceTree = "<group>"; };
 		C3678879BD36E5DA0E4B52CD /* CompanionLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionLogicTests.swift; sourceTree = "<group>"; };
 		C38B8F321FCEB2413228290C /* CompanionNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionNativeTests.swift; sourceTree = "<group>"; };
-		C7B84B710E933E0300BB2527 /* Sieghart-Complete.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Sieghart-Complete.xctestplan"; sourceTree = "<group>"; };
-		C12A4CC0D68B6A6BFB00F2B0 /* Sieghart-Fast.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Sieghart-Fast.xctestplan"; sourceTree = "<group>"; };
+		C7B84B710E933E0300BB2527 /* HeyChomp-Complete.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "HeyChomp-Complete.xctestplan"; sourceTree = "<group>"; };
+		C12A4CC0D68B6A6BFB00F2B0 /* HeyChomp-Fast.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "HeyChomp-Fast.xctestplan"; sourceTree = "<group>"; };
 		C844EFF19E9FE7C2B15CE6F9 /* CalendarFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarFixtures.swift; sourceTree = "<group>"; };
 		C176C9FC2A5A66E74BA7A499 /* UtilityFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityFixtures.swift; sourceTree = "<group>"; };
 		C68353BF8770DB4A1D9D6AC2 /* AgentFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentFixtures.swift; sourceTree = "<group>"; };
@@ -845,7 +845,7 @@
 			isa = PBXGroup;
 			children = (
 				B6CE627BC4395D0AEA4CBFBB /* ResidentAppDelegate.swift */,
-				BAEC82BF7B7723DDD83B0529 /* SieghartApp.swift */,
+				BAEC82BF7B7723DDD83B0529 /* HeyChompApp.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -1673,8 +1673,8 @@
 			isa = PBXGroup;
 			name = Products;
 			children = (
-				A10000000000000000000003 /* Sieghart.app */,
-				CCF7D9FA6C726DDC7304B30A /* SieghartTests.xctest */,
+				A10000000000000000000003 /* HeyChomp.app */,
+				CCF7D9FA6C726DDC7304B30A /* HeyChompTests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1843,8 +1843,8 @@
 			path = TestPlans;
 			sourceTree = "<group>";
 			children = (
-				C7B84B710E933E0300BB2527 /* Sieghart-Complete.xctestplan */,
-				C12A4CC0D68B6A6BFB00F2B0 /* Sieghart-Fast.xctestplan */,
+				C7B84B710E933E0300BB2527 /* HeyChomp-Complete.xctestplan */,
+				C12A4CC0D68B6A6BFB00F2B0 /* HeyChomp-Fast.xctestplan */,
 			);
 		};
 		CAD0D65F41F67DE61A34F905 /* Desktop */ = {
@@ -1922,9 +1922,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A1000000000000000000000A /* Sieghart */ = {
+		A1000000000000000000000A /* HeyChomp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A1000000000000000000000E /* Build configuration list for PBXNativeTarget "Sieghart" */;
+			buildConfigurationList = A1000000000000000000000E /* Build configuration list for PBXNativeTarget "HeyChomp" */;
 			buildPhases = (
 				A10000000000000000000008 /* Sources */,
 				A10000000000000000000009 /* Frameworks */,
@@ -1934,14 +1934,14 @@
 			);
 			dependencies = (
 			);
-			name = Sieghart;
-			productName = Sieghart;
-			productReference = A10000000000000000000003 /* Sieghart.app */;
+			name = HeyChomp;
+			productName = HeyChomp;
+			productReference = A10000000000000000000003 /* HeyChomp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		C6AB6C4DC6E52EC8F74130B0 /* SieghartTests */ = {
+		C6AB6C4DC6E52EC8F74130B0 /* HeyChompTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C802C526EDD8F5DF0856718E /* Build configuration list for PBXNativeTarget "SieghartTests" */;
+			buildConfigurationList = C802C526EDD8F5DF0856718E /* Build configuration list for PBXNativeTarget "HeyChompTests" */;
 			buildPhases = (
 				C478532C0A0A4854CC533A74 /* Sources */,
 				CCEEAE93C2C205B2C6260408 /* Frameworks */,
@@ -1951,19 +1951,19 @@
 			);
 			dependencies = (
 			);
-			name = SieghartTests;
-			productName = SieghartTests;
-			productReference = CCF7D9FA6C726DDC7304B30A /* SieghartTests.xctest */;
+			name = HeyChompTests;
+			productName = HeyChompTests;
+			productReference = CCF7D9FA6C726DDC7304B30A /* HeyChompTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		A10000000000000000000007 /* Project object */ = {
-			buildConfigurationList = A1000000000000000000000D /* Build configuration list for PBXProject "Sieghart" */;
+			buildConfigurationList = A1000000000000000000000D /* Build configuration list for PBXProject "HeyChomp" */;
 			targets = (
-				A1000000000000000000000A /* Sieghart */,
-				C6AB6C4DC6E52EC8F74130B0 /* SieghartTests */,
+				A1000000000000000000000A /* HeyChomp */,
+				C6AB6C4DC6E52EC8F74130B0 /* HeyChompTests */,
 			);
 			developmentRegion = en;
 			knownRegions = (
@@ -2014,7 +2014,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BC7BA7E6E5AB19E606D24FCF /* ResidentAppDelegate.swift in Sources */,
-				B68545C9A2840F9920432C94 /* SieghartApp.swift in Sources */,
+				B68545C9A2840F9920432C94 /* HeyChompApp.swift in Sources */,
 				B7431AF15CA274FFD1C58A31 /* KeyboardShortcuts.swift in Sources */,
 				BE0376B7D51B17FE2CD932E5 /* NotchGeometry.swift in Sources */,
 				BD3F41B261687BF95D9F61C3 /* TimerModels.swift in Sources */,
@@ -2519,11 +2519,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Sieghart;
+				INFOPLIST_KEY_CFBundleDisplayName = HeyChomp;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Sieghart listens only when you press the voice button.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Sieghart transcribes your spoken focus commands after you start listening.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "HeyChomp listens only when you press the voice button.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "HeyChomp transcribes your spoken focus commands after you start listening.";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.app;
@@ -2547,11 +2547,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Sieghart;
+				INFOPLIST_KEY_CFBundleDisplayName = HeyChomp;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Sieghart listens only when you press the voice button.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Sieghart transcribes your spoken focus commands after you start listening.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "HeyChomp listens only when you press the voice button.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "HeyChomp transcribes your spoken focus commands after you start listening.";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.app;
@@ -2571,11 +2571,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Sieghart;
+				INFOPLIST_KEY_CFBundleDisplayName = HeyChomp;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Sieghart listens only when you press the voice button.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Sieghart transcribes your spoken focus commands after you start listening.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "HeyChomp listens only when you press the voice button.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "HeyChomp transcribes your spoken focus commands after you start listening.";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2592,11 +2592,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Sieghart;
+				INFOPLIST_KEY_CFBundleDisplayName = HeyChomp;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Sieghart listens only when you press the voice button.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Sieghart transcribes your spoken focus commands after you start listening.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "HeyChomp listens only when you press the voice button.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "HeyChomp transcribes your spoken focus commands after you start listening.";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2628,7 +2628,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				INFOPLIST_KEY_CFBundleDisplayName = SieghartTests;
+				INFOPLIST_KEY_CFBundleDisplayName = HeyChompTests;
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2670,7 +2670,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				INFOPLIST_KEY_CFBundleDisplayName = SieghartTests;
+				INFOPLIST_KEY_CFBundleDisplayName = HeyChompTests;
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2690,7 +2690,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1000000000000000000000D /* Build configuration list for PBXProject "Sieghart" */ = {
+		A1000000000000000000000D /* Build configuration list for PBXProject "HeyChomp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A1000000000000000000000F /* Debug */,
@@ -2699,7 +2699,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A1000000000000000000000E /* Build configuration list for PBXNativeTarget "Sieghart" */ = {
+		A1000000000000000000000E /* Build configuration list for PBXNativeTarget "HeyChomp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A10000000000000000000011 /* Debug */,
@@ -2708,7 +2708,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C802C526EDD8F5DF0856718E /* Build configuration list for PBXNativeTarget "SieghartTests" */ = {
+		C802C526EDD8F5DF0856718E /* Build configuration list for PBXNativeTarget "HeyChompTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CE6B52A163D53A6C29D40C49 /* Debug */,

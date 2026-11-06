@@ -30,33 +30,12 @@ struct LocalChatPrompt: View {
             VStack(alignment: .leading, spacing: 8) {
                 headerBar
                 transcript
-                if !chat.readiness.available { availability }
-                if let notice = chat.notice {
-                    HStack(alignment: .top, spacing: 6) {
-                        Image(systemName: "info.circle.fill")
-                            .foregroundStyle(Color(red: 0.45, green: 0.56, blue: 0.98))
-                        Text(notice).lineLimit(3).textSelection(.enabled)
-                        Spacer(minLength: 0)
-                        Button { chat.notice = nil } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
-                    }
-                    .font(AdaRoomTheme.badgeFont(size: 10.5))
-                    .foregroundStyle(CompanionStyle.muted)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                if needsScreenPermission {
-                    ScreenPermissionHelp(language: en ? "en-US" : "pt-BR", retry: {
-                        guard let question = conversation.messages.last(where: { $0.role == .user })?.text else { return }
-                        chat.drafts[conversation.id] = question; chat.send(to: conversation.id)
-                    }).padding(10)
-                }
+                if !compact { recoverySections }
                 if let attachments = chat.attachments[conversation.id], !attachments.isEmpty {
-                    HStack {
-                        ForEach(Array(attachments.enumerated()), id: \.offset) { index, document in
-                            Button { chat.removeAttachment(at: index, from: conversation.id) } label: { Label(document.name + " ×", systemImage: "doc.text") }.font(.caption).buttonStyle(.bordered)
-                        }
-                    }
+                    Group {
+                        if preview { attachmentChips(attachments).frame(maxWidth: .infinity, alignment: .leading).clipped() }
+                        else { ScrollView(.horizontal) { attachmentChips(attachments) }.scrollIndicators(.hidden) }
+                    }.frame(height: 30)
                 }
                 composer
             }
@@ -64,7 +43,7 @@ struct LocalChatPrompt: View {
             .padding(.top, 12)
             .padding(.bottom, 12)
         }
-        .frame(height: compact ? nil : needsScreenPermission ? 490 : 320)
+        .frame(minHeight: compact ? nil : 320)
         .frame(maxHeight: compact ? .infinity : nil)
         .padding(.bottom, 10)
         .dropDestination(for: URL.self) { urls, _ in
@@ -107,9 +86,10 @@ struct LocalChatPrompt: View {
                         .font(AdaRoomTheme.titleFont(size: 12.5))
                         .foregroundStyle(AdaRoomTheme.assistantTextColor(for: colorScheme))
                     Circle()
-                        .fill(working ? Color(red: 0.45, green: 0.56, blue: 0.98) : Color.green.opacity(0.85))
-                        .frame(width: 5.5, height: 5.5)
-                }
+                        .fill(working ? CompanionStyle.accent : chat.readiness.available ? Color.green.opacity(0.85) : .orange)
+                        .frame(width: 5.5, height: 5.5).accessibilityHidden(true)
+                }.accessibilityElement(children: .combine)
+                    .accessibilityValue(working ? (en ? "Preparing reply" : "Preparando resposta") : chat.readiness.available ? (en ? "Ready" : "Pronto") : (en ? "Model unavailable" : "Modelo indisponível"))
                 Text(en ? chat.modelName : chat.modelName.replacingOccurrences(of: "On this Mac", with: "Neste Mac"))
                     .font(AdaRoomTheme.badgeFont(size: 9.5))
                     .foregroundStyle(CompanionStyle.muted)
@@ -149,7 +129,7 @@ struct LocalChatPrompt: View {
                 GeometryReader { size in
                     VStack(alignment: .leading, spacing: 6) { rows }
                         .frame(width: size.size.width, alignment: .topLeading).fixedSize(horizontal: false, vertical: true)
-                        .frame(height: size.size.height, alignment: .top).clipped()
+                        .frame(height: size.size.height, alignment: followsReply ? .bottom : .top).clipped()
                 }
             } else {
                 ScrollViewReader { proxy in
@@ -157,11 +137,21 @@ struct LocalChatPrompt: View {
                         LazyVStack(alignment: .leading, spacing: 8) { rows }.padding(.vertical, 2)
                     }
                     .onChange(of: conversation.messages) { _, _ in if followsReply { proxy.scrollTo("chat-bottom", anchor: .bottom) } }
-                    .onChange(of: conversation.id) { _, _ in proxy.scrollTo("chat-bottom", anchor: .bottom) }
-                    .onAppear { proxy.scrollTo("chat-bottom", anchor: .bottom) }
+                    .onChange(of: conversation.id) { _, _ in scrollToSelection(proxy) }
+                    .onChange(of: chat.messageFocus) { _, _ in scrollToSelection(proxy) }
+                    .onChange(of: chat.notice) { _, _ in if compact && followsReply { proxy.scrollTo("chat-bottom", anchor: .bottom) } }
+                    .onChange(of: chat.readiness) { _, _ in if compact && followsReply { proxy.scrollTo("chat-bottom", anchor: .bottom) } }
+                    .onAppear { scrollToSelection(proxy) }
                 }
             }
-        }.frame(maxWidth: .infinity, maxHeight: .infinity)
+        }.frame(minHeight: compact ? 88 : 160).frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    private func scrollToSelection(_ proxy: ScrollViewProxy) {
+        if let focus = chat.messageFocus, focus.chatID == conversation.id {
+            followsReply = false; proxy.scrollTo(focus.messageID, anchor: .center)
+        } else {
+            followsReply = true; proxy.scrollTo("chat-bottom", anchor: .bottom)
+        }
     }
     @ViewBuilder private var rows: some View {
         if conversation.messages.isEmpty {
@@ -175,9 +165,32 @@ struct LocalChatPrompt: View {
             }.padding(.top, 18)
         }
         ForEach(conversation.messages.filter { $0.role != .system }) { message in
-            AgentChatBubble(message: CodingMessage(id: message.id, role: message.role == .user ? .user : .assistant, text: message.text + (message.attachedFiles.map { "\n\n📎 " + $0.joined(separator: " · ") } ?? "")),
-                isStreaming: working && message.id == conversation.messages.last?.id)
-                .id(message.id)
+            VStack(alignment: .leading, spacing: 4) {
+                AgentChatBubble(message: CodingMessage(id: message.id, role: message.role == .user ? .user : .assistant, text: message.text + (message.attachedFiles.map { "\n\n📎 " + $0.joined(separator: " · ") } ?? "")),
+                    isStreaming: working && message.id == conversation.messages.last?.id)
+                if chat.canSaveReply(message.id, in: conversation.id) {
+                    if preview {
+                        Label(en ? "Save" : "Salvar", systemImage: "bookmark")
+                            .font(.caption).foregroundStyle(CompanionStyle.muted).padding(.leading, 10)
+                    } else {
+                    Menu {
+                        Button(en ? "Save reply" : "Salvar resposta") { chat.saveReply(message.id, in: conversation.id) }
+                        let blocks = CompanionArtifactLibrary.codeBlocks(in: message.text)
+                        ForEach(blocks.indices, id: \.self) { index in
+                            Button(en ? "Save code \(index + 1) · \(blocks[index].language)" : "Salvar código \(index + 1) · \(blocks[index].language)") {
+                                chat.saveReply(message.id, in: conversation.id, codeBlock: index)
+                            }
+                        }
+                    } label: { Label(en ? "Save" : "Salvar", systemImage: "bookmark") }
+                    .menuStyle(.borderlessButton).fixedSize().font(.caption)
+                    .foregroundStyle(CompanionStyle.muted).padding(.leading, 10)
+                    .accessibilityLabel(en ? "Save reply to library" : "Salvar resposta na biblioteca")
+                    }
+                }
+            }
+            .padding(3)
+            .background(CompanionStyle.accent.opacity(chat.messageFocus?.chatID == conversation.id && chat.messageFocus?.messageID == message.id ? 0.12 : 0), in: RoundedRectangle(cornerRadius: 18))
+            .id(message.id)
             if let handoff = message.handoff {
                 Button { chat.select(handoff.conversationID) } label: { Label(en ? "Continue with \(handoff.persona.title)" : "Continuar com \(handoff.persona.title)", systemImage: "arrow.up.right") }.buttonStyle(.bordered)
             }
@@ -197,16 +210,67 @@ struct LocalChatPrompt: View {
             }
             .transition(.opacity.combined(with: .scale(scale: 0.97)))
         }
+        if compact { recoverySections }
         Color.clear.frame(height: 1).id("chat-bottom")
     }
+    @ViewBuilder private var recoverySections: some View {
+        if !chat.readiness.available { availability }
+        if let notice = chat.notice { noticeCard(notice) }
+        if needsScreenPermission {
+            ScreenPermissionHelp(language: en ? "en-US" : "pt-BR", retry: {
+                chat.retryScreenRequest(in: conversation.id)
+            }, isRetrying: chat.generatingID != nil).padding(10)
+        }
+    }
+    private func attachmentChips(_ documents: [CompanionDocument]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(Array(documents.enumerated()), id: \.offset) { index, document in
+                HStack(spacing: 6) {
+                    Image(systemName: "doc.text").foregroundStyle(CompanionStyle.accentInk)
+                    Text(document.name).lineLimit(1).truncationMode(.middle).frame(maxWidth: 180)
+                    Button { chat.removeAttachment(at: index, from: conversation.id) } label: {
+                        Image(systemName: "xmark.circle.fill")
+                    }.buttonStyle(.plain).disabled(working)
+                        .accessibilityLabel(en ? "Remove \(document.name)" : "Remover \(document.name)")
+                }.font(.caption).padding(.horizontal, 9).padding(.vertical, 6)
+                    .background(CompanionStyle.edge.opacity(0.06), in: Capsule()).help(document.name)
+            }
+        }.fixedSize(horizontal: true, vertical: false)
+    }
     private var availability: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(chat.readiness.reason ?? "The on-device model is unavailable.").font(.system(size: 10.5)).textSelection(.enabled)
-            HStack {
-                Button("Check again") { Task { await chat.prepare() } }
-                Button("Apple Intelligence settings") { NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Siri-Settings.extension")!) }
-            }.font(.system(size: 10.5))
-        }.foregroundStyle(CompanionStyle.muted)
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Model unavailable", systemImage: "apple.intelligence").font(.caption.weight(.semibold))
+            Text(LocalizedStringKey(chat.readiness.reason ?? "The on-device model is unavailable."))
+                .font(.caption).foregroundStyle(CompanionStyle.muted)
+                .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { availabilityActions }
+                VStack(alignment: .leading, spacing: 8) { availabilityActions }
+            }
+        }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            .background(CompanionStyle.edge.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+    }
+    @ViewBuilder private var availabilityActions: some View {
+        Button("Check again") { Task { await chat.prepare() } }.buttonStyle(CompanionButtonStyle(compact: true)).disabled(chat.loading)
+        Button("Apple Intelligence settings") { NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Siri-Settings.extension")!) }
+            .buttonStyle(CompanionButtonStyle(compact: true))
+    }
+    private func noticeCard(_ notice: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "info.circle.fill").foregroundStyle(CompanionStyle.accentInk).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(LocalizedStringKey(notice)).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+                if let detail = chat.noticeDetail {
+                    DisclosureGroup("Technical details") {
+                        ScrollView { Text(detail).font(.caption).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
+                            .frame(maxHeight: 80)
+                    }.id(notice + detail)
+                }
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            Button { chat.notice = nil } label: { Image(systemName: "xmark") }
+                .buttonStyle(.plain).padding(3).accessibilityLabel("Dismiss notice")
+        }.font(.caption).foregroundStyle(CompanionStyle.muted).padding(10)
+            .background(CompanionStyle.accent.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
     }
     private var picker: some View {
         Group {

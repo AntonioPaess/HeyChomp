@@ -27,7 +27,7 @@ struct MouseButtonsSettingsView: View {
                     Button("Open Accessibility settings") { controller.allowAccess() }
                     Button("Retry") { controller.configure() }
                 }.buttonStyle(.bordered)
-                Button("Locate this copy of Sieghart") { AccessibilityAccess.revealRunningApp() }.font(.caption)
+                Button("Locate this copy of HeyChomp") { AccessibilityAccess.revealRunningApp() }.font(.caption)
             }
         }
     }

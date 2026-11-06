@@ -14,7 +14,7 @@ enum AdaGitHubError: Error, LocalizedError, Equatable {
         case .notConnected: return "Connect GitHub in Ada's chat settings first."
         case .invalidToken: return "Enter a GitHub personal access token, without spaces or line breaks."
         case .busy: return "A GitHub request is already in progress."
-        case .credentialStorage: return "Sieg could not access its GitHub credential in the Keychain."
+        case .credentialStorage: return "Chomp could not access its GitHub credential in the Keychain."
         case .responseTooLarge: return "GitHub returned more data than Ada can safely include in this conversation."
         case .redirectDenied: return "GitHub redirected this request. Ada did not forward your credential."
         case .accessUnavailable: return "GitHub refused the credential or its permissions. Check the token and selected repositories."
@@ -350,7 +350,7 @@ actor AdaGitHubContext {
         request.httpBody = body
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("Sieghart-Ada", forHTTPHeaderField: "User-Agent")
+        request.setValue("HeyChomp-Ada", forHTTPHeaderField: "User-Agent")
         if body != nil { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         let transport = transport
         // GitHub's full metadata for 100 repositories commonly exceeds 128 KiB.

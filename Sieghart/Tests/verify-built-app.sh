@@ -1,7 +1,9 @@
 #!/bin/bash
 set -euo pipefail
-app_bundle="${1:?Pass the compiled Sieghart.app path}"
+app_bundle="${1:?Pass the compiled HeyChomp.app path}"
 bundle_info="$app_bundle/Contents/Info.plist"
+[[ "$(/usr/bin/plutil -extract CFBundleDisplayName raw "$bundle_info")" == HeyChomp ]]
+[[ "$(/usr/bin/plutil -extract CFBundleExecutable raw "$bundle_info")" == HeyChomp ]]
 for privacy_key in NSAudioCaptureUsageDescription NSMicrophoneUsageDescription NSSpeechRecognitionUsageDescription NSBluetoothAlwaysUsageDescription NSCalendarsFullAccessUsageDescription NSAppleEventsUsageDescription; do
   purpose="$(/usr/bin/plutil -extract "$privacy_key" raw "$bundle_info")"
   [[ -n "$purpose" ]] || { echo "Missing built privacy purpose: $privacy_key"; exit 1; }

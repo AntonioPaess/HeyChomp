@@ -14,7 +14,7 @@ import Foundation
             calendar.refresh()
             let events = calendar.events.prefix(12).map { "\($0.title) | \($0.startDate.formatted(.iso8601)) – \($0.endDate.formatted(.iso8601)) | \($0.calendarTitle)" }.joined(separator: "\n")
             let reminders = calendar.visibleReminders.prefix(12).map { "\($0.title) | due \($0.effectiveDate.formatted(.iso8601))" }.joined(separator: "\n")
-            return header + "Calendar permission: \(calendar.accessState.title). Timezone: \(TimeZone.current.identifier). Last update: \(calendar.lastUpdated?.formatted(.iso8601) ?? "unavailable").\nEvents in selected view:\n\(events.isEmpty ? "No visible events returned." : events)\nLocal app reminders:\n\(reminders.isEmpty ? "None saved." : reminders)\nadd_reminder creates a local Sieghart reminder; it does not write an external Calendar event. Notifications enabled: \(calendar.notificationsEnabled)."
+            return header + "Calendar permission: \(calendar.accessState.title). Timezone: \(TimeZone.current.identifier). Last update: \(calendar.lastUpdated?.formatted(.iso8601) ?? "unavailable").\nEvents in selected view:\n\(events.isEmpty ? "No visible events returned." : events)\nLocal app reminders:\n\(reminders.isEmpty ? "None saved." : reminders)\nadd_reminder creates a local HeyChomp reminder; it does not write an external Calendar event. Notifications enabled: \(calendar.notificationsEnabled)."
         case .elinor:
             guard let usage = app.aiUsage else { return header + "AI spending integration is not connected. Use only figures supplied by the user. No bank accounts are connected." }
             let charges = usage.ledger.charges.sorted { $0.date > $1.date }.prefix(20).map {

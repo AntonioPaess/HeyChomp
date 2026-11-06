@@ -22,6 +22,7 @@ struct AwakeContext { var onAC = true; var externalDisplay = false; var applicat
 @MainActor protocol AwakeBackend: AnyObject {
     func context() -> AwakeContext
     func acquire(display: Bool) throws -> UInt32
+    func isHeld(_ token: UInt32, display: Bool) -> Bool
     func release(_ token: UInt32)
 }
 struct UtilityFailure: LocalizedError { var message: String; var errorDescription: String? { message } }
@@ -36,9 +37,16 @@ struct UtilityFailure: LocalizedError { var message: String; var errorDescriptio
     }
     func acquire(display: Bool) throws -> UInt32 {
         var token: IOPMAssertionID = 0
-        let status = IOPMAssertionCreateWithName(display ? kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString : kIOPMAssertionTypePreventUserIdleSystemSleep as CFString, IOPMAssertionLevel(kIOPMAssertionLevelOn), "Sieghart — user requested keep awake" as CFString, &token)
+        let status = IOPMAssertionCreateWithName(display ? kIOPMAssertionTypePreventUserIdleDisplaySleep as CFString : kIOPMAssertionTypePreventUserIdleSystemSleep as CFString, IOPMAssertionLevel(kIOPMAssertionLevelOn), "HeyChomp — user requested keep awake" as CFString, &token)
         guard status == kIOReturnSuccess else { throw UtilityFailure(message: "macOS rejected the keep-awake request (\(status))") }
         return token
     }
     func release(_ token: UInt32) { IOPMAssertionRelease(token) }
+    func isHeld(_ token: UInt32, display: Bool) -> Bool {
+        guard let properties = IOPMAssertionCopyProperties(token)?.takeRetainedValue() as? [String: Any],
+              let level = properties[kIOPMAssertionLevelKey as String] as? NSNumber,
+              let type = properties[kIOPMAssertionTypeKey as String] as? String else { return false }
+        let expected = display ? kIOPMAssertionTypePreventUserIdleDisplaySleep : kIOPMAssertionTypePreventUserIdleSystemSleep
+        return level.intValue == Int(kIOPMAssertionLevelOn) && type == expected as String
+    }
 }

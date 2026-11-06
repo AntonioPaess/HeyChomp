@@ -18,7 +18,11 @@ import time
 
 STATE = Path(tempfile.gettempdir()) / f"sieghart-update-awake-{os.getuid()}.json"
 PREFERENCES = Path.home() / "Library/Preferences/com.sieghart.app.plist"
-APP_EXECUTABLE = "/Applications/Sieghart.app/Contents/MacOS/Sieghart"
+APP_EXECUTABLES = {
+    "/Applications/HeyChomp.app/Contents/MacOS/HeyChomp",
+    "/Applications/Chomp.app/Contents/MacOS/Chomp",
+    "/Applications/Sieghart.app/Contents/MacOS/Sieghart",
+}
 APPLE_EPOCH = 978307200
 
 
@@ -49,7 +53,7 @@ def app_pid():
     result = subprocess.run(["/bin/ps", "-axo", "pid=,comm="], capture_output=True, text=True, errors="replace", check=True)
     for line in result.stdout.splitlines():
         parts = line.strip().split(None, 1)
-        if len(parts) == 2 and parts[1] == APP_EXECUTABLE:
+        if len(parts) == 2 and parts[1] in APP_EXECUTABLES:
             return int(parts[0])
     return None
 

@@ -73,7 +73,10 @@ struct ContentView: View {
                 CalendarView(model: notch.calendar, events: notch.events).companionCard()
             case .files:
 
-                CompanionArtifactShelf(library: notch.spatialAssistant.artifacts, language: activation.voiceLanguage)
+                CompanionArtifactShelf(library: notch.spatialAssistant.artifacts, language: activation.voiceLanguage, openSource: { item in
+                    if notch.agentRoom.localChat.revealSource(of: item) { notch.agentRoom.page = .chat; viewModel.section = .agentRoom; return true }
+                    return false
+                })
                 FilesView(model: notch.files).companionCard()
             case .capture:
 
@@ -100,9 +103,9 @@ struct ContentView: View {
                 AudioControlsView().companionCard()
                 VStack(alignment: .leading, spacing: 16) {
                     PreferenceRow("Switch output shortcut", detail: "Cycle through connected outputs from any app.") { ShortcutRecorder(action: .nextOutput) }
-                    Text(activation.audioShortcutStatuses[.nextOutput] ?? "Shortcut off").font(.caption).foregroundStyle(CompanionStyle.muted)
+                    Text(LocalizedStringKey(activation.audioShortcutStatuses[.nextOutput] ?? "Shortcut off")).font(.caption).foregroundStyle(CompanionStyle.muted)
                     PreferenceRow("Microphone mute shortcut", detail: "Toggle hardware mute on your selected microphone when supported.") { ShortcutRecorder(action: .muteMicrophone) }
-                    Text(activation.audioShortcutStatuses[.muteMicrophone] ?? "Shortcut off").font(.caption).foregroundStyle(CompanionStyle.muted)
+                    Text(LocalizedStringKey(activation.audioShortcutStatuses[.muteMicrophone] ?? "Shortcut off")).font(.caption).foregroundStyle(CompanionStyle.muted)
                 }.companionCard()
             case .agentRoom:
                 AgentRoomView(model: notch.agentRoom)
@@ -122,7 +125,7 @@ struct ContentView: View {
             HStack(spacing: 9) {
                 CompanionCharacter(size: 36, avatar: preferences.avatar, animates: preferences.characterMotion && !preferences.usesReducedMotion)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Sieghart").font(.headline)
+                    Text("HeyChomp").font(.headline)
                     Text(activation.voiceLanguage.hasPrefix("en") ? "Your quiet companion" : "Seu companheiro de todos os dias").font(.system(size: 10)).foregroundStyle(CompanionStyle.muted)
                 }
             }.padding(.horizontal, 8).padding(.top, 12).padding(.bottom, 18)
@@ -244,7 +247,7 @@ struct ContentView: View {
         MiddleClickSettings(controller: notch.middleClick).companionCard()
         VStack(alignment: .leading, spacing: 18) {
             Label("Keyboard", systemImage: "keyboard").font(.headline)
-            PreferenceRow("Companion shortcut", detail: "Record any key combination to reveal Sieghart.") { ShortcutRecorder(action: .companion) }
+            PreferenceRow("Companion shortcut", detail: "Record any key combination to reveal HeyChomp.") { ShortcutRecorder(action: .companion) }
             Text(activation.shortcutStatus).font(.caption).foregroundStyle(CompanionStyle.muted).frame(maxWidth: .infinity, alignment: .leading)
             Divider()
             PreferenceRow("Voice shortcut", detail: "Hold your shortcut to speak. Release it to send your request.") { ShortcutRecorder(action: .voice) }
@@ -258,7 +261,7 @@ struct ContentView: View {
                 Text("A shortcut with a key works across apps without keyboard monitoring access.")
                     .font(.caption).foregroundStyle(CompanionStyle.muted)
             }
-            Text("Close this window to keep Sieghart and its shortcuts in the menu bar. Choose Quit to stop the app.")
+            Text("Close this window to keep HeyChomp and its shortcuts in the menu bar. Choose Quit to stop the app.")
                 .font(.caption).foregroundStyle(CompanionStyle.muted)
             HStack {
                 if let date = activation.lastShortcutActivation {
@@ -279,7 +282,7 @@ struct ContentView: View {
             Text("Optional, off by default. Active only while Finder is in front. Moves and renames still need your review and confirmation.").font(.caption).foregroundStyle(CompanionStyle.muted)
             ForEach(ShortcutAction.finderActions) { action in
                 PreferenceRow(action.title, detail: action == .finderRename ? "Record F2 or your own keys. Select one file in Finder." : "Prepare the selected files, then review the current Finder destination.") { ShortcutRecorder(action: action) }
-                Text(activation.fileShortcutStatuses[action] ?? "Shortcut off").font(.caption).foregroundStyle(CompanionStyle.muted)
+                Text(LocalizedStringKey(activation.fileShortcutStatuses[action] ?? "Shortcut off")).font(.caption).foregroundStyle(CompanionStyle.muted)
             }
         }.companionCard()
         VStack(alignment: .leading, spacing: 18) {
@@ -296,23 +299,27 @@ struct ContentView: View {
                     else { activation.toggleListening() }
                 }.buttonStyle(CompanionButtonStyle()).focusEffectDisabled()
             }
-            PreferenceRow("Speech language", detail: "Choose the language for your commands and Sieg’s replies.") {
+            PreferenceRow("Speech language", detail: "Choose the language for your commands and Chomp’s replies.") {
                 if preview { Text(activation.voiceLanguage == "pt_BR" ? "Português" : "English").font(.callout).padding(9).background(CompanionStyle.edge.opacity(0.08), in: RoundedRectangle(cornerRadius: 9)) }
                 else { Picker("Speech language", selection: $activation.voiceLanguage) {
                     Text("English").tag("en_US")
                     Text("Português").tag("pt_BR")
                 }.labelsHidden().frame(width: 140) }
             }
-            PreferenceRow("Conversation", detail: "Keep the microphone on for a conversation. You can interrupt Sieg; Stop ends listening. Hold-to-talk remains available separately.") {
+            PreferenceRow("Conversation", detail: "Keep the microphone on for a conversation. You can interrupt Chomp; Stop ends listening. Hold-to-talk remains available separately.") {
                 Button(activation.isConversing ? "Stop conversation" : "Start conversation") { activation.toggleConversation() }
                     .buttonStyle(CompanionButtonStyle(primary: activation.isConversing))
             }
             if activation.isConversing {
-                Label(activation.conversation.status, systemImage: "mic.fill").font(.caption).foregroundStyle(.green)
+                Label(LocalizedStringKey(activation.conversation.status), systemImage: "mic.fill").font(.caption).foregroundStyle(.green)
             } else if !activation.conversation.status.isEmpty {
-                Text(activation.conversation.status).font(.caption).foregroundStyle(CompanionStyle.muted)
+                Text(LocalizedStringKey(activation.conversation.status)).font(.caption).foregroundStyle(CompanionStyle.muted)
             }
-            Text(activation.voiceStatus).font(.caption).foregroundStyle(CompanionStyle.muted).frame(maxWidth: .infinity, alignment: .leading)
+            Text(LocalizedStringKey(activation.voiceStatus)).font(.caption).foregroundStyle(CompanionStyle.muted).frame(maxWidth: .infinity, alignment: .leading)
+            if let settings = activation.voicePermissionSettingsURL {
+                Button("Open voice permission") { NSWorkspace.shared.open(settings) }
+                    .buttonStyle(CompanionButtonStyle(compact: true))
+            }
             if !activation.transcript.isEmpty {
                 Text("“\(activation.transcript)”").frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -330,7 +337,7 @@ struct ContentView: View {
                     .font(.caption).foregroundStyle(CompanionStyle.muted)
             }
         }.companionCard()
-        Text("You can always open Sieghart from the menu bar.").font(.caption).foregroundStyle(CompanionStyle.muted)
+        Text("You can always open HeyChomp from the menu bar.").font(.caption).foregroundStyle(CompanionStyle.muted)
     }
 
     @ViewBuilder private var appearanceSettings: some View {
@@ -346,11 +353,11 @@ struct ContentView: View {
                             Text(LocalizedStringKey(choice.rawValue)).font(.callout.weight(.medium)).foregroundStyle(CompanionStyle.ink)
                         }.padding(10).frame(maxWidth: .infinity)
                             .background(preferences.appearance == choice ? CompanionStyle.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 15))
-                    }.buttonStyle(.plain).focusEffectDisabled().accessibilityLabel("\(choice.rawValue) appearance")
-                        .accessibilityValue(preferences.appearance == choice ? "Selected" : "")
+                    }.buttonStyle(.plain).focusEffectDisabled().accessibilityLabel(Text(LocalizedStringKey(choice.rawValue)))
+                        .accessibilityAddTraits(preferences.appearance == choice ? .isSelected : [])
                 }
             }
-            Text("Applies to Sieghart’s windows and panels. Your Mac’s appearance stays unchanged.").font(.caption).foregroundStyle(CompanionStyle.muted)
+            Text("Applies to HeyChomp’s windows and panels. Your Mac’s appearance stays unchanged.").font(.caption).foregroundStyle(CompanionStyle.muted)
             Divider()
             Label("Liquid Glass", systemImage: "sparkles").font(.headline)
             Text("Optional translucent panels. Reduce Transparency always takes priority.").font(.caption).foregroundStyle(CompanionStyle.muted)
@@ -381,7 +388,7 @@ struct ContentView: View {
         }
         .companionCard()
         CompanionTeamGallery(animates: preferences.characterMotion && !preferences.usesReducedMotion, onAda: { viewModel.section = .agentRoom })
-        Text("Sig is always your main companion. Tap a team member to explore their movements.")
+        Text("Chomp is always your main companion. Tap a team member to explore their movements.")
             .font(.caption).foregroundStyle(CompanionStyle.muted)
         VStack(spacing: 20) {
             PreferenceRow("Compact active timer", detail: "Keep remaining time and controls close together.") {
@@ -423,7 +430,7 @@ private struct CompanionVoiceSettings: View {
     @StateObject private var previewVoice = SigVoiceSynthesizer(playsHardwareAudio: true)
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Label("Voz do Sieg", systemImage: "speaker.wave.2").font(.headline)
+            Label("Voz do Chomp", systemImage: "speaker.wave.2").font(.headline)
             PreferenceRow("Respostas em áudio", detail: "Ouça as respostas do seu companheiro.") {
                 Toggle("Respostas em áudio", isOn: $preferences.speechConfiguration.enabled)
                     .labelsHidden().toggleStyle(WorkspaceSwitchStyle())
@@ -448,13 +455,13 @@ private struct CompanionVoiceSettings: View {
                 }.buttonStyle(CompanionButtonStyle(compact: true))
             }
             if preferences.speechConfiguration.voiceIdentifier == SigVoiceCatalog.antonio {
-                Text("A voz do Sieg acompanha o idioma selecionado. Requer conexão; sem ela, uma voz local assume a resposta.")
+                Text("A voz do Chomp acompanha o idioma selecionado. Requer conexão; sem ela, uma voz local assume a resposta.")
                     .font(.caption).foregroundStyle(CompanionStyle.muted)
             }
             if let issue = previewVoice.lastPlaybackIssue {
                 Text(issue).font(.caption).foregroundStyle(CompanionStyle.muted)
             }
-            Text("A voz faz parte da identidade do Sieg. Velocidade e volume são salvos automaticamente.")
+            Text("A voz faz parte da identidade do Chomp. Velocidade e volume são salvos automaticamente.")
                 .font(.caption).foregroundStyle(CompanionStyle.muted)
         }
         .onChange(of: preferences.speechConfiguration.enabled) { _, enabled in
@@ -604,8 +611,8 @@ private struct ScrollInputSettings: View {
                     Button("Open Accessibility settings") { controller.allowAccess() }.buttonStyle(CompanionButtonStyle(compact: true))
                     Button("Retry") { controller.configure() }.buttonStyle(CompanionButtonStyle(compact: true))
                 }
-                Button("Locate this copy of Sieghart") { AccessibilityAccess.revealRunningApp() }.font(.caption)
-                Text("Enable this copy of Sieghart in macOS Privacy & Security, then return and click Retry.").font(.caption).foregroundStyle(CompanionStyle.muted)
+                Button("Locate this copy of HeyChomp") { AccessibilityAccess.revealRunningApp() }.font(.caption)
+                Text("Enable this copy of HeyChomp in macOS Privacy & Security, then return and click Retry.").font(.caption).foregroundStyle(CompanionStyle.muted)
             }
             Divider()
             PreferenceRow("Mouse acceleration", detail: "Customize or flatten macOS mouse pointer acceleration with automatic restore.") {

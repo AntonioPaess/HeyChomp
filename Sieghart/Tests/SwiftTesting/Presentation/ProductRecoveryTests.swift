@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import Testing
 import CoreText
+import UniformTypeIdentifiers
 
 extension LogicTests {
     @Suite(.tags(.logic, .interactions)) struct ProductRecoveryLogicTests {
@@ -60,9 +61,93 @@ extension LogicTests {
             let svg = CanvasSVGExporter.render(graph, title: "<script>alert('x')</script>")
             #expect(!svg.contains("<script>") && svg.contains("&lt;script&gt;") && svg.contains("marker-end"))
         }
+        @Test("G30.03 · Unquoted PT and EN edits change only the named block", arguments: [
+            "Mova o bloco Entrada para a direita", "Por favor, move Entrada pra cima!",
+            "Could you move the node Entrada to the right?", "Move Entrada up",
+            "Destaque a etapa Entrada", "Please highlight the block Entrada",
+            "Troque a legenda Entrada por Validação", "Rename the node Entrada to Validação"
+        ])
+        func naturalRevision(_ command: String) throws {
+            let original = revisionDocument()
+            let graph = try #require(original.diagram)
+            let revised = try #require(CanvasRevision.parse(command, canvas: original)).applying(to: original)
+            let updated = try #require(revised.diagram)
+            #expect(revised.id == original.id && revised.elements == original.elements)
+            #expect(updated.links == graph.links && updated.arrangement == graph.arrangement)
+            #expect(updated.nodes[0] != graph.nodes[0] && updated.nodes[1] == graph.nodes[1])
+            _ = try revised.validated()
+        }
+        @Test("G30.03 · Rename separators inside arbitrary node titles use the displayed document")
+        func revisionWithSeparators() throws {
+            let original = revisionDocument(first: "Busca por nome")
+            let command = "Troque o bloco Busca por nome por Consulta por usuário"
+            let revision = try #require(CanvasRevision.parse(command, canvas: original))
+            let revised = try revision.applying(to: original)
+            #expect(revision == .rename("Busca por nome", "Consulta por usuário"))
+            #expect(revised.diagram?.nodes[0].title == "Consulta por usuário")
+            #expect(revised.diagram?.nodes[1] == original.diagram?.nodes[1])
+            let ambiguous = revisionDocument(first: "Busca", second: "Busca por nome")
+            #expect(CanvasRevision.parse(command, canvas: ambiguous) == .ambiguous)
+            #expect(throws: CanvasRevisionError.self) { try CanvasRevision.ambiguous.applying(to: ambiguous) }
+            let quoted = try #require(CanvasRevision.parse("Troque o bloco \"Busca por nome\" por \"Consulta por usuário\"", canvas: ambiguous))
+            #expect(try quoted.applying(to: ambiguous).diagram?.nodes[1].title == "Consulta por usuário")
+        }
+        @Test("G30.03 · Missing or duplicate edit targets preserve the current drawing")
+        func invalidRevisionTargets() throws {
+            let original = revisionDocument()
+            let duplicate = revisionDocument(second: "Entrada")
+            let missing = try #require(CanvasRevision.parse("Destaque o bloco Inexistente", canvas: original))
+            #expect(throws: CanvasRevisionError.self) { try missing.applying(to: original) }
+            #expect(throws: CanvasRevisionError.self) { try CanvasRevision.highlight("Entrada").applying(to: duplicate) }
+            #expect(original.diagram?.nodes.map(\.title) == ["Entrada", "Saída"])
+            #expect(duplicate.diagram?.nodes.allSatisfy { $0.emphasized == nil } == true)
+        }
+        @Test("G30.03 · Questions, new content, searches and negated edits are not canvas mutations", arguments: [
+            "Não mova Entrada para a direita", "Please don't highlight Entrada", "Could you not rename Entrada to Outra",
+            "Pesquise como mover o bloco Entrada para a direita", "How do I highlight Entrada?",
+            "Explique como renomear Entrada para Outra", "Draw a new diagram about moving blocks",
+            "Crie um fluxograma de Entrada para Saída", "Qual a temperatura de Recife?"
+        ])
+        func inertRevision(_ command: String) {
+            #expect(CanvasRevision.parse(command, canvas: revisionDocument()) == nil)
+        }
+        @Test("G30.03 · Natural edits do not intercept window, code or settings commands", arguments: [
+            "Mova Safari para a esquerda", "Move Safari to the left", "Rename the variable count to total",
+            "Change my language to English", "Renomeie a variável entrada para resultado",
+            "Highlight the selected text", "Mude o tema para escuro",
+            "Change the name of this file to Outro", "Troque o texto selecionado por outro"
+        ], [false, true])
+        func unrelatedEdits(_ command: String, _ hasCanvas: Bool) {
+            #expect(CanvasRevision.parse(command, canvas: hasCanvas ? revisionDocument() : nil) == nil)
+        }
+        @Test("G30.03 · Unquoted drawing edits require a displayed drawing", arguments: [
+            "Destaque a etapa Entrada", "Troque a legenda Entrada por Outra", "Move the block Input up"
+        ])
+        func naturalEditWithoutCanvas(_ command: String) {
+            #expect(CanvasRevision.parse(command) == nil)
+        }
+        private func revisionDocument(first: String = "Entrada", second: String = "Saída") -> GeneratedCanvas {
+            let graph = CanvasDiagram(arrangement: .flow, nodes: [
+                .init(id: "a", title: first, detail: "Keep this detail", kind: .process),
+                .init(id: "b", title: second, detail: "Keep the other detail", kind: .terminal)
+            ], links: [.init(from: "a", to: "b", label: "next")])
+            return GeneratedCanvas(title: "Revision fixture", spokenSummary: "Fixture graph", code: "", codeLanguage: "", elements: [], diagram: graph)
+        }
+        @Test("G30.03 · A real class with one observed member does not require invented siblings")
+        func singleObservedMember() throws {
+            let source = "final class SelectedTripController { func cancelPreview() {} }"
+            let canvas = try ObservedClassDiagram.make(title: "Selected class", summary: "The observed member cancels the preview.",
+                className: "SelectedTripController", members: [.init(identifier: "cancelPreview", detail: "Cancels the preview")], observed: source)
+            #expect(canvas.diagram?.nodes.map(\.title) == ["SelectedTripController", "cancelPreview"])
+            #expect(canvas.diagram?.links.count == 1)
+            #expect(throws: SpatialContentError.self) {
+                try ObservedClassDiagram.make(title: "Selected class", summary: "Unknown member", className: "SelectedTripController",
+                    members: [.init(identifier: "inventedAPI", detail: "")], observed: source)
+            }
+        }
         @Test("G30.01 · Voice address repair never rewrites references to Siri inside the request")
         func address() {
-            #expect(VoiceAddressNormalization.request("Siri, leia minha tela") == "Sieg, leia minha tela")
+            #expect(VoiceAddressNormalization.request("Siri, leia minha tela") == "Chomp, leia minha tela")
             #expect(VoiceAddressNormalization.request("Explique como funciona a Siri") == "Explique como funciona a Siri")
             #expect(VoiceAddressNormalization.request("Siri funciona offline?") == "Siri funciona offline?")
         }
@@ -96,6 +181,51 @@ extension LogicTests {
 
 extension MacContractsTests {
     @MainActor @Suite(.tags(.isolated, .voiceIntegration)) struct ProductRecoveryStateTests {
+        @Test("G30.03 · Typed and transcribed revisions share current-canvas resolution without model calls", arguments: [false, true])
+        func contextualCanvasRevision(_ usesAudio: Bool) async throws {
+            let speech = SigVoiceSynthesizer(playsHardwareAudio: false), engine = PresentationVoiceGenerator()
+            let overlay = SpatialOverlayViewModel(voiceSynthesizer: speech, managesWindow: false)
+            let coordinator = SpatialAssistantCoordinator(overlay: overlay, voiceEngine: engine, managesWindows: false)
+            defer { coordinator.cancelVoiceResponse(); coordinator.stopBackgroundWork(); overlay.dismiss() }
+            let graph = CanvasDiagram(arrangement: .flow, nodes: [
+                .init(id: "a", title: "Busca por nome", detail: "Source detail", kind: .process),
+                .init(id: "b", title: "Resultado", detail: "Target detail", kind: .terminal)
+            ], links: [.init(from: "a", to: "b", label: "next")])
+            let original = GeneratedCanvas(title: "Fixture", spokenSummary: "Fixture summary", code: "", codeLanguage: "", elements: [], diagram: graph)
+            try overlay.present(original)
+            let command = "Troque o bloco Busca por nome por Consulta por usuário"
+            var reply: String?
+            if usesAudio {
+                if case .handledImmediate(let status, _) = coordinator.tryHandleVoiceCommand(command) { reply = status }
+            } else { reply = await coordinator.executeFromChatIfApplicable(command) }
+            #expect(reply == "Atualizei essa parte do desenho.")
+            #expect(overlay.generatedCanvas?.id == original.id)
+            #expect(overlay.generatedCanvas?.diagram?.nodes[0].title == "Consulta por usuário")
+            #expect(overlay.generatedCanvas?.diagram?.nodes[1] == graph.nodes[1])
+            #expect(overlay.generatedCanvas?.diagram?.links == graph.links && engine.requests.isEmpty)
+            if !usesAudio { #expect(coordinator.response == nil && !speech.isSpeaking) }
+        }
+        @Test("G30.03 · Failed edits preserve the canvas and explain recovery in the selected language", arguments: [false, true])
+        func failedCanvasRevision(_ usesAudio: Bool) async throws {
+            let speech = SigVoiceSynthesizer(playsHardwareAudio: false)
+            let overlay = SpatialOverlayViewModel(voiceSynthesizer: speech, managesWindow: false)
+            let coordinator = SpatialAssistantCoordinator(overlay: overlay, managesWindows: false)
+            coordinator.responseLanguage = "en-US"
+            defer { coordinator.cancelVoiceResponse(); coordinator.stopBackgroundWork(); overlay.dismiss() }
+            let graph = CanvasDiagram(arrangement: .flow, nodes: [
+                .init(id: "a", title: "Input", detail: "", kind: .process),
+                .init(id: "b", title: "Output", detail: "", kind: .terminal)
+            ], links: [.init(from: "a", to: "b", label: "")])
+            let original = GeneratedCanvas(title: "Fixture", spokenSummary: "Fixture summary", code: "", codeLanguage: "", elements: [], diagram: graph)
+            try overlay.present(original, language: "en-US")
+            var reply: String?
+            if usesAudio {
+                if case .handledImmediate(let status, _) = coordinator.tryHandleVoiceCommand("Highlight the block Missing") { reply = status }
+            } else { reply = await coordinator.executeFromChatIfApplicable("Highlight the block Missing") }
+            #expect(reply?.contains("unique label") == true)
+            #expect(overlay.generatedCanvas == original && coordinator.lastStatus == reply)
+            if !usesAudio { #expect(coordinator.response == nil && !speech.isSpeaking) }
+        }
         @Test("G30.04 · Artifact files survive reopening and cannot turn into executable SVG markup")
         func artifactStorage() throws {
             let root = FileManager.default.temporaryDirectory.appendingPathComponent("sieg-library-" + UUID().uuidString)
@@ -164,6 +294,20 @@ extension MacContractsTests {
             #expect(try Data(contentsOf: storedURL) == Data(contentsOf: url))
             let reopened = try CompanionDocument.read(storedURL)
             #expect(reopened.pages.count == 2 && reopened.text.contains("source omega"))
+            let exported = try library.file(for: stored)
+            #expect(try exported.name.hasSuffix(".pdf") && exported.data == Data(contentsOf: url))
+            let dragURL = try library.representationURL(for: stored)
+            #expect(try dragURL.lastPathComponent == "example.pdf" && Data(contentsOf: dragURL) == exported.data)
+            try FileManager.default.removeItem(at: storedURL)
+            #expect(throws: CompanionArtifactFailure.self) { try library.file(for: stored) }
+            let extracted = try library.file(for: stored, format: .extractedText)
+            #expect(extracted.name == "example.txt" && String(data: extracted.data, encoding: .utf8) == document.text)
+            let failedDestination = root.appendingPathComponent("should-not-exist.pdf")
+            #expect(throws: CompanionArtifactFailure.self) { try library.write(stored, to: failedDestination) }
+            #expect(!FileManager.default.fileExists(atPath: failedDestination.path))
+            try FileManager.default.createSymbolicLink(at: storedURL, withDestinationURL: url)
+            #expect(library.url(for: stored) == nil)
+            #expect(throws: CompanionArtifactFailure.self) { try library.file(for: stored) }
             let textURL = root.appendingPathComponent("example.txt"); try Data("Text fixture".utf8).write(to: textURL)
             let link = root.appendingPathComponent("link.txt"); try FileManager.default.createSymbolicLink(at: link, withDestinationURL: textURL)
             #expect(throws: (any Error).self) { try CompanionDocument.read(link) }
@@ -204,6 +348,69 @@ extension MacContractsTests {
             routines.tick(now: now)
             #expect(calls == 1 && routines.items[0].nextRun > now)
             #expect(routines.items[0].failures == 0)
+        }
+    }
+}
+
+
+extension MacContractsTests {
+    @MainActor @Suite(.tags(.isolated, .interactions, .localChat)) struct ArtifactReplyTests {
+        @Test("G30.04 · Saved replies preserve source, code bytes and identity across restart")
+        func replyPersistence() throws {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent("sieg-reply-" + UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let reply = LocalChatMessage(role: .assistant, text: "<think>private draft\n```swift\nsecret()\n```</think>\nA useful answer.\n```python\nprint('olá')\n```\n```swift\nlet value = 42\n```")
+            let chat = LocalChatConversation(persona: .ada, title: "An answer / example", messages: [reply])
+            let library = CompanionArtifactLibrary(directory: root)
+            let saved = try #require(library.saveReply(reply, in: chat))
+            #expect(!saved.content.contains("secret") && !saved.content.contains("<think>"))
+            #expect(library.saveReply(reply, in: chat)?.id == saved.id && library.items.count == 1)
+            let code = try #require(library.saveReply(reply, in: chat, codeBlock: 0))
+            #expect(code.kind == .code && code.content == "print('olá')" && code.filename.hasSuffix(".py"))
+            #expect(library.saveReply(reply, in: chat, codeBlock: 99) == nil)
+            #expect(library.saveReply(reply, in: chat, codeBlock: 1)?.filename.hasSuffix(".swift") == true)
+            let restored = CompanionArtifactLibrary(directory: root)
+            let restoredCode = try #require(restored.items.first { $0.id == code.id })
+            #expect(restoredCode.sourceChatID == chat.id && restoredCode.sourceMessageID == reply.id)
+            try FileManager.default.removeItem(at: root.appendingPathComponent(code.filename))
+            var forged = restoredCode; forged.content = "uncommitted text"
+            let file = try restored.file(for: forged)
+            #expect(file.name.hasSuffix(".py") && file.data == Data("print('olá')".utf8))
+            let representation = try restored.representationURL(for: restoredCode)
+            #expect(try Data(contentsOf: representation) == file.data)
+            let drag = restored.dragProvider(for: restoredCode)
+            #expect(drag.registeredTypeIdentifiers.first == UTType.fileURL.identifier)
+            #expect(drag.suggestedName == representation.lastPathComponent)
+            let blocker = root.appendingPathComponent("blocker"); try Data().write(to: blocker)
+            #expect(throws: (any Error).self) { try restored.write(restoredCode, to: blocker.appendingPathComponent("reply.py")) }
+        }
+        @Test("G30.04 · Thought-only, unfinished, user and detached messages cannot be saved")
+        func rejectsNonReplies() {
+            let library = CompanionArtifactLibrary()
+            for text in ["<think>private</think>", "<think>unfinished", " "] {
+                let reply = LocalChatMessage(role: .assistant, text: text)
+                #expect(library.saveReply(reply, in: .init(persona: .sig, title: "Example", messages: [reply])) == nil)
+            }
+            let user = LocalChatMessage(role: .user, text: "Not a reply")
+            #expect(library.saveReply(user, in: .init(persona: .sig, title: "Example", messages: [user])) == nil)
+            let reply = LocalChatMessage(role: .assistant, text: "Detached")
+            #expect(library.saveReply(reply, in: .init(persona: .sig, title: "Example")) == nil)
+            #expect(library.items.isEmpty)
+        }
+        @Test("G30.04 · Legacy index without chat links still opens and exports")
+        func legacyIndex() throws {
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent("sieg-legacy-" + UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: root) }
+            let library = CompanionArtifactLibrary(directory: root)
+            library.saveCanvas(.init(title: "Legacy", spokenSummary: "Display", code: "hello", codeLanguage: "text", elements: []))
+            let index = root.appendingPathComponent("index.json")
+            var records = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: index)) as? [[String: Any]])
+            records[0].removeValue(forKey: "sourceChatID"); records[0].removeValue(forKey: "sourceMessageID")
+            try JSONSerialization.data(withJSONObject: records).write(to: index)
+            let restored = CompanionArtifactLibrary(directory: root)
+            let item = try #require(restored.items.first)
+            #expect(item.sourceChatID == nil && item.sourceMessageID == nil)
+            #expect(try restored.file(for: item).data == Data("hello".utf8))
         }
     }
 }

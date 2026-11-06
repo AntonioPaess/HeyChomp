@@ -37,7 +37,7 @@ struct CanvasDiagramView: View {
                     nodeCard(box.node).frame(width: box.frame.width, height: box.frame.height)
                         .position(x: box.frame.midX, y: box.frame.midY)
                 }
-                Text("SIEG").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(3)
+                Text("CHOMP").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(3)
                     .foregroundStyle(.white.opacity(0.30)).position(x: outer.midX, y: outer.maxY - 22)
             }
         }.allowsHitTesting(false)

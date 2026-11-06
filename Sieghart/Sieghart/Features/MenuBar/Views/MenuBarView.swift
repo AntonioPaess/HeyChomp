@@ -15,7 +15,7 @@ struct MenuBarView: View {
             HStack(spacing: 12) {
                 CompanionCharacter(size: 30, avatar: preferences.avatar, animates: false)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Sieghart").font(.system(size: 16, weight: .semibold))
+                    Text("HeyChomp").font(.system(size: 16, weight: .semibold))
                     Text(preferences.avatar.name).font(.caption).foregroundStyle(CompanionStyle.muted)
                 }
                 Spacer()
@@ -79,7 +79,7 @@ struct MenuBarView: View {
             }.fixedSize(horizontal: false, vertical: true)
             Divider().overlay(CompanionStyle.edge.opacity(0.1))
             HStack {
-                Button { openWindow(id: "main"); notch.focusMainWindow() } label: { Label("Open Sieghart", systemImage: "gearshape") }.buttonStyle(.plain)
+                Button { openWindow(id: "main"); notch.focusMainWindow() } label: { Label("Open HeyChomp", systemImage: "gearshape") }.buttonStyle(.plain)
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }.buttonStyle(.plain)
             }.font(.caption).foregroundStyle(CompanionStyle.muted)

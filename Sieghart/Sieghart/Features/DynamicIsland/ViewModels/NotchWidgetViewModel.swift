@@ -149,6 +149,7 @@ final class NotchWidgetViewModel: ObservableObject {
             return VoiceAppTools.execute(command, in: self, language: self.spatialAssistant.responseLanguage)
         }
         self.agentRoom.localChat.awakeStatusProvider = { [weak self] in self?.keepAwake }
+        self.agentRoom.localChat.artifactLibrary = self.spatialAssistant.artifacts
         self.spatialAssistant.screenInteraction.onOpenWeather = { [weak self] observation in
             guard let self else { return }
             self.spatialAssistant.reopenWeather(observation)
@@ -593,7 +594,7 @@ final class NotchWidgetViewModel: ObservableObject {
     }
 
     func focusMainWindow() {
-        guard let mainWindow = NSApp.windows.first(where: { $0 !== panel && $0.title == "Sieghart" }) else {
+        guard let mainWindow = NSApp.windows.first(where: { $0 !== panel && $0.title == "HeyChomp" }) else {
             return
         }
 

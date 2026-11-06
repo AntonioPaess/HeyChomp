@@ -8,4 +8,4 @@ Preserve alterações de outros chats. Não trabalhe simultaneamente no mesmo ch
 
 Não use mensagens prontas como substituto de inferência ou de execução real. Mensagens digitadas recebem resposta no chat sem áudio; pedidos por microfone recebem resultado visual e áudio no widget. Não testar microfone ou reproduzir voz sem autorização específica atual.
 
-O app instalado é `/Applications/Sieghart.app`. Sempre lançar pelo LaunchServices usando o script do projeto e preservar Keep Awake durante atualizações. Não executar diretamente o binário interno do app.
+O app instalado é `/Applications/HeyChomp.app`. Sempre lançar pelo LaunchServices usando o script do projeto e preservar Keep Awake durante atualizações. Não executar diretamente o binário interno do app.

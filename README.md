@@ -1,255 +1,107 @@
-# Sieghart
+# HeyChomp
+
+### Um próximo passo por vez, com o Chomp por perto.
+
+[![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](Sieghart/HeyChomp.xcodeproj)
+[![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-007AFF?logo=apple&logoColor=white)](Sieghart/Sieghart)
+[![MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+HeyChomp é um app nativo para macOS que reúne conversas, foco e ferramentas do Mac. O **Chomp** acompanha o trabalho pelo widget próximo ao notch e coordena uma equipe de especialistas, mantendo conversas e resultados acessíveis na Home.
+
+![Chomp e os especialistas na apresentação integrada](Sieghart/Design/Readme/sieg-greeting.gif)
+
+*Recorte silencioso da apresentação do runtime integrado, com os personagens atuais. [Ver o clipe completo](Sieghart/Design/Validation/team-runtime/hello-final.mp4).*
+
+## Um companheiro, uma equipe
+
+Chomp é o companheiro principal fixo. Os especialistas têm identidade e responsabilidade próprias; não são uma lista de avatares para substituí-lo.
+
+| Chomp | Rita | Ada | Gantt | Elinor | Toni |
+| --- | --- | --- | --- | --- | --- |
+| <img src="Sieghart/Sieghart/Shared/Resources/ProviderAssets.xcassets/Companion-sig.imageset/portrait@2x.png" width="88" alt="Chomp, companheiro escuro com losango verde"> | <img src="Sieghart/Sieghart/Shared/Resources/ProviderAssets.xcassets/Companion-rita.imageset/portrait@2x.png" width="88" alt="Rita, personagem verde"> | <img src="Sieghart/Sieghart/Shared/Resources/ProviderAssets.xcassets/Companion-ada.imageset/portrait@2x.png" width="88" alt="Ada, personagem amarelo em pixels"> | <img src="Sieghart/Sieghart/Shared/Resources/ProviderAssets.xcassets/Companion-gantt.imageset/portrait@2x.png" width="88" alt="Gantt, personagem em forma de agenda"> | <img src="Sieghart/Sieghart/Shared/Resources/ProviderAssets.xcassets/Companion-elinor.imageset/portrait@2x.png" width="88" alt="Elinor, personagem com monóculo"> | <img src="Sieghart/Sieghart/Shared/Resources/ProviderAssets.xcassets/Companion-toni.imageset/portrait@2x.png" width="88" alt="Toni, personagem de papel"> |
+| Coordenação e ferramentas do Mac | Foco e pausas | Código e matemática | Agenda e rotina | Recursos | Arquivos e escrita |
+
+A presença de um especialista não significa que todas as suas integrações estejam concluídas. Os limites atuais estão em [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+
+## Conversas e trabalho no mesmo lugar
+
+![Home atual do Sieghart no tema escuro](Sieghart/Design/Workflow/evidence/sieg-opening-polish-2026-10-22/dark-overview.png)
+
+*Prévia das views de produção de 22/10/2026, com dados de exemplo. Não é uma comprovação de funcionamento de cada integração.*
+
+| Área | Experiência implementada e limites |
+| --- | --- |
+| Conversas | Chomp como entrada, encaminhamento por especialidade, histórico, busca e conversas fixadas/arquivadas. |
+| Voz | Segurar o atalho para falar e soltar para interpretar. Texto responde no chat; microfone recebe resultado visual e áudio no widget. Validação física do fluxo ainda pendente. |
+| Contexto da tela | Captura solicitada, seleção, Accessibility e OCR. Permissões e qualidade em telas reais ainda precisam de aceite. |
+| Desenhos e explicações | Formas e canvas de conteúdo gerado. Qualidade factual, composição de diagramas e pedidos compostos continuam em validação. |
+| Foco e rotina | Timer, Pomodoro, cronômetro, agenda e retomada de resultados. |
+| Ferramentas do Mac | Keep Awake com duração e opção de manter a tela ligada, áudio, captura, área de transferência e controles compatíveis com o dispositivo. |
+| Biblioteca | Salve respostas e código, filtre resultados, volte à mensagem original e exporte arquivos. Arraste de resposta em Markdown validado no Finder. |
+
+## O tempo com o Chomp
+
+![Chomp em cenas de calor, granizo, céu nublado e congelamento](Sieghart/Design/Readme/sieg-weather.gif)
+
+*Prévia animada com valores ilustrativos, exportada das cenas de produção. O app consulta o Open-Meteo para obter os dados; esta animação é uma demonstração visual.*
+
+O personagem reage a nove estados climáticos, com variações de dia e noite. Chuva, neve, nuvens, granizo e efeitos térmicos ocupam o painel; acessórios e expressões acompanham o corpo do Chomp. Há adaptações para Reduzir Movimento. O recolhimento automático e as consultas de cidades arbitrárias ainda fazem parte da [validação em uso real](KNOWN_ISSUES.md).
+
+[Prancha dos estados](Sieghart/Design/Workflow/evidence/sieg-weather-finish-2026-10-22/weather-finish-board.png) · [Clipe original](Sieghart/Design/Workflow/evidence/sieg-weather-finish-2026-10-22/weather-finish-motion.mp4) · [Origem das mídias do README](Sieghart/Design/Readme/README.md)
+
+## Estado do produto
+
+**Em desenvolvimento.** HeyChomp é o aplicativo. Chomp é o companheiro que antes se chamava Sieg. A base inspirada no HeyClicky já passou nos testes reais de Keep Awake, clima, OCR de imagem importada e retorno a um resultado salvo. Ainda faltam o alvo correto da leitura de tela, a seleção física de um recorte, a geração e revisão de diagramas com o modelo real e a rodada de voz com atalho, interrupção e AirPods. [Bugs e critérios de aceite](KNOWN_ISSUES.md).
+
+O build **123** está instalado e foi testado por texto com o AFM 3 Core Advanced. O build **120** passou Complete (**491 funções / 1383 invocações**) e Fast (**422 / 1282**). [Checkpoint dos testes e limites](CURRENT_WORK.md).
+
+A preparação para o Swift Student Challenge é uma etapa separada, adiada pelo autor enquanto o produto evolui. Este repositório contém o app macOS em Xcode.
+
+## Abrir e desenvolver
+
+Abra [Sieghart/HeyChomp.xcodeproj](Sieghart/HeyChomp.xcodeproj). O projeto usa Swift 6, SwiftUI, AppKit e SceneKit. O deployment target é macOS 14.6; o motor local AFM 3 exige macOS 27, hardware elegível e Apple Intelligence pronto. Recursos também dependem das permissões e APIs disponíveis no Mac.
+
+[Compilação, instalação e testes](Sieghart/README.md) · [Arquitetura](Sieghart/ARCHITECTURE.md) · [Testes e evidências](Sieghart/Tests/README.md)
+
+Para uma cópia instalada, use `/Applications/HeyChomp.app` e o script de lançamento do projeto. Não execute diretamente o binário interno do bundle. A atualização deve preservar uma sessão ativa de Keep Awake.
 
 ## Retomar o desenvolvimento
 
-Comece por [HANDOFF.md](HANDOFF.md). O [checkpoint vivo](CURRENT_WORK.md), os [bugs e validações pendentes](KNOWN_ISSUES.md) e o [índice de pesquisa/REA](RESEARCH_INDEX.md) permitem continuar sem o histórico do chat ou o Obsidian. Os relatórios antigos abaixo são históricos; consulte o checkpoint para o estado atual.
-
-
-### Your Mac companion, right at the notch.
-
-[![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](Sieghart/Sieghart.xcodeproj)
-[![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-007AFF?logo=apple&logoColor=white)](Sieghart/Sieghart)
-[![macOS 14.6+](https://img.shields.io/badge/macOS-14.6%2B-222222?logo=apple&logoColor=white)](Sieghart/README.md)
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
-Sieghart is a native macOS companion that lives near the camera notch. An animated avatar reacts to your touch and pointer, while focus sessions and quick controls stay close to the top of your screen.
-
-Choose **Timer**, **Pomodoro** or **Stopwatch** in the app’s **Timers tab**, the menu-bar Timers subpage, or directly inside the widget. Starting is explicit; the compact island keeps the countdown or elapsed time nearby while you work.
-
-**Built toward the Swift Student Challenge.** The goal is a short, personal experience about physical interaction, an expressive companion, and calmer focus. The macOS app is the development base; Challenge packaging and hardware compatibility remain milestones.
-
-> **Sprint 4 complete and accepted October 8.** After `f77ac65`, the user reported “tudo funcionando”. [Closeout](Sieghart/Design/sprint-4-closeout.md). [Sprint 5 scope](Sieghart/Design/sprint-5-plan.md): agenda/reminders, notifications, downloads, files, capture and contextual companion reactions. Connected email/upload and extended hardware remain later work.
-
-## October 8 — Voice/search and MVVM organization
-
-Sources and Xcode groups now use **Features / Core / Shared**, with screen Views/ViewModels together by feature, native services/helpers in Core and reused controls/preferences/coordinators in Shared. [Architecture and boundaries](Sieghart/ARCHITECTURE.md).
-
-Voice closes audio and drains recognition before executing commands. Topic searches now include questions and bare terms, with a bounded recovery for a settled search whose final recognition callback never arrives; app/timer commands retain strict final recognition. Expanded Companion stays visible during busy voice/action states. The approved gestures are now applied: attentive listening, a shape-matched corner loading cue and short individual success reactions. Coast has relaxed eyelids and an unhurried rhythm; Arcade retains square eyes and stepped geometry. Companion reflects its own commands; background AI telemetry never puts an idle avatar into loading. Actual AI work and data reads use cues only in their dashboard. Fast voice actions run immediately, with at least 700 ms of visual processing before result acknowledgement. [Animated production gestures](Sieghart/Design/Concepts/simple-companions-voice-v2.gif) · [Changes, tests and Mac checklist](Sieghart/Design/voice-search-regression-checks.md). Voice/AirPods and applied motion acceptance closed on the final October 8 user report.
-
-The user approved the [revised motion/Coast study](Sieghart/Design/Concepts/expressive-study-v2/README.md) with “pode aplicar”. It is implemented with native paths and smooth interruption; the app was kept closed for user testing.
-
-The user will provide onboarding storytelling. A [three-minute experience brief](Sieghart/Design/challenge-onboarding-brief.md) is recorded; the final judging flow is not yet delivered.
-
-## Sprint 4 — System utilities and greeting
-
-The previous clipboard/island/editor slice passed the user's Mac tests. The remaining requested implementation now adds System, Keep awake, audio favorites/order/device priorities and optional global output/microphone shortcuts, compatible brightness/dimming/display sleep, optional Bluetooth restoration and a narrow Music launch guard. The six companions greet from the center, wave and dock into the island; motion is optional and interruptions keep the current contour.
-
-[Full implementation, new Mac checks and hardware boundaries](Sieghart/Design/sprint-4-utilities.md). User acceptance closed October 8 after the final audio follow-up; XDR boost and temperature/fan control remain backlog.
-
-![Six native companions greeting](Sieghart/Design/Concepts/companion-launch-greeting.gif)
-
-## Sprint 4 — First slice
-
-- **Clipboard:** local text, image and file-reference history; search, pins, preview, copy/paste, exclusions and pause. Choose **5, 10 or 20** saved copies and cleanup after chosen days, Mac shutdown or lid close. Open with **⌃⌥C**, the side button, app tab or menu subpage. Direct Paste needs Accessibility; Copy/⌘V works without it.
-- **Side buttons:** Dynamic Island offers a visual island preview with six surrounding positions. Click to add/edit/remove, drag to move or swap, and choose Essentials/Focus/Work from Layout. Size cards and optional Glass sit below the editor.
-- **Companion arrival:** Welcome → avatar → local tools, native fluid animation, balanced left/right gaze, optional permission setup and a distinct widget entrance on Finish. No black band above the avatar.
-- **Optional middle click:** Activation → Three-finger middle click. Off by default; tap with three fingers, grant Accessibility and retry. Unsupported trackpads show unavailable. Future Challenge packaging must omit this Mac-only contact adapter.
-- **AI spending:** response-record deduplication, Fast tier changes, first full bounded scan and retained counters from long files. Internal models without official prices remain explicitly unpriced. API-equivalent value is separate from paid charges.
-
-![Six companions arriving](Sieghart/Design/Concepts/companion-welcome-motion.gif)
-
-[Clipboard preview](Sieghart/Design/Concepts/island-clipboard-preview.png) · [onboarding](Sieghart/Design/Concepts/onboarding-welcome-preview.png) · [first-slice changes and accepted checklist](Sieghart/Design/sprint-4-checkpoint.md).
-
-## The experience
-
-| Feature | What it does |
+| Documento | Para quê |
 | --- | --- |
-| **Six companions** | CRT Buddy, Arcade 1984, Minimal Spirit, Coast Buddy, Paper Pal and Ink Buddy. Choose your companion during onboarding; change it later in Appearance or the menu-bar Avatars tab. It also becomes your menu-bar icon. |
-| **Expressive reactions** | Touch brings a smile; repeated pokes make the companion grumpy, then sleepy. Tap again to wake it. Native eye expressions, smooth blinking, gaze, sleeping breath and floating “z” and short messages explain each response. |
-| **Audio controls** | Master output volume, default output/input selection, supported microphone gain/mute, and an opt-in per-app mixer on the selected output. Stereo/mono Float32 routes use Core Audio process taps; the user accepted the Sprint 3 Mac checklist October 8. |
-| **Menu-bar subpages** | Companion, Timers, AI, Audio, Clipboard and Avatars replace the long stacked panel. Avatar changes save immediately. |
-| **Three timer modes** | The app and notch share a standalone countdown, Pomodoro with breaks/rounds, and stopwatch. Each supports pause, resume and reset; choosing a mode never starts a session. |
-| **Dynamic island** | Matches the physical notch’s height and grows sideways. The companion strolls along the island and nudges the countdown during the final 30 seconds. Hover for a visual highlight; the first click opens controls even with another app active. The full activation strip, including the camera gap, toggles controls. Pointer exit allows 800 ms to cross between controls; keyboard reveal allows four seconds to reach them. |
-| **Completion celebration** | The avatar comes down to announce completion and the break, then tucks away again. |
-| **Persistent sessions** | Restores running deadlines, paused timers, completed sessions, and focus preferences after relaunch. |
-| **Configurable activation** | Record separate companion and voice shortcuts, including modifier-only combinations, plus optional hover and impacts. |
-| **Voice on demand** | Focus, installed-app launch and browser search commands execute automatically in English or Portuguese (for example, “open Safari”, “abra o WhatsApp” or “pesquise receitas”). A nod, checkmark, and message acknowledge an understood command. |
-| **AI work nearby** | With one local-monitoring consent, follow Codex/Claude Code activity automatically, see limits and charts, and keep the active provider beside your avatar. |
-| **Size and motion** | Choose Small, Medium or Large expanded widgets, compact timer density and character motion; macOS Reduce Motion is always respected. |
+| [HANDOFF.md](HANDOFF.md) | Ponto de entrada, decisões do produto, mapa de código e retomada no Claude. |
+| [CURRENT_WORK.md](CURRENT_WORK.md) | Checkpoint vivo: o que mudou, evidências e próxima ação. |
+| [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | Bugs, limitações e critérios de aceite ainda pendentes. |
+| [RESEARCH_INDEX.md](RESEARCH_INDEX.md) | Pesquisas/REA dos aplicativos de referência e alcance de cada estudo. |
+| [CLAUDE.md](CLAUDE.md) e [AGENTS.md](AGENTS.md) | Instruções de trabalho e preservação das mudanças. |
 
-### Meet the companion
+Os relatórios de sprint e conceitos antigos são históricos. Eles continuam em [Design](Sieghart/Design/) e no histórico Git; não representam automaticamente o produto atual. Os GIFs e retratos acima usam a equipe integrada, substituindo as demonstrações dos avatares removidos.
 
-![The six Sieghart companions and their reactions](Sieghart/Design/Concepts/avatar-reactions-preview.png)
+## Licença
 
-*Production native shapes based on the user-approved Simple Companions board, with matte light, soft shadow and a curved coral paper fold. Each canvas draws at its final display size for sharp edges in both the app and island. Eyes and expressions interpolate directly; no bitmap pose swapping.*
+[MIT](LICENSE). Atribuições e limites dos recursos de terceiros estão em [THIRD_PARTY_NOTICES.md](Sieghart/THIRD_PARTY_NOTICES.md).
 
-![Simple companions in motion](Sieghart/Design/Concepts/simple-companions-motion.gif)
+Edição natural de diagramas no build 112: mover, renomear e destacar blocos pelos títulos atuais, preservando relações e recusando ambiguidades. [Mudanças, testes e limites](Sieghart/Design/Workflow/sieg-canvas-revision-2026-10-29.md). Sem testes de áudio físico ou aceite de leitura/modelo real nesta etapa.
 
-*Offscreen 20 fps preview of native gaze, blinking and breathing. The app’s motion updates at 60 Hz and respects Reduce Motion.*
+Build 114: recuperação de leitura com conversa/recorte originais, rascunho e anexos preservados; expiração encerra apenas a tarefa correspondente. Inclui o contexto e descarte de resultados atrasados do lote 113. [Entrega de 03/11 e limitações](Sieghart/Design/Workflow/sieg-screen-recovery-2026-11-03.md).
 
-First launch opens an animated welcome, then presents all six companions in a three-column onboarding gallery, with each name and personality. Select your initial companion and continue. Later, open **Appearance** or the menu-bar **Avatars** tab to change it. The choice saves immediately and appears throughout the main app, widget, compact island, voice, completion celebrations, menu header, and menu-bar icon. All artwork is drawn locally and works offline. Legacy sprite assets remain archived in the repository and are excluded from the app bundle. CRT Buddy remains the default.
+Build 115: avisos localizados, detalhes técnicos expansíveis, recuperação dentro da rolagem do widget e anexos legíveis. Indicador do personagem reflete indisponibilidade do modelo. [Acabamento, evidências e limites](Sieghart/Design/Workflow/sieg-interface-polish-2026-11-03.md).
 
-### A companion with context
+## Apple Foundation Models e nuvem
 
-![Companion with comfortable margins and no duplicated action row](Sieghart/Design/Concepts/island-companion-preview.png)
+O modo local depende do Apple Intelligence pronto no Mac. A integração com o Private Cloud Compute está no código e o build de desenvolvimento usa apenas os entitlements locais. Faltam o identificador definitivo de distribuição, a concessão da Apple, o perfil correspondente e uma resposta real em um build de TestFlight ou ad hoc. [Estado e passos de ativação](Sieghart/Design/Workflow/apple-private-cloud-setup-2026-11-03.md).
 
-*Static renders of the production views, without opening app windows. The widget keeps only companion context inside the Buddy page. Side controls and the tool grid handle navigation; the menu bar uses six compact subpages with natural content heights.*
+Build 116: espera por permissões de voz com prazo/cancelamento e recuperação nos Ajustes. Seleção callbacks/voice-integration: **125 funções / 176 invocações** aprovada. Atualização preservou o Keep Awake ativo; início e encerramento da escuta observados no app, ainda sem aceite de uma conversa completa. [Evidência e limites](Sieghart/Design/Workflow/sieg-voice-access-2026-11-04.md).
 
-The compact island and camera strip stay sRGB black (`#000000`). Expanded pages offer optional Glass, an attached shoulder contour and circular quick controls around the surface. Appearance selects System, Light or Dark; separate switches control Glass in other windows/panels and in the expanded island. Both switches default off. macOS 26 uses Liquid Glass; older supported systems use behind-window blur. Reduce Transparency keeps an opaque surface. Native transitions reserve their full bounds so the moving silhouette does not resize or crop its content.
 
-![Horizontal Pomodoro setup](Sieghart/Design/Concepts/island-pomodoro-preview.png)
+## Respostas que viram arquivos
 
-*Offscreen production-view render; glass translucency is illustrated against a sample background. Native desktop refraction and movement still require a Mac run.*
+![Prévia da biblioteca com exemplos de resposta, código e documento](Sieghart/Design/Workflow/evidence/sieg-artifact-flow-2026-11-04/catalog/pt-BR-dark-filled.png)
 
-### Main app
+O chat permite salvar uma resposta ou um bloco de código na biblioteca, com retorno à mensagem original. Busca, filtros e prévias ajudam a retomar; exportação conserva o PDF original e oferece texto extraído em `.txt` quando ele está ausente. Contratos dirigidos: **257 funções / 764 invocações** aprovadas; build 118 instalado na cópia canônica. [Mudanças e limites](Sieghart/Design/Workflow/sieg-artifact-flow-2026-11-04.md).
 
-![Sieghart main window](Sieghart/Design/Concepts/app-overview-preview.png)
+Testes de som e microfone estão suspensos a pedido do usuário desde 04/11.
 
-*Offscreen render of the production main window with illustrative AI data. Overview, Timers, Activation, Appearance, AI agents, Audio and onboarding share configurable solid/glass surfaces, palette and companions. The user accepted the associated Mac appearance checklist October 8; this image itself is an offscreen render.*
+O teste na janela real abriu a resposta correta depois de trocar de conversa e não reproduziu a borda amarela do catálogo. O 118 anuncia o arquivo primeiro como URL nativa e passou **145 funções / 607 invocações**. No gesto real, o Finder recebeu um `.md` com bytes idênticos à resposta salva. [Fechamento da base HeyClicky e plano do Chomp](Sieghart/Design/Workflow/chomp-heyclicky-closeout-2026-11-05.md).
 
-[Appearance](Sieghart/Design/Concepts/app-appearance-preview.png) · [Timers](Sieghart/Design/Concepts/app-timers-preview.png) · [Activation](Sieghart/Design/Concepts/app-activation-preview.png) · [AI dashboard](Sieghart/Design/Concepts/app-ai-preview.png) · [Audio](Sieghart/Design/Concepts/app-audio-preview.png)
-
-[Sleeping motion](Sieghart/Design/Concepts/simple-companions-sleep.gif) · [Companion depth](Sieghart/Design/Concepts/simple-companions-depth-preview.png) · [Compact hover without an outline](Sieghart/Design/Concepts/compact-hover-preview.png)
-
-[Explore the design prototype](Sieghart/Design/Prototype) · [Read the implementation notes](Sieghart/README.md)
-
-### Audio and compact navigation
-
-![Audio mixer with illustrative apps and levels](Sieghart/Design/Concepts/island-audio-preview.png)
-
-Output selection, master volume and input-device controls use Core Audio hardware properties. Devices without writable volume/mute show unavailable controls. The per-app mixer is off after launch. **Enable app mixer** opts in; the button immediately starts the public macOS system-audio permission path before enabling app sliders. A failure provides Retry and Audio permission settings. The mixer processes audio locally without saving it or recording the microphone. It shows up to five actual running apps plus Master, prioritizes apps currently playing audio, groups helpers into their visible installed app, waits for an audio connection before enabling its slider, loads native app icons, identifies the selected device (including AirPods), adjusts each with a private process tap and aggregate playback route, and restores normal playback when disabled. Stereo process mixdown supports mono Bluetooth calls and planar/interleaved Float32 outputs; encoded/incompatible formats are rejected explicitly. Device format changes rebuild routes even with the same ID; restarted helpers can retry. The user reported all Sprint 3 manual checks passed October 8, including the audio/device checklist.
-
-Finder is excluded from app columns. Use an app's icon menu → **Hide from mixer** to remove it and release its route, restoring normal playback; **Hidden apps** (eye-slash) restores it with its saved mixer volume. Hidden choices persist and do not create columns for closed apps. Safari/XPC helpers now resolve through optional macOS responsibility metadata plus the existing ancestry/bundle/path fallback, and each slider change refreshes its process group. Injected checks and the universal build pass; Safari/app-selection acceptance closed on the user’s final October 8 “tudo funcionando” report. This optional undocumented lookup is omitted under `SIEGHART_CHALLENGE`; full Challenge packaging remains pending. [Audio follow-up and Mac checklist](Sieghart/Design/sprint-4-utilities.md).
-
-![Choose a companion from the menu bar](Sieghart/Design/Concepts/menu-avatars-preview.png)
-
-The menu-bar panel is 380 points wide. Each tab replaces its content and fits its height, eliminating the empty 300-point content area. The island's ten-tile grid opens Companion, Audio, AI agents, Timers, Clipboard, Avatars, System, Keep awake, Display & power and Preferences; voice uses Companion. AI cards follow limits/spending → current work → hourly trend → models/projects → activity; hover/select a bar for exact tokens and estimated value. Connection details open separately, keeping island height bounded.
-
-## Swift Student Challenge
-
-The [currently published Apple requirements](https://developer.apple.com/swift-student-challenge/eligibility/), checked on October 5, 2026, call for an individual app playground (`.swiftpm`) submitted as a ZIP of up to 25 MB. The experience must work offline, include its resources locally, use English, and be experienced within three minutes. The playground must build and run with Swift Playground 4.6 or Xcode 26 or later. Requirements must be checked again for the target edition.
-
-The main development project remains the macOS `.xcodeproj`. A submission adaptation is a separate milestone. Real accelerometer interaction remains a goal for the Challenge experience; its compatibility with an accepted playground destination still needs validation.
-
-The judging experience should tell one clear story: meet the companion, reveal it through physical interaction, configure a focus session, and see its response. Keyboard controls and reduced motion keep the experience accessible. The core journey must work without network services, an account, or speech recognition. Voice and future integrations need a separate offline compatibility review.
-
-## Get started
-
-### Requirements
-
-- macOS **14.6 or later**.
-- Xcode with a **Swift 6** compiler.
-- Microphone and speech-recognition permission for voice commands.
-- Compatible accelerometer hardware for the optional impact gestures.
-
-The target builds for Apple silicon and Intel. Sensor availability depends on the Mac; keyboard and hover activation are available independently.
-
-### Run in Xcode
-
-```sh
-git clone https://github.com/AntonioPaess/Sieghart.git
-cd Sieghart
-open Sieghart/Sieghart.xcodeproj
-```
-
-Select the **Sieghart** scheme and **My Mac**, then run. Configure signing if Xcode requests it. The project includes the microphone usage descriptions and Audio Input entitlement.
-
-### Start your first session
-
-1. Complete Welcome → choose one of six avatars → optional local AI/Clipboard tools. Optional voice/paste access setup is available there. Finish opens the companion with a special arrival; focus remains explicit.
-2. Click the compact island or press **Control + Option + S** to reveal the companion. Hover gives a subtle companion reaction without outlining or opening the island.
-3. Open **Timers** in the app or widget. Choose Timer for a countdown, Pomodoro for focus/break rounds, or Stopwatch for elapsed time.
-4. Press **Start** for the selected mode. The widget tucks into the island; click it for pause/resume/reset controls. Pomodoro also offers Finish.
-5. Open **Activation** or **Appearance** in the main window to customize the experience.
-
-The menu bar also provides access to the widget and app. In Activation, press a shortcut recorder and enter any key combination; release modifier-only keys to save. Companion and voice bindings can be disabled separately. Impact gestures are off by default.
-
-Closing the main window with its red button keeps Sieghart in the menu bar. An app delegate retains activation independently of the window and explicitly keeps the process running after the last window closes. Window closure cancels an unfinished shortcut recorder and recovers activation; **Quit** stops the app. A listen-only session event tap handles modifier gestures across apps and restarts after interruption; regular-key hotkeys register on the system dispatcher after AppKit finishes launching. Both overlay panels elevate their level when the foreground window covers the display, and disappear on session lock/sleep. The earlier intermittent shortcut interruption is resolved in [SG-001](Sieghart/BUGS.md) following user acceptance October 8. Healthy global registrations stay active across app/Space changes; permission changes or failed delivery setup trigger recovery. With an existing keyboard grant, both global delivery paths work with duplicate suppression. The user accepted the red-window-close and cross-app/full-screen shortcut checklist October 8.
-
-## Voice and local data
-
-Voice starts with its configured shortcut or **Speak** in Companion/menu. Listening, transcription, feedback and Cancel/Back use the Companion page itself; there is no separate Voice page or launcher tile. The default voice shortcut is **Control + Option + V**. Saved custom modifier-only bindings remain available; Activation offers the regular-key default without overwriting them. Modifier-only shortcuts use a listen-only session event tap with Input Monitoring access, or the AppKit global monitor with existing Accessibility access. Activation provides an explicit permission button; one of those grants is sufficient. Shortcuts containing a regular key use the system hotkey API. See [Apple’s event-monitor documentation](https://developer.apple.com/documentation/appkit/nsevent/addglobalmonitorforevents(matching:handler:)).
-
-Speak a supported command and finish naturally. About 1.4 seconds of audio quiet ends capture, then final recognition executes a local action. A 55-second safety limit cancels prolonged capture. Choose English or Portuguese in Activation. Try “inicia o foco”, “inicie o pomodoro”, “inicia o pomodoro em vinte e cinco minutos”, “start focus for 25 minutes”, “pause timer”, “resume”, “finish”, “show”, or “hide”. A spoken duration sets the session length, not a delayed start. Without one, the saved focus length is used. Focus choices remain 5–60 minutes in five-minute steps. Unsupported, negated, or conflicting commands leave the timer unchanged. This is a local command interface; open-ended AI conversation remains planned.
-
-Timers and preferences are stored locally in `UserDefaults`. The microphone is off while idle. Speech recognition uses Apple’s Speech framework; service availability and on-device processing depend on the language and system. See [Apple’s Speech documentation](https://developer.apple.com/documentation/speech/sfspeechrecognizer).
-
-## Build and checks
-
-Compile without launching the app:
-
-```sh
-xcodebuild \
-  -project Sieghart/Sieghart.xcodeproj \
-  -scheme Sieghart \
-  -destination 'generic/platform=macOS' \
-  CODE_SIGNING_ALLOWED=NO build
-```
-
-Run all deterministic checks:
-
-```sh
-bash Sieghart/Tests/run-checks.sh
-```
-
-These checks do not open the app, activate the sensor, register system shortcuts, request permissions, or record audio. They cover all three timer modes, countdown/stopwatch pause and restoration, explicit mode selection, interval counting, native first-click acceptance, activation-strip toggle, background speech authorization, voice execution and acknowledgement, shortcut persistence, modifier gestures, all six native menu icons, continuous eye/shape motion and Reduce Motion, repeated-touch reactions, wake-up behavior, exact compact notch height, island collapse, completion announcements during automatic breaks, real quota protocol fixtures, cloned-session deduplication, token arithmetic and spending persistence, AI lifecycle completion, long-turn metadata recovery, graph deduplication, first-run avatar persistence, click-only expansion, collapse of every panel, old-completion suppression, widget sizes, automatic price/tier/cache arithmetic, unpriced lower bounds and usage-based provider logos. The audio group exercises opt-in, failure states, same-ID device format changes, teardown and bounded Float32 mixing without hardware. A ninth group verifies Claude history formats/staleness, atomic CSV/JSON charge imports, export deduplication and broader archived history.
-
-## Sprint 3 closeout
-
-Sprint 3 is complete and accepted October 8, 2026: the user reported all manual checks passed. Implementation, nine isolated test groups and the signed universal build were completed October 7. Browser search, reviewed charge CSV/JSON import/export, expanded local/archived history and automatic Claude desktop quota reading complete the adapters. Real read-only Codex quota/counter sources were checked successfully; the last check found no fresh Claude reading on this Mac. SG-001 through SG-005 are resolved on the user’s report. Sprint 4 is also complete and accepted on the final October 8 report; its closeout and Sprint 5 scope are linked at the top.
-
-[Delivered scope and exact Mac checklist](Sieghart/Design/sprint-3-closeout.md) · [Charge import format](Sieghart/Design/charge-imports.md) · [Sources preview](Sieghart/Design/Concepts/ai-data-sources-preview.png) · [Search in Companion](Sieghart/Design/Concepts/island-companion-search-preview.png)
-
-## Project map
-
-| Location | Responsibility |
-| --- | --- |
-| [App](Sieghart/Sieghart/App) | Composition and resident application lifetime. |
-| [Features](Sieghart/Sieghart/Features) | Views and ViewModels grouped by screen/feature. |
-| [Core Services](Sieghart/Sieghart/Core/Services) | Voice, Core Audio, AI readers, pasteboard, monitor, power, display, input, calendar and native panels. |
-| [Core Helpers](Sieghart/Sieghart/Core/Helpers) | Voice/search parsing, encoded URLs, shortcut rules, timer and notch value types. |
-| [Shared](Sieghart/Sieghart/Shared) | Reusable avatars/controls, appearance options, preferences, activation/gesture services and assets. |
-| [Tests](Sieghart/Tests) / [Design](Sieghart/Design) | Isolated checks, offscreen fixture previews and design/reference records. |
-
-[Detailed MVVM organization](Sieghart/ARCHITECTURE.md). Native island presentation still has a coordinator; the hierarchy does not claim a complete protocol extraction of every AppKit window operation.
-
-## AI usage
-
-Onboarding asks once whether to follow local AI usage. When enabled, Sieghart detects installed Codex/Claude Code and refreshes in the background using existing provider sign-in. Open **AI limits** from the sidebar, Overview, menu or widget tools; say “What is my AI limits” to open the same panel. No extra API key is required for this local adapter.
-
-The dashboard follows the reference screenshots: quota and spending cards, current project/model/output/elapsed work beside your avatar, a 24-hour chart, model/project rankings, and a 13-week activity heatmap with streak, active days and busiest day. Reliable active work also appears automatically in the compact island. Completion clears the work indicator; a focus timer remains available.
-
-Codex supplies real 5-hour and weekly remaining percentages, resets and dated account activity. Hourly/model/project charts use deduplicated local logs and are marked **partial local history**. Missing readings remain unavailable. Disconnect stops provider reads and automatic reconnection.
-
-Token value is automatic: bundled model prices work immediately, then the app refreshes public [OpenAI](https://developers.openai.com/api/docs/pricing) and [Claude](https://platform.claude.com/docs/en/about-claude/pricing) tables daily and keeps the last successful reading offline. It prices each known model's input, output and cache; documented OpenAI tiers and per-request long context are considered when recorded. Internal/unidentified models keep their tokens and show an unpriced amount; a partial value uses ≥. The value is an API-equivalent estimate, not a subscription charge. [Frankfurter](https://frankfurter.dev) supplies an automatic dated USD/BRL reference rate. These public requests send no account or usage data. Custom average prices/rates remain optional overrides; actual charges remain separate. Reviewed CSV/JSON charge import and JSON export are implemented; direct billing-account connection is not enabled.
-
-Provider logos appear only when readings or usage show that provider was used. Model and project rows expose full integer totals. Hover or select an hourly bar for its range, input/output/cache tokens and value; select a heatmap day for its date and exact usage. Historical model context is recovered before the bounded log tail, including completed tasks. Absent metadata stays explicitly unattributed. Claude quotas read the desktop app’s fresh local plan history automatically; older/missing history is unavailable, reset dates are not inferred, and dated imported reports remain a fallback. Provider emblems are bundled vector assets, including the corrected OpenAI emblem for Codex; see [third-party notices](Sieghart/THIRD_PARTY_NOTICES.md).
-
-![Complete AI dashboard rendered from production views](Sieghart/Design/Concepts/ai-dashboard-preview.png)
-
-*Offscreen production-view render with labeled example data; no live app window was opened. [Six-avatar onboarding preview](Sieghart/Design/Concepts/onboarding-preview.png).*
-
-## Roadmap and references
-
-[Full roadmap](ROADMAP.md) · [39 reference screenshots](Sieghart/Design/References/Widget/README.md). The roadmap covers all 77 modules in the current reference catalog, foundational onboarding/settings, and companion interactions. Planned modules are not claims of shipped functionality.
-
-### Timer previews
-
-[Countdown](Sieghart/Design/Concepts/timer-timer-preview.png) · [Pomodoro](Sieghart/Design/Concepts/timer-pomodoro-preview.png) · [Stopwatch](Sieghart/Design/Concepts/timer-stopwatch-preview.png). Rendered from production SwiftUI views offscreen; the user accepted the associated Mac interaction/appearance checklist October 8.
-
-### Simpler companion direction
-
-[The approved Simple Companions board](Sieghart/Design/Concepts/avatar-simple-studies.png) is now implemented as native shapes across onboarding, Appearance, island and menu. All six preserve their saved identities. Expressions, gaze and blinking interpolate continuously; breathing, listening and acknowledgement use gentle shape movement. Legacy detailed artwork is archived and excluded from app resources. See [the design brief](Sieghart/Design/Concepts/avatar-simple-studies.md).
-
-## Useful companion options
-
-The proposed first additions are task handoff (open a completed AI/download result) and contextual quick actions (resume a clock, select AirPods, mute an app or keep awake). Other options are a local “where I stopped” note, verified meeting audio context and opt-in gentle reminders. The user also proposes a primary companion coordinating other avatar agents, and workflows that receive a file, upload it and prepare/send email with explicit authorization. Clear, resumable steps and fewer app switches support the user's ADHD-oriented product intention. Optional selected-repository PR/build alerts follow the core utilities. These are proposals, not shipped functionality. [Concrete experiences, dependencies and boundaries](Sieghart/Design/companion-capabilities.md).
-
-## New companion reference
-
-The user supplied Coucou as inspiration after accepting Sprint 3. [Reference study](Sieghart/Design/coucou-reference.md) records task/result hierarchy, coordinated motion, file handoff and small task-agent indicators. These are future design proposals; the six Simple Companions and confirmed interaction rules remain the product identity.
-
-## Next steps
-
-Sprints 3 and 4 are complete and accepted. [Sprint 5](Sieghart/Design/sprint-5-plan.md) is ready to begin: calendar/reminders, notifications, selected-folder downloads, file shelf, clipboard/file helpers, capture and contextual companion reactions. Connected workflows follow the core utilities.
-
-- Implement and validate the S4 utility scope when that sprint begins.
-- Validate real sensor interaction in the accepted Challenge submission environment.
-- Refine a three-minute, offline story with expressive interactions and accessible controls.
-- Give future document interactions their own receive-and-carry animation when that feature is introduced.
-- Prepare and verify the submission adaptation against the target edition’s rules.
-- Continue Calendar, reminders, and conversational AI as later macOS milestones; Calendar is currently hidden.
-
-## License
-
-Sieghart is released under the [MIT License](LICENSE).
+O **Chomp 119** passou **491 funções / 1383 invocações** no Complete e **422 / 1282** no Fast. Keep Awake, clima e OCR da imagem sintética foram confirmados no app. Seleção da janela certa, gesto de recorte e diagramas reais continuam com aceite separado. [Renomeação e resultados](Sieghart/Design/Workflow/chomp-rename-acceptance-2026-11-05.md).

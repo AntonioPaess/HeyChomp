@@ -30,13 +30,13 @@ enum AppSection: String, CaseIterable, Identifiable {
     func subtitle(english: Bool) -> String {
         switch self {
         case .overview: english ? "Your people, conversations and next steps, together." : "Sua equipe, suas conversas e seus próximos passos, juntos."
-        case .agentRoom: english ? "Start with Sieg. Bring a specialist into the conversation when you need one." : "Comece com o Sieg e conte com um especialista quando precisar."
+        case .agentRoom: english ? "Start with Chomp. Bring a specialist into the conversation when you need one." : "Comece com o Chomp e conte com um especialista quando precisar."
         case .calendar: english ? "A clear view of your commitments and reminders." : "Seus compromissos e lembretes, em uma visão clara."
         case .focus: english ? "One thing at a time. Choose your pace." : "Uma coisa de cada vez. Escolha seu ritmo."
         case .files: english ? "Keep useful documents and finished work within reach." : "Seus documentos e resultados úteis, sempre por perto."
         case .capture: english ? "Save a moment, highlight a detail, read what's on screen." : "Guarde uma imagem, destaque um detalhe e leia o que está na tela."
         case .clipboard: english ? "Find and reuse what you've copied on this Mac." : "Encontre e reutilize o que você copiou neste Mac."
-        case .activation: english ? "Choose how to call Sieg, speak and interact." : "Escolha como chamar o Sieg, falar e interagir."
+        case .activation: english ? "Choose how to call Chomp, speak and interact." : "Escolha como chamar o Chomp, falar e interagir."
         case .appearance: english ? "A space that fits your day, with your companions close by." : "Um espaço com a sua cara e seus companheiros por perto."
         case .dynamicIsland: english ? "Arrange your floating companion and quick controls." : "Organize seu companheiro flutuante e os controles rápidos."
         case .audio: english ? "Your sound devices and app volume, in one place." : "Dispositivos de som e volume dos apps, no mesmo lugar."

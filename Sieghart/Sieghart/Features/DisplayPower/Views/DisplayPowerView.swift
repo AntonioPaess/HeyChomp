@@ -21,7 +21,7 @@ struct DisplayPowerView: View {
                 HStack { Button("Restore dimming") { controller.restoreBrightness() }; Spacer(); Button("Sleep displays") { controller.sleepDisplays() } }.buttonStyle(CompanionButtonStyle(compact: true))
             } else {
                 UtilityToggle(title: "Disconnect Bluetooth devices during sleep", isOn: $controller.disconnectBluetoothOnSleep).toggleStyle(WorkspaceSwitchStyle())
-                Text("Reconnect only devices Sieghart disconnected. Bluetooth stays on; keyboards and pointing devices may be disconnected too.").font(.caption).foregroundStyle(CompanionStyle.muted)
+                Text("Reconnect only devices HeyChomp disconnected. Bluetooth stays on; keyboards and pointing devices may be disconnected too.").font(.caption).foregroundStyle(CompanionStyle.muted)
                 Text(controller.bluetoothStatus).font(.caption)
                 Divider()
                 UtilityToggle(title: "Block Music launches after a playback key", isOn: $controller.blockMusicAfterPlayKey).toggleStyle(WorkspaceSwitchStyle())

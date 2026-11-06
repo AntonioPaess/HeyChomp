@@ -9,7 +9,7 @@ struct CompanionTaskShelf: View {
     private var english: Bool { language.hasPrefix("en") }
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label(english ? "Your work with Sieg" : "Seu trabalho com o Sieg", systemImage: "tray.full")
+            Label(english ? "Your work with Chomp" : "Seu trabalho com o Chomp", systemImage: "tray.full")
                 .font(.headline)
             if journal.tasks.isEmpty {
                 Text(english ? "Research, diagrams and walkthroughs stay here so you can return to them." : "Pesquisas, diagramas e orientações ficam aqui para você retomar depois.")

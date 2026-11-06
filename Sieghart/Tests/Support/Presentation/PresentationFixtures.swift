@@ -129,6 +129,7 @@ import Testing
     func context() -> AwakeContext { AwakeContext() }
     func acquire(display: Bool) throws -> UInt32 { Issue.record("Unexpected power assertion"); return 1 }
     func release(_ token: UInt32) {}
+    func isHeld(_ token: UInt32, display: Bool) -> Bool { Issue.record("Unexpected assertion verification"); return false }
 }
 @MainActor private final class PresentationDisplayBackend: DisplayPowerBackend {
     func displays() -> [DisplayInfo] { [] }

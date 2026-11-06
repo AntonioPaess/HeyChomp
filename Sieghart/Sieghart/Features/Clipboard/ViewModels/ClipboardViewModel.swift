@@ -205,7 +205,7 @@ import Darwin
     func requestPasteAccess() {
         guard monitorsSystem else { return }
         let trusted = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
-        status = trusted ? "Direct paste is ready" : "Allow Sieghart in Accessibility, then return here"
+        status = trusted ? "Direct paste is ready" : "Allow HeyChomp in Accessibility, then return here"
     }
     func openPasteAccess() {
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)

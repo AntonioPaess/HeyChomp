@@ -135,7 +135,7 @@ enum LocalCodexUsage {
             }
             throw CodexUsageError.timedOut
         }
-        try send(["id": 1, "method": "initialize", "params": ["clientInfo": ["name": "sieghart", "title": "Sieghart", "version": "0.1.0"]]])
+        try send(["id": 1, "method": "initialize", "params": ["clientInfo": ["name": "sieghart", "title": "HeyChomp", "version": "0.1.0"]]])
         _ = try response(id: 1)
         try send(["method": "initialized", "params": [:]])
         try send(["id": 2, "method": method])

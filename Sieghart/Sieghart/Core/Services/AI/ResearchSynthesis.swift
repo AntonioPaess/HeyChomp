@@ -92,7 +92,7 @@ actor PublicResearchPageFetcher: ResearchPageFetching {
         guard let host = source.url.host, await Task.detached(priority:.utility,operation:{ ResearchDocumentPolicy.hasPublicAddresses(host) }).value else { throw ResearchFailure.invalidResponse }
         try Task.checkCancellation()
         var request = URLRequest(url: source.url)
-        request.setValue("Sieghart/1.0 (public document reader)", forHTTPHeaderField: "User-Agent")
+        request.setValue("HeyChomp/1.0 (public document reader)", forHTTPHeaderField: "User-Agent")
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200,
               response.url.map(ResearchDocumentPolicy.permits) == true,

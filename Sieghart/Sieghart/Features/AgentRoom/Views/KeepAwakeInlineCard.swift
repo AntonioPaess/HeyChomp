@@ -18,7 +18,7 @@ struct KeepAwakeInlineCard: View {
                 Text("Keep Awake").font(.callout.weight(.semibold))
                 Spacer()
                 Circle().fill(current && model.holding ? Color.mint : Color.secondary).frame(width: 6, height: 6)
-                Text(current ? (model.holding ? (en ? "Active" : "Ativo") : (en ? "Waiting" : "Aguardando")) : (en ? "Ended" : "Encerrado")).font(.caption)
+                Text(current ? (model.holding ? (en ? "Active" : "Ativo") : model.error != nil ? (en ? "Needs attention" : "Precisa de atenção") : (en ? "Paused" : "Em pausa")) : (en ? "Ended" : "Encerrado")).font(.caption)
             }
             HStack(alignment: .firstTextBaseline) {
                 Text(remaining).font(.system(size: 28, weight: .medium, design: .rounded)).monospacedDigit().contentTransition(.numericText())
@@ -36,8 +36,12 @@ struct KeepAwakeInlineCard: View {
                     .accessibilityLabel(en ? "Elapsed time" : "Tempo decorrido")
                     .accessibilityValue("\(Int(progress * 100))%")
             }
-            Text(current ? (model.holding ? (en ? "Your Mac is being kept awake." : "Seu Mac está sendo mantido acordado.") : (en ? "Waiting for your configured power or app conditions." : "Aguardando as condições de energia ou apps que você definiu.")) : (en ? "This session is no longer active." : "Este período não está mais ativo."))
+            Text(LocalizedStringKey(current ? model.status : (en ? "This session is no longer active." : "Este período não está mais ativo.")))
                 .font(.caption).foregroundStyle(.secondary)
+            if current, let error = model.error {
+                Label(LocalizedStringKey(error), systemImage: "exclamationmark.circle")
+                    .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+            }
         }.padding(16).frame(maxWidth: 390, alignment: .leading)
             .background(Color.mint.opacity(0.055), in: RoundedRectangle(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(.mint.opacity(0.18)))

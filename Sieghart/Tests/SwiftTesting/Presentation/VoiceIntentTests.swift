@@ -124,6 +124,11 @@ extension LogicTests {
             #expect(FocusVoiceParser.parse("Abra o WhatsApp") == .openApp(name: "whatsapp"))
             #expect(FocusVoiceParser.parse("Open Safari") == .openApp(name: "safari"))
             #expect(FocusVoiceParser.parse("Open Sieghart") == .show)
+            #expect(FocusVoiceParser.parse("Open Chomp") == .show)
+            #expect(FocusVoiceParser.parse("Open HeyChomp") == .show)
+            #expect(FocusVoiceParser.parse("Abra o HeyChomp") == .show)
+            #expect(FocusVoiceParser.parse("HeyChomp, qual a temperatura em Recife?") == .ask(question: "qual a temperatura em Recife?"))
+            #expect(FocusVoiceParser.parse("Hey Chomp, what is pi?") == .ask(question: "what is pi?"))
             for phrase in ["What is my ai limits", "What are my AI limits?", "Mostre meus limites do Codex"] {
                 #expect(FocusVoiceParser.parse(phrase) == .aiLimits)
             }

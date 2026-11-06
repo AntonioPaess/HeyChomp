@@ -126,7 +126,7 @@ final class LocalReminderNotifier: ReminderNotifying {
         let settings = await center.notificationSettings()
         guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else { return }
         let content = UNMutableNotificationContent()
-        content.title = "Sieghart reminder"
+        content.title = "HeyChomp reminder"
         content.body = reminder.title
         content.userInfo = ["reminderID": reminder.id.uuidString]
         content.categoryIdentifier = "sieghart.schedule"

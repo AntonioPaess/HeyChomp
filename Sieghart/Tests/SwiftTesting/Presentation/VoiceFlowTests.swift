@@ -6,13 +6,16 @@ import Testing
     var releases = 0
     var available = true
     var fails = false
+    private var heldDisplay: Bool?
     func context() -> AwakeContext { .init(onAC: available) }
     func acquire(display: Bool) throws -> UInt32 {
         if fails { throw UtilityFailure(message: "fixture power failure") }
         acquisitions += 1
+        heldDisplay = display
         return 7
     }
-    func release(_ token: UInt32) { releases += 1 }
+    func release(_ token: UInt32) { releases += 1; heldDisplay = nil }
+    func isHeld(_ token: UInt32, display: Bool) -> Bool { token == 7 && heldDisplay == display }
 }
 
 @MainActor private final class VoiceSystemSampler: SystemSampling {
@@ -132,6 +135,8 @@ extension MacContractsTests {
             activation.toggleListening()
             try await PresentationWait.until { !activation.isVoiceBusy }
             #expect(activation.voiceStatus.contains("Allow microphone"))
+            #expect(activation.voicePermissionIssue == .microphoneAccess)
+            #expect(activation.voicePermissionSettingsURL?.absoluteString.contains("Privacy_Microphone") == true)
             #expect(f.capture.receivers.isEmpty)
         }
 

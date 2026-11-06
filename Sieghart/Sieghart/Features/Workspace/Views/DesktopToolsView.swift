@@ -13,7 +13,7 @@ struct DesktopToolsView: View {
                 Button("Refresh list") { model.refresh() }
             }.buttonStyle(.bordered)
             Button("Open Accessibility settings") { model.allowAccess() }.buttonStyle(.bordered)
-            Button("Locate this copy of Sieghart") { AccessibilityAccess.revealRunningApp() }.font(.caption)
+            Button("Locate this copy of HeyChomp") { AccessibilityAccess.revealRunningApp() }.font(.caption)
             Text("Enable this copy in macOS Privacy & Security, then return and refresh.").font(.caption).foregroundStyle(CompanionStyle.muted)
             Text(model.status).font(.caption).foregroundStyle(CompanionStyle.muted).accessibilityIdentifier("desktop.status")
             Text("1. Refresh the list. 2. Select a window below. 3. Choose a layout. Show brings a window forward; Open activates an app.").font(.caption).foregroundStyle(CompanionStyle.muted)

@@ -30,6 +30,7 @@ final class SpatialOverlayViewModel: ObservableObject {
     private var targetScreenFrame: CGRect?
     private var speechObservation: AnyCancellable?
     private var fadeTask: Task<Void, Never>?
+    private var inspectionID = UUID()
 
     init(
         voiceSynthesizer: (any SigVoiceSynthesizing)? = nil,
@@ -46,6 +47,7 @@ final class SpatialOverlayViewModel: ObservableObject {
 
     /// Triggers a spatial vector drawing on screen with animated stroke trim (`0.0 -> 1.0`), glow, and `.easeOut` auto-fade.
     func draw(shape: SpatialVectorShape, prompt: String, holdDuration: TimeInterval = 3.2, speaksAcknowledgement: Bool = true, language: String = "pt-BR") {
+        inspectionID = UUID()
         uiLanguage = language; isPinned = false
         targetScreenFrame = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }?.frame
         fadeTask?.cancel()
@@ -91,11 +93,12 @@ final class SpatialOverlayViewModel: ObservableObject {
     /// and speaks a concise explanation using Sig's voice.
     @discardableResult
     func inspectScreen(query: String, selection: ScreenSelection? = nil, holdDuration: TimeInterval = 3.8, speaksReading: Bool = true, language: String = "pt-BR") async -> ScreenSemanticReading {
+        let id = UUID(); inspectionID = id
         fadeTask?.cancel()
         activeDrawing = nil
         generatedCanvas = nil
         let reading = await inspector.inspect(query: query, selection: selection)
-        guard !Task.isCancelled else { return reading }
+        guard !Task.isCancelled, inspectionID == id else { return reading }
         guard reading.failure == nil else {
             lastStatusMessage = reading.explanation(language: language)
             if speaksReading { voiceSynthesizer.speak(lastStatusMessage, language: language) }
@@ -125,6 +128,7 @@ final class SpatialOverlayViewModel: ObservableObject {
 
     func present(_ document: GeneratedCanvas, language: String = "pt-BR") throws {
         let checked = try document.validated()
+        inspectionID = UUID()
         uiLanguage = language; isPinned = false
         targetScreenFrame = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) }?.frame
         fadeTask?.cancel()
@@ -158,14 +162,16 @@ final class SpatialOverlayViewModel: ObservableObject {
     }
 
     func highlightGuidance(_ region: ScreenTextRegion, screenFrame: CGRect, title: String, language: String) {
+        inspectionID = UUID()
         fadeTask?.cancel(); activeDrawing = nil; generatedCanvas = nil
         targetScreenFrame = screenFrame; uiLanguage = language; isPinned = true
         activeHighlight = .init(frame: region.frame.insetBy(dx: -5, dy: -5), cursorPoint: .init(x: region.frame.maxX+14, y: region.frame.midY), elementRole: "Text target", elementTitle: title, recognizedText: region.text, summary: guidanceStatus ?? "")
         strokeProgress = 1; overlayOpacity = 1; isPresentingOverlay = true
         ensurePanelVisible()
     }
-    func hideGuidanceHighlight() { activeHighlight = nil; isPresentingOverlay = true; overlayOpacity = 1; ensurePanelVisible() }
+    func hideGuidanceHighlight() { inspectionID = UUID(); activeHighlight = nil; isPresentingOverlay = true; overlayOpacity = 1; ensurePanelVisible() }
     func endGuidance() {
+        inspectionID = UUID()
         if guidanceStatus != nil {
             activeHighlight = nil; isPinned = false; isPresentingOverlay = false
             panel?.orderOut(nil); controlsPanel?.orderOut(nil)
@@ -180,6 +186,7 @@ final class SpatialOverlayViewModel: ObservableObject {
 
     /// Immediately dismisses any active spatial drawing or screen annotation (callable from Dynamic Island close button).
     func dismiss() {
+        inspectionID = UUID()
         onDismiss?()
         fadeTask?.cancel()
         fadeTask = nil
@@ -233,9 +240,7 @@ final class SpatialOverlayViewModel: ObservableObject {
         let screenFrame = targetScreenFrame ?? NSScreen.main?.frame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
         if panel == nil {
             let newPanel = SpatialCanvasPanel(screenFrame: screenFrame)
-            let hosting = NSHostingView(rootView: SpatialCanvasOverlay(viewModel: self))
-            hosting.frame = NSRect(origin: .zero, size: screenFrame.size)
-            newPanel.contentView = hosting
+            newPanel.host(SpatialCanvasOverlay(viewModel: self))
             panel = newPanel
         }
         panel?.setFrame(screenFrame, display: true)
@@ -243,7 +248,7 @@ final class SpatialOverlayViewModel: ObservableObject {
         panel?.orderFrontRegardless()
         if controlsPanel == nil {
             let controls = SpatialCanvasPanel(screenFrame: CGRect(x: 0, y: 0, width: 300, height: 54))
-            controls.contentView = NSHostingView(rootView: SpatialCanvasControls(model: self))
+            controls.host(SpatialCanvasControls(model: self))
             controls.ignoresMouseEvents = false
             controls.level = .statusBar
             controlsPanel = controls

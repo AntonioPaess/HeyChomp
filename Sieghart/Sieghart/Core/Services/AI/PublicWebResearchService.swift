@@ -44,7 +44,7 @@ actor PublicWebResearchService: ResearchProviding {
         components.queryItems = [.init(name: "q", value: topic), .init(name: "format", value: "rss"),
             .init(name: "setlang", value: language.hasPrefix("en") ? "en" : "pt-br")]
         var request = URLRequest(url: components.url!)
-        request.setValue("Sieghart/1.0 Desktop research", forHTTPHeaderField: "User-Agent")
+        request.setValue("HeyChomp/1.0 Desktop research", forHTTPHeaderField: "User-Agent")
         var sources: [ResearchSource] = []
         do {
             let (data, response) = try await session.data(for: request)
@@ -91,7 +91,7 @@ actor PublicWebResearchService: ResearchProviding {
             .init(name: "prop", value: "extracts|info"), .init(name: "exintro", value: "1"),
             .init(name: "explaintext", value: "1"), .init(name: "inprop", value: "url"), .init(name: "format", value: "json")]
         var request = URLRequest(url: url.url!)
-        request.setValue("Sieghart/1.0 Desktop educational research", forHTTPHeaderField: "User-Agent")
+        request.setValue("HeyChomp/1.0 Desktop educational research", forHTTPHeaderField: "User-Agent")
         let (data, response) = try await session.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200, data.count <= 800_000 else { throw ResearchFailure.invalidResponse }
         struct Page: Decodable { let title: String; let extract: String?; let fullurl: URL?; let index: Int? }

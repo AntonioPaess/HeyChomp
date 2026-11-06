@@ -73,14 +73,14 @@ def main():
     try:
         fcntl.flock(cache_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
-        raise RuntimeError("This derived-data directory is already running Sieghart tests.")
+        raise RuntimeError("This derived-data directory is already running HeyChomp tests.")
     snapshot = derived / "SourceWorkspace"
     marker = snapshot / ".sieghart-source-root"
     if snapshot.exists() and (not marker.is_file() or marker.read_text() != str(ROOT)):
         raise RuntimeError("Refusing to overwrite an unrecognized source workspace.")
     snapshot.mkdir(exist_ok=True)
     marker.write_text(str(ROOT))
-    shutil.copytree(ROOT / "Sieghart.xcodeproj", snapshot / "Sieghart.xcodeproj",
+    shutil.copytree(ROOT / "HeyChomp.xcodeproj", snapshot / "HeyChomp.xcodeproj",
                     ignore=shutil.ignore_patterns("xcuserdata", "project.xcworkspace"), dirs_exist_ok=True)
     (snapshot / "Tests").mkdir(exist_ok=True)
     for directory in ("Sieghart", "Tests/Support", "Tests/SwiftTesting"):
@@ -90,8 +90,8 @@ def main():
         link.symlink_to(ROOT / directory, target_is_directory=True)
     shutil.copytree(ROOT / "Tests" / "TestPlans", snapshot / "Tests" / "TestPlans", dirs_exist_ok=True)
     architecture = "arm64" if platform.machine() == "arm64" else "x86_64"
-    base = ["xcodebuild", "-project", str(snapshot / "Sieghart.xcodeproj"),
-            "-scheme", "Sieghart-Checks", "-destination", f"platform=macOS,arch={architecture}",
+    base = ["xcodebuild", "-project", str(snapshot / "HeyChomp.xcodeproj"),
+            "-scheme", "HeyChomp-Checks", "-destination", f"platform=macOS,arch={architecture}",
             "-derivedDataPath", str(derived), "-parallel-testing-enabled", "NO",
             "-maximum-parallel-testing-workers", "1"]
     manifest = {}
@@ -99,12 +99,12 @@ def main():
         for file in sorted((ROOT / directory).rglob("*.swift")):
             manifest[str(file.relative_to(ROOT))] = hashlib.sha256(file.read_bytes()).hexdigest()
     (output / "source-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    run(base + ["-testPlan", "Sieghart-Complete", "test", "-enumerate-tests",
+    run(base + ["-testPlan", "HeyChomp-Complete", "test", "-enumerate-tests",
                 "-test-enumeration-style", "hierarchical", "-test-enumeration-format", "json",
                 "-test-enumeration-output-path", str(output / "discovery.json")], output / "discovery.log")
     selection = [sys.executable, str(ROOT / "Tools/swift-test-index.py"),
                  "--enumeration", str(output / "discovery.json"), "--output", str(output / "test-index.json"),
-                 "--fast-plan", str(snapshot / "Tests/TestPlans/Sieghart-Fast.xctestplan"),
+                 "--fast-plan", str(snapshot / "Tests/TestPlans/HeyChomp-Fast.xctestplan"),
                  "--plan", args.plan, "--selectors", str(output / "selectors.txt")]
     if args.filter:
         selection += ["--filter", args.filter]
@@ -117,7 +117,7 @@ def main():
     selectors = (output / "selectors.txt").read_text().splitlines()
     if not selectors:
         raise RuntimeError("No tests selected; refusing a false successful run.")
-    plan_name = "Sieghart-Complete" if args.plan == "complete" else "Sieghart-Fast"
+    plan_name = "HeyChomp-Complete" if args.plan == "complete" else "HeyChomp-Fast"
     command = base + ["-testPlan", plan_name, "-resultBundlePath", str(output / "Results.xcresult"),
                       "-enableCodeCoverage", "YES", "test"]
     if args.filter or args.only:
@@ -132,10 +132,10 @@ def main():
     tests = capture_json(["xcrun", "xcresulttool", "get", "test-results", "tests", "--path",
                           str(output / "Results.xcresult")], output / "test-results.json", output / "test-results.log")
     cases = [node for node in nodes(tests) if node.get("nodeType") == "Test Case"]
-    actual = {"SieghartTests/" + node["nodeIdentifier"] for node in cases}
+    actual = {"HeyChompTests/" + node["nodeIdentifier"] for node in cases}
     missing, unexpected = set(selectors) - actual, actual - set(selectors)
     functions = collections.Counter(node.get("result", "Unknown") for node in cases)
-    by_identifier = {"SieghartTests/" + node["nodeIdentifier"]: node for node in cases}
+    by_identifier = {"HeyChompTests/" + node["nodeIdentifier"]: node for node in cases}
     contracts = collections.defaultdict(list)
     for record in index["records"]:
         if not record["selected"]:
@@ -163,7 +163,7 @@ def main():
     found = {file["path"] for file in production_files}
     executable = sum(file.get("executableLines", 0) for file in production_files)
     covered = sum(file.get("coveredLines", 0) for file in production_files)
-    useful_coverage = {"module": "SieghartTests", "expectedProductionFiles": len(expected),
+    useful_coverage = {"module": "HeyChompTests", "expectedProductionFiles": len(expected),
                        "includedProductionFiles": len(found), "missingProductionFiles": sorted(expected - found),
                        "coveredLines": covered, "executableLines": executable,
                        "lineCoverage": covered / executable if executable else 0, "files": production_files}

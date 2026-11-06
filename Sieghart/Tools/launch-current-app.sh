@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-app_bundle="/Applications/Sieghart.app"
+app_bundle="/Applications/HeyChomp.app"
 tool_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if [[ $# -gt 1 || ( $# -eq 1 && "$1" != --resume-keep-awake-session ) ]]; then

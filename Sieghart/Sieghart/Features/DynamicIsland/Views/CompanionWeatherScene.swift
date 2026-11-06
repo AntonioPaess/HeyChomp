@@ -94,7 +94,7 @@ struct CompanionWeatherScene: View {
                 atmosphere(time: time, foreground: false).allowsHitTesting(false)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Label(en ? "Weather with Sieg" : "O tempo com o Sieg", systemImage: mood == .hail ? "cloud.hail.fill" : observation.symbol)
+                        Label(en ? "Weather with Chomp" : "O tempo com o Chomp", systemImage: mood == .hail ? "cloud.hail.fill" : observation.symbol)
                             .font(.system(size: 11, weight: .semibold)).foregroundStyle(mood.tint)
                         Spacer()
                         if let stop { Button(action: stop) { Image(systemName: "stop.circle") }.help(en ? "Stop speaking" : "Parar fala").padding(.trailing, 76) }

@@ -2,7 +2,7 @@ import SwiftUI
 
 // Adapted from Coucou's MIT CardBackground, ChatBubble, TypingDotsView and
 // SendButtonStyle (71b773f08101237e1ec950efdaee17a626c830e6), upgraded with
-// Sieghart's Apple-like glassmorphic Ada Room design system.
+// Chomp's Apple-like glassmorphic Ada Room design system.
 // Copyright (c) 2026 Louis Raillé. See THIRD_PARTY_NOTICES.md.
 enum AgentChatColor {
     static func hex(_ value: UInt32) -> Color {

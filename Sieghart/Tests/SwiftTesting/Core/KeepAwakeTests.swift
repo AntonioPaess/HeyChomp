@@ -1,10 +1,65 @@
 import AppKit
 import Foundation
 import Testing
+import IOKit.pwr_mgt
 
 extension MacContractsTests {
   @Suite(.tags(.utilities, .isolated)) @MainActor
   struct KeepAwakeTests {
+    @Test("G14.03 · Lost native protection is recovered without changing the user's deadline")
+    func lostAssertionRecovery() throws {
+      let store = try TestDefaults(); defer { store.cleanup() }
+      var clock = Date(timeIntervalSince1970: 1_800_000_000)
+      let backend = CoreSampleAwake(), awake = KeepAwakeViewModel(backend: backend, defaults: store.value, now: { clock })
+      defer { awake.stop(); awake.shutdown() }
+      awake.request.minutes = 120; awake.request.keepDisplay = true; awake.start()
+      let deadline = awake.request.end
+      backend.held.removeAll(); clock += 60; awake.tick()
+      #expect(awake.holding && backend.acquired == [true, true] && backend.released == [1])
+      #expect(awake.request.end == deadline && awake.remaining == 7140)
+      backend.held.removeAll(); backend.confirmsAcquisition = false; awake.tick()
+      #expect(!awake.holding && awake.enabled && awake.error != nil)
+      #expect(backend.released == [1, 2, 3] && awake.status == "Couldn't keep your Mac awake")
+      backend.confirmsAcquisition = true; awake.tick()
+      #expect(awake.holding && awake.error == nil && awake.request.end == deadline)
+      awake.stop(); let count = backend.acquired.count; awake.tick()
+      #expect(backend.acquired.count == count && !awake.holding)
+    }
+
+    @Test("G14.03 · An unconfirmed acquisition is released and never announced as success")
+    func unconfirmedAcquisition() throws {
+      let store = try TestDefaults(); defer { store.cleanup() }
+      let backend = CoreSampleAwake(); backend.confirmsAcquisition = false
+      let awake = KeepAwakeViewModel(backend: backend, defaults: store.value)
+      defer { awake.stop(); awake.shutdown() }
+      var reactions: [Bool] = []; awake.onReaction = { reactions.append($0) }
+      awake.start()
+      #expect(!awake.holding && awake.error != nil && backend.released == [1])
+      #expect(!reactions.contains(true))
+    }
+
+    @Test("G14.04 · Display wake and session activation resume only the remaining original session", arguments: [
+      NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification
+    ])
+    func recoveryNotifications(_ wake: Notification.Name) throws {
+      let store = try TestDefaults(); defer { store.cleanup() }
+      var clock = Date(timeIntervalSince1970: 1_800_000_000)
+      let backend = CoreSampleAwake(), center = NotificationCenter()
+      let awake = KeepAwakeViewModel(backend: backend, defaults: store.value, now: { clock })
+      defer { awake.stop(); awake.shutdown() }
+      awake.startLifecycle(center: center); awake.request.minutes = 120; awake.request.keepDisplay = true; awake.start()
+      let deadline = awake.request.end
+      center.post(name: NSWorkspace.willSleepNotification, object: nil)
+      #expect(!awake.holding && awake.status == "Paused while your Mac sleeps")
+      clock += 60; center.post(name: wake, object: nil)
+      #expect(awake.holding && awake.remaining == 7140 && awake.request.end == deadline)
+      center.post(name: NSWorkspace.willSleepNotification, object: nil)
+      clock += 7200; center.post(name: wake, object: nil)
+      #expect(!awake.enabled && !awake.holding && backend.acquired.count == 2)
+      awake.shutdown(); center.post(name: wake, object: nil)
+      #expect(backend.acquired.count == 2)
+    }
+
     @Test("G14.03 · Natural duration wording and an explicit display option are independent")
     func spokenAndTypedDisplayIntent() {
       for phrase in ["ativa o keep awake com 2hrs e manter a tela ligada", "Ative o Keep Awake por duas horas com a tela ligada", "ative o keep awake e mantenha a tela ligada por 2 horas", "enable keep awake for two hours and keep the screen on", "ativa o keep awake por 2 horas e não deixa a tela apagar"] {
@@ -159,5 +214,22 @@ extension MacContractsTests {
       }
     }
 
+  }
+}
+
+extension MacContractsTests {
+  @Suite(.tags(.utilities, .localIntegration)) @MainActor struct KeepAwakeNativeTests {
+    @Test("G14.03 · macOS confirms the exact owned assertion, level, type and release", arguments: [false, true])
+    func nativeAssertionState(_ display: Bool) throws {
+      let backend = MacAwakeBackend(), token = try backend.acquire(display: display)
+      var released = false
+      defer { if !released { backend.release(token) } }
+      #expect(backend.isHeld(token, display: display))
+      #expect(!backend.isHeld(token, display: !display))
+      let status = IOPMAssertionSetProperty(token, kIOPMAssertionLevelKey as CFString, NSNumber(value: kIOPMAssertionLevelOff))
+      #expect(status == kIOReturnSuccess && !backend.isHeld(token, display: display))
+      backend.release(token); released = true
+      #expect(!backend.isHeld(token, display: display))
+    }
   }
 }

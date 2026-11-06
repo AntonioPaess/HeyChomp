@@ -447,7 +447,7 @@ def enumerated_records(data: object, sources: dict[str, dict]) -> list[dict]:
         if kind == "plan":
             path, plan = (), name
         elif kind == "target":
-            if name != "SieghartTests":
+            if name != "HeyChompTests":
                 raise IndexError(f"Unknown enumerated test target: {name}")
             path = (name,)
         else:
@@ -548,8 +548,8 @@ def run(arguments: argparse.Namespace) -> dict:
         if not isinstance(fast_plan, dict) or not isinstance(fast_plan.get("testTargets"), list) or not fast_plan["testTargets"] or not isinstance(fast_plan["testTargets"][0], dict):
             raise IndexError("Fast plan must contain testTargets[0]")
         target = fast_plan["testTargets"][0].get("target", {})
-        if not isinstance(target, dict) or target.get("name") != "SieghartTests":
-            raise IndexError("Fast plan testTargets[0] must refer to SieghartTests")
+        if not isinstance(target, dict) or target.get("name") != "HeyChompTests":
+            raise IndexError("Fast plan testTargets[0] must refer to HeyChompTests")
         if not fast_selectors:
             raise IndexError("No eligible logic/isolated test leaves are available for the fast plan")
         fast_plan["testTargets"][0]["selectedTests"] = swift_testing_selection(fast_selectors)
@@ -590,7 +590,7 @@ def main() -> int:
     parser.add_argument("--fast-plan", type=Path, help="Update only this copied .xctestplan with all eligible function leaves")
     parser.add_argument("--filter", help="Regex over the registered group names")
     parser.add_argument("--plan", choices=("complete", "fast"), default="complete")
-    parser.add_argument("--only", help="Exact runtime identifier, optionally omitting SieghartTests/")
+    parser.add_argument("--only", help="Exact runtime identifier, optionally omitting HeyChompTests/")
     parser.add_argument("--selectors", type=Path, help="Write full selected identifiers, one per line")
     arguments = parser.parse_args()
     try:

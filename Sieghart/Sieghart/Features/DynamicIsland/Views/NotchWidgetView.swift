@@ -131,15 +131,15 @@ struct NotchWidgetView: View {
 
     private var pageTitle: String {
         if activation.voiceLanguage.hasPrefix("en") { return englishPageTitle }
-        if notch.presentation == .agentRoom { return notch.agentRoom.page == .chat ? "Conversa com " + (notch.agentRoom.localChat.selected?.persona.title ?? "Sieg") : "Conversas" }
-        return ["Companion": "Sieg", "Timers": "Timers", "AI agents": "Uso de IA", "Your tools": "Suas ferramentas", "System": "Sistema", "Keep awake": "Keep Awake", "Display & power": "Tela e energia", "Audio": "Áudio", "Clipboard": "Área de transferência", "Calendar": "Agenda", "Files": "Arquivos", "Capture": "Captura", "Your team": "Sua equipe", "Session complete": "Sessão concluída"][englishPageTitle] ?? englishPageTitle
+        if notch.presentation == .agentRoom { return notch.agentRoom.page == .chat ? "Conversa com " + (notch.agentRoom.localChat.selected?.persona.title ?? "Chomp") : "Conversas" }
+        return ["Companion": "Chomp", "Timers": "Timers", "AI agents": "Uso de IA", "Your tools": "Suas ferramentas", "System": "Sistema", "Keep awake": "Keep Awake", "Display & power": "Tela e energia", "Audio": "Áudio", "Clipboard": "Área de transferência", "Calendar": "Agenda", "Files": "Arquivos", "Capture": "Captura", "Your team": "Sua equipe", "Session complete": "Sessão concluída"][englishPageTitle] ?? englishPageTitle
     }
     private var englishPageTitle: String {
         switch notch.presentation {
         case .home: "Companion"
         case .focusSetup, .timer: "Timers"
         case .aiLimits: "AI agents"
-        case .agentRoom: notch.agentRoom.page == .chat ? "Chat with " + (notch.agentRoom.localChat.selected?.persona.title ?? "Sieg") : "Conversations"
+        case .agentRoom: notch.agentRoom.page == .chat ? "Chat with " + (notch.agentRoom.localChat.selected?.persona.title ?? "Chomp") : "Conversations"
         case .tools: "Your tools"
         case .system: "System"
         case .keepAwake: "Keep awake"
@@ -249,9 +249,9 @@ struct NotchWidgetView: View {
                                        mood: activation.commandAcknowledged ? .understood : activation.isVoiceBusy ? .idle : reactions.mood)
                         .frame(width: 124, height: 96)
                 }
-                .accessibilityLabel("Interact with Sieghart")
+                .accessibilityLabel("Interact with Chomp")
                 .accessibilityValue(reactionDescription)
-                .help("Say hello. Repeated taps make Sieghart grumpy, then sleepy. Tap again to wake.")
+                .help("Say hello. Repeated taps make Chomp grumpy, then sleepy. Tap again to wake.")
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let location): avatarPointer = animates ? CompanionGaze.sample(point: location, in: CGSize(width: 124, height: 96)) : .zero
@@ -308,7 +308,7 @@ struct NotchWidgetView: View {
                 CompanionWeatherCard(observation: observation, language: notch.spatialAssistant.responseLanguage,
                                      animates: animates, dismiss: { notch.spatialAssistant.dismissWeather() })
             } else if let response = notch.spatialAssistant.response {
-                CompanionResponseCard(needsScreenPermission: notch.spatialAssistant.screenAccessIssue == .permission, retryScreen: { notch.spatialAssistant.retryScreenReading() }, response: response, language: notch.spatialAssistant.responseLanguage,
+                CompanionResponseCard(needsScreenPermission: notch.spatialAssistant.screenAccessIssue == .permission, retryScreen: { notch.spatialAssistant.retryScreenReading() }, isRetryingScreen: notch.spatialAssistant.isRetryingScreenReading, response: response, language: notch.spatialAssistant.responseLanguage,
                     speaks: notch.spatialAssistant.overlay.voiceSynthesizer.isSpeaking,
                     stop: { notch.spatialAssistant.overlay.voiceSynthesizer.stop(); notch.spatialAssistant.screenInteraction.finishResponse() },
                     dismiss: { notch.spatialAssistant.dismissResponse() },
@@ -487,7 +487,7 @@ struct NotchWidgetView: View {
                         Color.clear.frame(width: notch.geometry.cutoutWidth + (notch.geometry.cutoutWidth > 0 ? 8 : 24))
                         Text("Open").font(.system(size: 11, weight: .medium)).foregroundStyle(CompanionStyle.accentInk).frame(maxWidth: .infinity)
                     }.padding(.horizontal, 8).frame(height: notch.geometry.bodyHeight).contentShape(Rectangle())
-                }.buttonStyle(.plain).accessibilityLabel("Open Sieghart")
+                }.buttonStyle(.plain).accessibilityLabel("Open HeyChomp")
             }
         }
     }

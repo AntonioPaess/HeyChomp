@@ -11,7 +11,7 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-PROJECT = ROOT / "Sieghart.xcodeproj/project.pbxproj"
+PROJECT = ROOT / "HeyChomp.xcodeproj/project.pbxproj"
 original = PROJECT.read_text()
 project = json.loads(subprocess.check_output(
     ["/usr/bin/plutil", "-convert", "json", "-o", "-", str(PROJECT)]))
@@ -48,8 +48,8 @@ def visit(gid, parent=""):
 
 project_object = objects[project["rootObject"]]
 visit(project_object["mainGroup"])
-app_id = next(k for k in project_object["targets"] if objects[k].get("name") == "Sieghart")
-test_id = next((k for k in project_object["targets"] if objects[k].get("name") == "SieghartTests"),
+app_id = next(k for k in project_object["targets"] if objects[k].get("name") == "HeyChomp")
+test_id = next((k for k in project_object["targets"] if objects[k].get("name") == "HeyChompTests"),
                ident("target:SieghartTests"))
 test_phases = {name: ident("phase:SieghartTests:" + name) for name in ("Sources", "Frameworks", "Resources")}
 for name, phase_id in test_phases.items():
@@ -58,8 +58,8 @@ for name, phase_id in test_phases.items():
                        "files": [], "runOnlyForDeploymentPostprocessing": "0"}, name)
 product_id = ident("product:SieghartTests")
 put(product_id, {"isa": "PBXFileReference", "explicitFileType": "wrapper.cfbundle",
-                 "includeInIndex": "0", "path": "SieghartTests.xctest",
-                 "sourceTree": "BUILT_PRODUCTS_DIR"}, "SieghartTests.xctest")
+                 "includeInIndex": "0", "path": "HeyChompTests.xctest",
+                 "sourceTree": "BUILT_PRODUCTS_DIR"}, "HeyChompTests.xctest")
 configs = []
 for config in ("Debug", "Release"):
     settings = {
@@ -73,7 +73,7 @@ for config in ("Debug", "Release"):
         "ENABLE_PREVIEWS": "NO", "SWIFT_EMIT_LOC_STRINGS": "NO",
         "CLANG_ENABLE_MODULES": "YES", "CLANG_ENABLE_OBJC_ARC": "YES",
         "SWIFT_OPTIMIZATION_LEVEL": "-Onone",
-        "INFOPLIST_KEY_CFBundleDisplayName": "SieghartTests",
+        "INFOPLIST_KEY_CFBundleDisplayName": "HeyChompTests",
         "INFOPLIST_KEY_LSUIElement": "NO", "INFOPLIST_KEY_LSApplicationCategoryType": "",
         "LD_RUNPATH_SEARCH_PATHS": ["$(inherited)", "@loader_path/../Frameworks",
                                   "@executable_path/../Frameworks"],
@@ -90,12 +90,12 @@ for config in ("Debug", "Release"):
 config_list = ident("configs:SieghartTests")
 put(config_list, {"isa": "XCConfigurationList", "buildConfigurations": configs,
                   "defaultConfigurationIsVisible": "0", "defaultConfigurationName": "Release"},
-    'Build configuration list for PBXNativeTarget "SieghartTests"')
+    'Build configuration list for PBXNativeTarget "HeyChompTests"')
 put(test_id, {"isa": "PBXNativeTarget", "buildConfigurationList": config_list,
               "buildPhases": list(test_phases.values()), "buildRules": [], "dependencies": [],
-              "name": "SieghartTests", "productName": "SieghartTests",
+              "name": "HeyChompTests", "productName": "HeyChompTests",
               "productReference": product_id, "productType": "com.apple.product-type.bundle.unit-test"},
-    "SieghartTests")
+    "HeyChompTests")
 if test_id not in project_object["targets"]:
     project_object["targets"].append(test_id)
 products = objects[project_object["productRefGroup"]]["children"]

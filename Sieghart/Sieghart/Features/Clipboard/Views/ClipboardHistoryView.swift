@@ -86,7 +86,7 @@ struct ClipboardHistoryView: View {
             }
             .confirmationDialog("Clear saved clipboard history?", isPresented: $confirmClear, titleVisibility: .visible) {
                 Button("Clear history", role: .destructive) { clipboard.clear(); selection = nil }
-            } message: { Text("This removes saved copies and pins from Sieghart. Your current system clipboard is unchanged.") }
+            } message: { Text("This removes saved copies and pins from HeyChomp. Your current system clipboard is unchanged.") }
     }
     private func filter(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(LocalizedStringKey(title), action: action).font(.system(size: compact ? 10 : 11, weight: .medium)).buttonStyle(.plain)

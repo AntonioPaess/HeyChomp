@@ -38,6 +38,7 @@ struct ConversationInterruptionGate {
     @Published private(set) var isPreparing = false
     @Published private(set) var transcript = ""
     @Published private(set) var status = ""
+    @Published private(set) var permissionIssue: VoiceCaptureFailure?
     var onUtterance: (@MainActor (String) -> Void)?
     var onInterruption: (@MainActor () -> Void)?
     var assistantState: (@MainActor () -> (busy: Bool, spoken: String))?
@@ -82,7 +83,7 @@ struct ConversationInterruptionGate {
                 }
             } catch {
                 guard self.generation == id else { return }
-                self.stop(); self.status = error.localizedDescription
+                self.stop(); self.permissionIssue = error as? VoiceCaptureFailure; self.status = error.localizedDescription
             }
         }
     }
@@ -93,6 +94,7 @@ struct ConversationInterruptionGate {
         capture.cancel(); capture.useVoiceProcessing(false)
         session.cancel(); gate.reset(); finalizing = false
         isActive = false; isPreparing = false; transcript = ""
+        permissionIssue = nil
         status = english ? "Conversation ended" : "Conversa encerrada"
     }
     private var english: Bool { language.hasPrefix("en") }
@@ -100,7 +102,7 @@ struct ConversationInterruptionGate {
         guard isActive else { return }
         captureID = UUID(); let id = captureID
         session.start(at: now()); gate.reset(); finalizing = false; transcript = ""
-        status = english ? "Microphone on · You can interrupt Sieg · Stop to end" : "Microfone ligado · Você pode interromper o Sieg · Pare para encerrar"
+        status = english ? "Microphone on · You can interrupt Chomp · Stop to end" : "Microfone ligado · Você pode interromper o Chomp · Pare para encerrar"
         try capture.start(language: language) { [weak self] event in
             guard let self, self.isActive, self.captureID == id else { return }
             switch event {

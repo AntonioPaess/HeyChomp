@@ -11,18 +11,18 @@
     "testTimeoutsEnabled": true,
     "codeCoverage": true,
     "targetForVariableExpansion": {
-      "containerPath": "container:Sieghart.xcodeproj",
+      "containerPath": "container:HeyChomp.xcodeproj",
       "identifier": "C6AB6C4DC6E52EC8F74130B0",
-      "name": "SieghartTests"
+      "name": "HeyChompTests"
     }
   },
   "testTargets": [
     {
       "parallelizable": false,
       "target": {
-        "containerPath": "container:Sieghart.xcodeproj",
+        "containerPath": "container:HeyChomp.xcodeproj",
         "identifier": "C6AB6C4DC6E52EC8F74130B0",
-        "name": "SieghartTests"
+        "name": "HeyChompTests"
       },
       "selectedTests": {
         "suites": [

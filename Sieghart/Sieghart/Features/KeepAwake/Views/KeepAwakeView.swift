@@ -18,7 +18,7 @@ struct KeepAwakeView: View {
             case .duration:
                 HStack { Text("Keep awake for"); Spacer(); Group { if preview { Text("\(controller.request.minutes) min ⌄").foregroundStyle(CompanionStyle.accentInk) } else { Picker("Duration", selection: $controller.request.minutes) { ForEach([5, 15, 30, 60, 120, 240, 480, 1440], id: \.self) { Text("\($0) min").tag($0) } }.labelsHidden().frame(width: 115) } } }.disabled(controller.enabled)
             case .until: DatePicker("Until", selection: $controller.request.until, displayedComponents: [.date, .hourAndMinute]).disabled(controller.enabled)
-            case .indefinite: Text("Stays active until you stop it or quit Sieghart.").font(.caption).foregroundStyle(CompanionStyle.muted)
+            case .indefinite: Text("Stays active until you stop it or quit HeyChomp.").font(.caption).foregroundStyle(CompanionStyle.muted)
             }
             UtilityToggle(title: "Keep display awake too", isOn: $controller.request.keepDisplay).toggleStyle(WorkspaceSwitchStyle())
             DisclosureGroup("Conditions & restoration", isExpanded: $showsConditions) {

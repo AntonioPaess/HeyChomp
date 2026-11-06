@@ -24,7 +24,7 @@ struct CompanionOnboardingView: View {
                 if viewModel.step > 0 { CompanionCharacter(size: 48, avatar: chosen, animates: moves) }
                 VStack(alignment: .leading, spacing: 5) {
                     Text(viewModel.step == 0 ? "A little companion. A quieter day." : viewModel.step == 1 ? "Meet your team." : "Bring your tools along.").font(.largeTitle.weight(.semibold))
-                    Text(viewModel.step == 0 ? "Meet Sieghart. A familiar face for your time and your tools." : viewModel.step == 1 ? "Sig leads. Five specialists bring their own personality." : "Choose what stays nearby. You can change this anytime.")
+                    Text(viewModel.step == 0 ? "Meet Chomp. A familiar face for your time and your tools." : viewModel.step == 1 ? "Chomp leads. Five specialists bring their own personality." : "Choose what stays nearby. You can change this anytime.")
                         .foregroundStyle(CompanionStyle.muted)
                 }
             }
@@ -38,7 +38,7 @@ struct CompanionOnboardingView: View {
                 HStack(spacing: 6) { ForEach(0..<3) { index in Capsule().fill(viewModel.step == index ? CompanionStyle.accent : CompanionStyle.edge.opacity(0.15)).frame(width: viewModel.step == index ? 20 : 6, height: 6) } }
                     .accessibilityLabel("Step \(viewModel.step + 1) of 3")
                 Spacer()
-                Button(viewModel.step == 0 ? "Meet the companions" : viewModel.step == 1 ? "Continue with Sig" : "Make yourself at home") {
+                Button(viewModel.step == 0 ? "Meet the companions" : viewModel.step == 1 ? "Continue with Chomp" : "Make yourself at home") {
                     if viewModel.step < 2 { viewModel.step += 1 }
                     else {
                         viewModel.complete(preferences: preferences, usage: usage, codex: codex, clipboard: clipboard)
@@ -62,13 +62,13 @@ struct CompanionOnboardingView: View {
                     Text("Ready when you are.").font(.title2.weight(.semibold))
                     Text("Keep a timer nearby, find something you copied, or speak a command. Your companion stays with you — without taking over your day.")
                         .font(.callout).foregroundStyle(CompanionStyle.muted).multilineTextAlignment(.center).frame(maxWidth: 470)
-                    Text("Sig is your main companion. Meet Rita, Ada, Gantt, Elinor and Toni.").font(.caption).foregroundStyle(CompanionStyle.muted)
+                    Text("Chomp is your main companion. Meet Rita, Ada, Gantt, Elinor and Toni.").font(.caption).foregroundStyle(CompanionStyle.muted)
                 }.frame(maxWidth: .infinity).padding(.vertical, 22).modifier(WorkspaceSurface(radius: 24))
             } else if viewModel.step == 1 {
                 Button(preferences.introductionLanguage == .english ? "Rehearse voice and selection" : "Ensaiar voz e seleção") { tutorial = true }.buttonStyle(CompanionButtonStyle(primary: true))
                 CompanionTeamGallery(animates: moves)
                 Text(chosen.detail).font(.callout).foregroundStyle(CompanionStyle.muted)
-                Text("Tap any companion to explore their movements. Sig stays with you in the island, voice and focus sessions.")
+                Text("Tap any companion to explore their movements. Chomp stays with you in the island, voice and focus sessions.")
                     .font(.caption).foregroundStyle(CompanionStyle.muted)
             } else {
                 VStack(alignment: .leading, spacing: 14) {

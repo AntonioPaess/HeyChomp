@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>Sieghart reconnects devices you chose to disconnect during sleep.</string>
+    <string>HeyChomp reconnects devices you chose to disconnect during sleep.</string>
     <key>NSAudioCaptureUsageDescription</key>
-    <string>Sieghart adjusts audio from apps you choose. Audio is processed locally and never saved.</string>
+    <string>HeyChomp adjusts audio from apps you choose. Audio is processed locally and never saved.</string>
     <key>NSCalendarsFullAccessUsageDescription</key>
-    <string>Sieghart shows your upcoming events in the calendar and Dynamic Island. Events stay on this Mac.</string>
+    <string>HeyChomp shows your upcoming events in the calendar and Dynamic Island. Events stay on this Mac.</string>
     <key>LSUIElement</key><true/>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Sieghart reads your Finder selection and destination only when you choose its file move tools.</string>
+    <string>HeyChomp reads your Finder selection and destination only when you choose its file move tools.</string>
 </dict></plist>

@@ -45,7 +45,7 @@ struct InputGuardsSettingsView: View {
             Toggle("Text expansion snippets", isOn: $controller.options.snippetsEnabled)
             if controller.options.snippetsEnabled {
                 HStack(spacing: 8) {
-                    TextField("Trigger (e.g. ;sig)", text: $newTrigger).textFieldStyle(.roundedBorder).frame(maxWidth: 140)
+                    TextField("Trigger (e.g. ;chomp)", text: $newTrigger).textFieldStyle(.roundedBorder).frame(maxWidth: 140)
                     TextField("Replacement text", text: $newReplacement).textFieldStyle(.roundedBorder)
                     Button("Add") {
                         if controller.addSnippet(trigger: newTrigger, replacement: newReplacement) {

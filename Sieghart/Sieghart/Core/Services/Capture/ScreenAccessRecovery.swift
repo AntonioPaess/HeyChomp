@@ -19,12 +19,13 @@ import SwiftUI
 struct ScreenPermissionHelp: View {
     let language: String
     var retry: (() -> Void)? = nil
+    var isRetrying = false
     private var en: Bool { language.hasPrefix("en") }
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(en ? "Allow this copy to read your screen" : "Permita que esta cópia leia sua tela", systemImage: "viewfinder")
                 .font(.headline)
-            Text(en ? "Enable Sieghart in Screen Recording. If macOS requests a restart, reopen this same copy." : "Ative o Sieghart em Gravação de Tela. Se o macOS pedir para reiniciar, reabra esta mesma cópia.")
+            Text(en ? "Enable HeyChomp in Screen Recording. If macOS requests a restart, reopen this same copy." : "Ative o HeyChomp em Gravação de Tela. Se o macOS pedir para reiniciar, reabra esta mesma cópia.")
                 .font(.callout).fixedSize(horizontal: false, vertical: true)
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) { settingsButton; locateButton; retryButton }
@@ -48,8 +49,9 @@ struct ScreenPermissionHelp: View {
     }
     @ViewBuilder private var retryButton: some View {
         if let retry {
-            Button(en ? "Try again" : "Tentar novamente", action: retry)
+            Button(en ? (isRetrying ? "Reading…" : "Try again") : (isRetrying ? "Lendo…" : "Tentar novamente"), action: retry)
                 .buttonStyle(CompanionButtonStyle(compact: true))
+                .disabled(isRetrying)
         }
     }
 

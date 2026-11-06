@@ -21,10 +21,10 @@ class ProjectSourceChecks(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         (self.root / "Tools").mkdir()
-        (self.root / "Sieghart.xcodeproj").mkdir()
-        self.project = self.root / "Sieghart.xcodeproj/project.pbxproj"
+        (self.root / "HeyChomp.xcodeproj").mkdir()
+        self.project = self.root / "HeyChomp.xcodeproj/project.pbxproj"
         shutil.copy2(ROOT / "Tools/update-project-sources.py", self.root / "Tools/update-project-sources.py")
-        shutil.copy2(ROOT / "Sieghart.xcodeproj/project.pbxproj", self.project)
+        shutil.copy2(ROOT / "HeyChomp.xcodeproj/project.pbxproj", self.project)
         for tree in ("Sieghart", "Tests/Support", "Tests/SwiftTesting", "Tests/TestPlans"):
             for path in (ROOT / tree).rglob("*"):
                 if path.is_file() and path.suffix in (".swift", ".xctestplan"):
@@ -48,13 +48,13 @@ class ProjectSourceChecks(unittest.TestCase):
         self.generate()
         self.assertEqual(first, self.project.read_bytes())
         project = read_project(self.project)
-        app = self.source_ids(project, "Sieghart")
-        tests = self.source_ids(project, "SieghartTests")
+        app = self.source_ids(project, "HeyChomp")
+        tests = self.source_ids(project, "HeyChompTests")
         objects = project["objects"]
         self.assertEqual(len(app), len(set(app)))
         self.assertEqual(len(tests), len(set(tests)))
         app_only = {objects[f]["path"] for f in set(app) - set(tests)}
-        self.assertEqual(app_only, {"SieghartApp.swift", "ResidentAppDelegate.swift"})
+        self.assertEqual(app_only, {"HeyChompApp.swift", "ResidentAppDelegate.swift"})
         self.assertTrue(set(tests) - set(app))
 
     def test_duplicate_basenames_use_distinct_paths_and_build_references(self):
@@ -67,7 +67,7 @@ class ProjectSourceChecks(unittest.TestCase):
         objects = project["objects"]
         refs = {k for k, v in objects.items() if v.get("path") == "MembershipProbe.swift"}
         self.assertEqual(len(refs), 2)
-        for name in ("Sieghart", "SieghartTests"):
+        for name in ("HeyChomp", "HeyChompTests"):
             self.assertTrue(refs.issubset(self.source_ids(project, name)))
         first = self.project.read_bytes()
         self.generate()

@@ -60,7 +60,7 @@ enum SiegDesktopToolAuthorization {
 
 @available(macOS 27.0, *) struct SiegDesktopTool: Tool {
     let name = "sieg_desktop"
-    let description = "Real Sieghart tools: app_info reads Mac/app facts; keep_awake/stop_keep_awake; weather; read_screen; draw; specialist_context (query: ada/rita/gantt/elinor/toni/sig) reads actual role-specific app data; ask_ada/ask_rita/ask_gantt/ask_elinor/ask_toni delegate; start_break and add_reminder execute explicit user requests; capabilities lists functions. Use separate calls for multiple requested operations. Do not guess state or claim success before a verified receipt."
+    let description = "Real HeyChomp tools: app_info reads Mac/app facts; keep_awake/stop_keep_awake; weather; read_screen; draw; specialist_context (query: ada/rita/gantt/elinor/toni/sig) reads actual role-specific app data; ask_ada/ask_rita/ask_gantt/ask_elinor/ask_toni delegate; start_break and add_reminder execute explicit user requests; capabilities lists functions. Use separate calls for multiple requested operations. Do not guess state or claim success before a verified receipt."
     let bridge: SiegDesktopBridge
     let originalRequest: String
     private let budget = SiegToolBudget()

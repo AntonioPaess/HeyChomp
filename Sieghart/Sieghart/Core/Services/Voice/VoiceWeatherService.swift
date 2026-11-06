@@ -14,7 +14,7 @@ struct VoiceWeatherQuery: Equatable, Sendable {
         let locationText = text.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: "?!.")))
             .replacingOccurrences(of: #"^(?:e|and|what about)\s+(?:(?:em|no|na|in|at)\s+)?"#, with: "", options: .regularExpression)
         let shortLocation = locationText.range(of: #"^[\p{L}][\p{L}\s,.’'\-]{1,100}$"#, options: .regularExpression) != nil && locationText.split(separator: " ").count <= 5
-        let isCourtesyOrAction = locationText.range(of: #"^(?:obrigad\w*|muito obrigad\w*|valeu|ok|sim|nao|yes|no|thanks|thank|pare|stop|cancele|cancel|sieg|siri|oi|ola|hello|me|eu|voce|i|you|pode|poderia|consegue|continu\w*|vamos|entao|o que|fa[cz]\w*|crie|desenh\w*|leia|traduz\w*|abre|abra|ativ\w*|expli\w*|explain\w*|draw\w*|sketch\w*|read|translate|tell|teach|open|enable|disable|como|qual|what|how)\b"#, options: .regularExpression) != nil
+        let isCourtesyOrAction = locationText.range(of: #"^(?:obrigad\w*|muito obrigad\w*|valeu|ok|sim|nao|yes|no|thanks|thank|pare|stop|cancele|cancel|sieg|sig|chomp|heychomp|siri|oi|ola|hello|me|eu|voce|i|you|pode|poderia|consegue|continu\w*|vamos|entao|o que|fa[cz]\w*|crie|desenh\w*|leia|traduz\w*|abre|abra|ativ\w*|expli\w*|explain\w*|draw\w*|sketch\w*|read|translate|tell|teach|open|enable|disable|como|qual|what|how)\b"#, options: .regularExpression) != nil
         if (expectsLocation || (previousCity != nil && locationContinuation)), shortLocation, !isCourtesyOrAction,
            text.range(of: #"\b(?:tempo|clima|weather|temperatura|temperature|chov\w*|rain\w*|frio|cold|quente|hot)\b"#, options: .regularExpression) == nil {
             return .init(city: locationText, future: false)

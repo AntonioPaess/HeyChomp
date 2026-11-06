@@ -93,7 +93,7 @@ actor FinderFileSelection: FinderSelecting {
         var error: NSDictionary?
         guard let script = NSAppleScript(source: source) else { throw FileToolError.unsupported }
         let result = script.executeAndReturnError(&error)
-        if error != nil { throw FileToolError.message("Allow Sieghart to control Finder in System Settings → Privacy & Security → Automation, or use Choose files.") }
+        if error != nil { throw FileToolError.message("Allow HeyChomp to control Finder in System Settings → Privacy & Security → Automation, or use Choose files.") }
         return result
     }
     func selection() throws -> [URL] {

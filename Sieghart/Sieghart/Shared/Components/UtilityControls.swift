@@ -39,7 +39,7 @@ struct UtilityToggle: View {
         HStack {
             Text(LocalizedStringKey(title)).font(.callout).fixedSize(horizontal: false, vertical: true)
             Spacer()
-            Toggle(title, isOn: $isOn).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
+            Toggle(LocalizedStringKey(title), isOn: $isOn).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
         }
     }
 }

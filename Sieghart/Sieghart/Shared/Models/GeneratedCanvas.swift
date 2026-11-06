@@ -52,7 +52,7 @@ enum ObservedClassDiagram {
     struct Member: Sendable { let identifier: String; let detail: String }
     static func make(title: String, summary: String, className: String, members: [Member], observed: String) throws -> GeneratedCanvas {
         let declaration = #"\b(?:class|actor|struct|protocol)\s+"# + NSRegularExpression.escapedPattern(for: className) + #"\b"#
-        guard !className.isEmpty, className.count <= 72, observed.range(of: declaration, options: .regularExpression) != nil, (2...7).contains(members.count),
+        guard !className.isEmpty, className.count <= 72, observed.range(of: declaration, options: .regularExpression) != nil, (1...7).contains(members.count),
               Set(members.map(\.identifier)).count == members.count,
               members.allSatisfy({ !$0.identifier.isEmpty && $0.identifier.count <= 72 && observed.contains($0.identifier) && $0.detail.count <= 120 })
         else { throw SpatialContentError.invalidContent }
@@ -69,8 +69,7 @@ struct CanvasRequest: Equatable, Sendable {
     let wantsCode: Bool
     var screenContext: String? = nil
     var needsScreenContext: Bool {
-        let text = prompt.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .init(identifier: "en_US"))
-        return text.range(of: #"\b(?:(?:essa|esta|dessa|desta|esse|este|desse|deste)\s+(?:classe|codigo|funcao|metodo|trecho|componente)|this\s+(?:class|code|function|method)|(?:classe|codigo|funcao|metodo)\s+(?:que\s+(?:esta|aparece)|visivel|abert[ao]|selecionad\w*))\b"#, options: .regularExpression) != nil
+        ScreenSemanticInspector.referencesVisibleContent(prompt)
     }
     var authorPrompt: String {
         guard let screenContext else { return prompt }
@@ -84,13 +83,25 @@ struct CanvasRequest: Equatable, Sendable {
         prompt.range(of: #"\b(?:tela|screen|canvas)\b"#, options: [.regularExpression, .caseInsensitive]) != nil
     }
     static func parse(_ prompt: String) -> Self? {
-        let text = SearchVoiceParser.requestText(prompt)
+        var text = SearchVoiceParser.requestText(prompt)
+        if let persona = CompanionSpecialistInstructions.requested(in: text) {
+            text = text.replacingOccurrences(of: "^" + persona.rawValue + #"[, :]+"#, with: "", options: [.regularExpression, .caseInsensitive])
+        }
         guard !SearchVoiceParser.hasSearchIntent(text), !SearchVoiceParser.hasNegatedIntent(text) else { return nil }
         let normalized = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "pt_BR"))
-        guard normalized.range(of: #"^(?:como|how|o que|what|explique como|explain how)\b"#, options: .regularExpression) == nil else { return nil }
-        let writes = normalized.range(of: #"\b(?:escrev\w*|mostr\w*|exib\w*|coloc\w*|crie|criar|faca|faz|monte|monta|gere|gerar|write|show|display|create|draw|desenh\w*)\b"#, options: .regularExpression) != nil
+        var actionText = normalized
+        if normalized.range(of: #"^(?:como|how|o que|what|expli(?:ca|que) como|explain how)\b"#, options: .regularExpression) != nil {
+            // A question about drawing is not a drawing command. An explicit
+            // second request still counts: “explain how X works and draw it”.
+            let explains = normalized.range(of: #"^(?:expli(?:ca|que) como|explain how)\b"#, options: .regularExpression) != nil
+            let boundary = explains ? #"(?:\b(?:e|and)\s+|[;.!?]\s*)"# : #"[;.!?]\s*"#
+            let command = boundary + #"(?:(?:por favor|please|depois|then|em seguida)[, ]+)*(?:faca|faz|crie|cria|monte|monta|gere|gera|escreva|escreve|mostre|mostra|desenhe|desenha|ilustre|ilustra|draw|sketch|create|make|write|show|display)\b"#
+            guard let clause = normalized.range(of: command, options: .regularExpression) else { return nil }
+            actionText = String(normalized[clause.lowerBound...])
+        }
+        let writes = actionText.range(of: #"\b(?:escrev\w*|mostr\w*|exib\w*|coloc\w*|crie|cria|criar|faca|faz|monte|monta|gere|gera|gerar|write|show|display|create|make|draw|desenh\w*)\b"#, options: .regularExpression) != nil
         let code = normalized.range(of: #"\b(?:codigo|code|algoritmo|algorithm|funcao|function|programa)\b"#, options: .regularExpression) != nil
-        let draws = normalized.range(of: #"\b(?:desenh\w*|ilustr\w*|rabis\w*|draw|sketch)\b"#, options: .regularExpression) != nil
+        let draws = actionText.range(of: #"\b(?:desenh\w*|ilustr\w*|rabis\w*|draw|sketch)\b"#, options: .regularExpression) != nil
         let diagram = normalized.range(of: #"\b(?:diagrama|diagram|fluxograma|flowchart)\b"#, options: .regularExpression) != nil
         guard (writes && code) || draws || (writes && diagram) else { return nil }
         return .init(prompt: prompt, wantsCode: writes && code && !diagram)

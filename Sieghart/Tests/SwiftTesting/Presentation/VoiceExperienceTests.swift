@@ -39,9 +39,11 @@ private actor NeuralAudioFixture: NeuralSpeechProviding {
 
 @MainActor private final class MemoryAwakeBackendForVoice: AwakeBackend {
     var acquisitions = 0
+    private var heldDisplay: Bool?
     func context() -> AwakeContext { .init(onAC: true) }
-    func acquire(display: Bool) throws -> UInt32 { acquisitions += 1; return 99 }
-    func release(_ token: UInt32) {}
+    func acquire(display: Bool) throws -> UInt32 { acquisitions += 1; heldDisplay = display; return 99 }
+    func release(_ token: UInt32) { heldDisplay = nil }
+    func isHeld(_ token: UInt32, display: Bool) -> Bool { token == 99 && heldDisplay == display }
 }
 
 extension LogicTests {
@@ -342,8 +344,34 @@ extension MacContractsTests {
             activation.receiveHotkey(.voice, eventTime: 101.01)
             // Releasing capture ends its busy state before the coordinator's
             // response task begins. Await both sides of that handoff.
-            try await PresentationWait.until { !activation.isVoiceBusy && generator.requests.count == 1 }
+            do { try await PresentationWait.until { !activation.isVoiceBusy && generator.requests.count == 1 && f.notch.spatialAssistant.lastStatus == generator.reply } }
+            catch {
+                Issue.record("Held turn ended with busy=\(activation.isVoiceBusy), model requests=\(generator.requests.count), status=\(activation.voiceStatus), coordinator=\(f.notch.spatialAssistant.lastStatus)")
+                throw error
+            }
             #expect(generator.requests.count == 1 && f.capture.finishCount == 1)
+            #expect(activation.voiceStatus != "Voice is off")
+        }
+
+        @Test("G03.03 · A valid held shortcut interrupts a pending answer and retains its new gesture")
+        func validShortcutInterruptsAnswer() async throws {
+            let generator = PresentationVoiceGenerator(); generator.holdsReplies = true
+            let f = try PresentationFixture(voiceGenerator: generator)
+            defer { generator.finishAll(); f.cleanup() }
+            let activation = try f.activation()
+            activation.executeVoiceCommand("Explique pi")
+            try await PresentationWait.until { generator.requests.count == 1 }
+            activation.pressVoiceShortcut(at: 100)
+            try await PresentationWait.until { activation.isListening }
+            f.recognize("Desenha um círculo na tela", final: true)
+            #expect(activation.isListening && generator.requests.count == 1)
+            activation.releaseVoiceShortcut(at: 101)
+            try await PresentationWait.until { !activation.isVoiceBusy && f.notch.spatialAssistant.overlay.activeDrawing?.shape == .circle }
+            let drawingID = f.notch.spatialAssistant.overlay.activeDrawing?.id
+            let status = f.notch.spatialAssistant.lastStatus
+            generator.finish(0, reply: "Obsolete explanation")
+            try await PresentationWait.stays({ f.notch.spatialAssistant.overlay.activeDrawing?.id == drawingID && f.notch.spatialAssistant.lastStatus == status }, for: .milliseconds(50))
+            #expect(!activation.isListening && !activation.isFinalizing && f.capture.finishCount == 1)
         }
 
         @Test("G30.03 · Actual image pixels are recognized locally; capture failures do not invent screen text")
@@ -360,7 +388,7 @@ extension MacContractsTests {
             let denied = ScreenSemanticInspector(queriesSystemAX: false, capture: { _ in throw ScreenInspectionFailure.permission })
             let failure = await denied.inspectAtCursor(query: "Read my screen")
             #expect(failure.failure == .permission && failure.ocrText.isEmpty)
-            #expect(failure.explanation(language: "en-US").contains("Allow Sieghart"))
+            #expect(failure.explanation(language: "en-US").contains("Allow HeyChomp"))
         }
 
         @Test("G30.03 · Cancelled screen capture cannot reopen its annotation or speak an old result")

@@ -176,8 +176,8 @@ enum ScreenControlRequest {
         case .scroll(let down): guard control.actions.contains(down ? "AXScrollDownByPage" : "AXScrollUpByPage") else { throw ScreenControlFailure.refused }; mutation = .scroll(id,down:down)
         case .write(let text,let label): guard same(label,control.title),control.writable else { throw ScreenControlFailure.refused }; mutation = .write(id,text:text)
         }
-        if case .write = mutation { pendingReview = .init(control:control,mutation:mutation,summary:original); return "Review required in Sieg before writing. Nothing was changed." }
-        if ScreenControlRequest.requiresReview(control.title) { pendingReview = .init(control:control,mutation:mutation,summary:original); return "Review required in Sieg. No action was executed." }
+        if case .write = mutation { pendingReview = .init(control:control,mutation:mutation,summary:original); return "Review required in HeyChomp before writing. Nothing was changed." }
+        if ScreenControlRequest.requiresReview(control.title) { pendingReview = .init(control:control,mutation:mutation,summary:original); return "Review required in HeyChomp. No action was executed." }
         let receipt = try backend.perform(mutation)
         controls = []
         return receipt

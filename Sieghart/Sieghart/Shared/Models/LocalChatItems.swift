@@ -1,5 +1,12 @@
 import Foundation
 
+/// Ownership follows the async request through its providers. The selected
+/// conversation alone cannot identify which request owns a spatial effect.
+enum LocalChatExecutionContext {
+    struct Owner: Sendable { let chatID: String; let generationID: UUID }
+    @TaskLocal static var owner: Owner?
+}
+
 enum LocalChatReadiness: Equatable, Sendable {
     case available
     case unavailable(String)
@@ -18,7 +25,7 @@ enum LocalChatReadiness: Equatable, Sendable {
 enum LocalChatPersona: String, Codable, CaseIterable, Sendable {
     case ada, sig, rita, gantt, elinor, toni
 
-    var title: String { self == .sig ? "Sieg" : rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
+    var title: String { self == .sig ? "Chomp" : rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
     var avatar: CompanionAvatar { CompanionAvatar(rawValue: rawValue) ?? .sig }
 }
 
