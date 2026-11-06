@@ -14,7 +14,7 @@ struct CompanionMotionStudio: View {
             HStack {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Meet your team").font(.title2.weight(.semibold))
-                    Text("Sig leads. Every specialist has a character of their own.").font(.caption).foregroundStyle(CompanionStyle.muted)
+                    Text("Chomp leads. Every specialist has a character of their own.").font(.caption).foregroundStyle(CompanionStyle.muted)
                 }
                 Spacer()
                 Button("Done") { if let close { close() } else { dismiss() } }.buttonStyle(CompanionButtonStyle(compact: true))

@@ -6,7 +6,7 @@ enum CompanionAvatar: String, CaseIterable, Identifiable, Sendable {
     case sig, rita, ada, gantt, elinor, toni
     var id: String { rawValue }
     static var specialists: [Self] { allCases.filter { $0 != .sig } }
-    var name: String { rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
+    var name: String { self == .sig ? "Chomp" : rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
     var subtitle: String {
         switch self {
         case .sig: "Your main companion"

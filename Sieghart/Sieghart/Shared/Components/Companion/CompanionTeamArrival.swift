@@ -190,7 +190,7 @@ struct CompanionTeamArrival: View {
                 withAnimation(.easeInOut(duration: 0.55)) { stageTime = max(boundary, Date().timeIntervalSince(origin)) }
             }
         }.accessibilityElement(children: .ignore)
-            .accessibilityLabel("Sig greets you and introduces the Companions. Meet Rita, Ada, Gantt, Elinor and Toni. Sig returns and introduces himself as your orchestrator.")
+            .accessibilityLabel("Chomp greets you and introduces the Companions. Meet Rita, Ada, Gantt, Elinor and Toni. Chomp returns and introduces himself as your orchestrator.")
     }
 }
 

@@ -8,7 +8,7 @@ struct ShortcutRecorder: View {
     private var recording: Bool { activation.recordingShortcut == action }
     var body: some View {
         HStack(spacing: 8) {
-            Button(recording ? "Press shortcut…" : activation.shortcut(for: action)?.label ?? "Record shortcut") {
+            Button(LocalizedStringKey(recording ? "Press shortcut…" : activation.shortcut(for: action)?.label ?? "Record shortcut")) {
                 activation.recordingShortcut = recording ? nil : action
             }
             .buttonStyle(CompanionButtonStyle())

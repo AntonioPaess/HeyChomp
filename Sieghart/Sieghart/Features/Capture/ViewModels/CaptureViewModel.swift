@@ -111,7 +111,7 @@ import UniformTypeIdentifiers
     } }
     func saveImage() {
         guard image != nil, !isBusy else { return }
-        let panel = NSSavePanel(); panel.allowedContentTypes = [.png]; panel.nameFieldStringValue = "Sieghart Capture.png"
+        let panel = NSSavePanel(); panel.allowedContentTypes = [.png]; panel.nameFieldStringValue = "HeyChomp Capture.png"
         panel.begin { [weak self] response in
             guard response == .OK, let url = panel.url else { return }
             self?.run {

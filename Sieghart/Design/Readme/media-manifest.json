@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-24",
+  "scope": "Silent README derivatives of existing integrated runtime previews; not new app recordings or hardware validation.",
+  "media": [
+    {
+      "file": "sieg-greeting.gif",
+      "source": "Sieghart/Design/Validation/team-runtime/hello-final.mp4",
+      "source_sha256": "d24a4d0b0cc43699890d9398339430efb7445489d36f66dc4ea00f639bbfb063",
+      "sha256": "12fdd270c65519f5511ae35393f9aa4261fdd790fdfe53ec8eacb7434a23d798",
+      "bytes": 1101005,
+      "start_seconds": 2,
+      "duration_seconds": 6,
+      "fps": 18,
+      "width": 900,
+      "audio": false,
+      "method": "ffmpeg palettegen/paletteuse, 128 colors; bayer dithering; loop"
+    },
+    {
+      "file": "sieg-weather.gif",
+      "source": "Sieghart/Design/Workflow/evidence/sieg-weather-finish-2026-10-22/weather-finish-motion.mp4",
+      "source_sha256": "545c9450211912fab4c5effd96fb24ec5c92493cfce75a8bd138dfca2e41c789",
+      "sha256": "8350e1ef880fe532f1174b483cf432e69ff6996be40dcf4a0e2234610a20120f",
+      "bytes": 3580748,
+      "start_seconds": 0,
+      "duration_seconds": 7,
+      "fps": 10,
+      "width": 900,
+      "audio": false,
+      "method": "ffmpeg palettegen/paletteuse, 128 colors; bayer dithering; loop"
+    }
+  ]
+}

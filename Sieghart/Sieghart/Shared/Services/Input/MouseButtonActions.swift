@@ -106,7 +106,7 @@ enum MouseActionResult: Equatable, Sendable {
               let app = NSWorkspace.shared.frontmostApplication, !app.isTerminated,
               app.activationPolicy == .regular, app.processIdentifier != ProcessInfo.processInfo.processIdentifier,
               let date = app.launchDate, let bundle = app.bundleIdentifier, let window = frontWindow(of: app.processIdentifier) else {
-            return .unavailable("Choose an app outside Sieghart. Button actions pause during Secure Input.")
+            return .unavailable("Choose an app outside HeyChomp. Button actions pause during Secure Input.")
         }
         guard action.supports(bundleID: bundle) else {
             return .unavailable("Back and Forward support Finder, Safari and Chrome. This app keeps the mouse default.")

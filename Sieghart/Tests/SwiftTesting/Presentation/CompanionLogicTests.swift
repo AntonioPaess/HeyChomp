@@ -82,6 +82,7 @@ extension LogicTests {
         @Test("G05.01 · Fixed six identities, five specialists and bilingual introduction") func identities() {
             #expect(CompanionAvatar.allCases == [.sig, .rita, .ada, .gantt, .elinor, .toni])
             #expect(CompanionAvatar.specialists.count == 5 && !CompanionAvatar.specialists.contains(.sig))
+            #expect(CompanionAvatar.sig.name == "Chomp" && CompanionAvatar.sig.id == "sig")
             #expect(CompanionIntroductionCopy.forMember(.rita).headline == "Breathe with me.")
             #expect(CompanionIntroductionCopy.forMember(.rita, language: .portuguese).headline == "Respira comigo.")
             let opening = CompanionIntroductionCopy.forIntroduction(at: CompanionTeamFormation.dockTime)

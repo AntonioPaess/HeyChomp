@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 import Testing
 
 extension MacContractsTests {
@@ -166,6 +167,35 @@ extension MacContractsTests {
         }
     }
     @Suite(.tags(.agentRoom, .nativeView)) @MainActor struct AgentComposerTests {
+        @Test("G17.04 — native composer keeps its draft, localized label and contrast through presentation changes")
+        func presentationRefresh() async throws {
+            var draft = "Visible draft", sends = 0
+            let binding = Binding(get: { draft }, set: { draft = $0 })
+            let host = NSHostingView(rootView: AgentChatComposer(text: binding, placeholder: "Pergunte ao Chomp…", submit: { sends += 1 }))
+            let panel = NSPanel(contentRect: NSRect(x: -5000, y: -5000, width: 360, height: 44), styleMask: [.borderless], backing: .buffered, defer: false)
+            panel.isReleasedWhenClosed = false; panel.contentView = host
+            defer { panel.contentView = nil; panel.close() }
+            host.frame = NSRect(x: 0, y: 0, width: 360, height: 44); host.layoutSubtreeIfNeeded()
+            func editor(in view: NSView) -> AgentChatEditor? {
+                if let field = view as? AgentChatEditor { return field }
+                return view.subviews.lazy.compactMap { editor(in: $0) }.first
+            }
+            try await IntegrationWait.until { editor(in: host)?.accessibilityLabel() == "Pergunte ao Chomp…" }
+            let field = try #require(editor(in: host))
+            #expect(field.placeholderString == "Pergunte ao Chomp…" && field.stringValue == draft)
+            host.rootView = AgentChatComposer(text: binding, placeholder: "Ask Ada…", submit: { sends += 1 })
+            try await IntegrationWait.until { field.accessibilityLabel() == "Ask Ada…" }
+            #expect(field.placeholderString == "Ask Ada…" && field.stringValue == "Visible draft" && sends == 0)
+            for (name, lightText) in [(NSAppearance.Name.aqua, false), (.darkAqua, true)] {
+                let appearance = try #require(NSAppearance(named: name)); field.appearance = appearance
+                var resolved: NSColor?
+                appearance.performAsCurrentDrawingAppearance { resolved = field.textColor?.usingColorSpace(.sRGB) }
+                let color = try #require(resolved)
+                let luminance = color.redComponent * 0.2126 + color.greenComponent * 0.7152 + color.blueComponent * 0.0722
+                #expect(lightText ? luminance > 0.6 : luminance < 0.4)
+            }
+        }
+
         @Test("G17.04 — texto alterado atualiza draft e envia uma vez, novo contexto limpa")
         func composer() {
             let editor = AgentChatEditor(); var draft = "", sends = 0

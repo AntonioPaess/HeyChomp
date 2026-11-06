@@ -28,7 +28,7 @@ import Foundation
         guard let executable = executable() else { throw CodingAgentError.unavailable("Install Codex or its CLI, sign in there, then connect.") }
         try rpc.start(executable, arguments: ["app-server", "--listen", "stdio://"])
         do {
-            _ = try await rpc.request("initialize", params: .object(["clientInfo": .object(["name": .string("sieghart_ada"), "title": .string("Sieghart · Ada"), "version": .string("0.1.0")]), "capabilities": .object(["experimentalApi": .bool(true)])]))
+            _ = try await rpc.request("initialize", params: .object(["clientInfo": .object(["name": .string("sieghart_ada"), "title": .string("HeyChomp · Ada"), "version": .string("0.1.0")]), "capabilities": .object(["experimentalApi": .bool(true)])]))
             try rpc.send(.object(["method": .string("initialized"), "params": .object([:])]))
             let account = try await rpc.request("account/read", params: .object(["refreshToken": .bool(false)]))
             guard account["account"] != .null else { throw CodingAgentError.unavailable("Sign in through Codex or codex login, then reconnect Ada.") }
@@ -292,7 +292,7 @@ import Foundation
         var current = known[id] ?? CodingSession(provider: provider, providerID: rawID, title: "Codex session", directory: "")
         if packet["id"] != .null {
             guard ["item/tool/requestUserInput", "item/commandExecution/requestApproval", "item/fileChange/requestApproval", "item/permissions/requestApproval"].contains(method) else {
-                try? rpc.send(.object(["id": packet["id"], "error": .object(["code": .number(-32601), "message": .string("This request is not supported by Sieghart.")])]))
+                try? rpc.send(.object(["id": packet["id"], "error": .object(["code": .number(-32601), "message": .string("This request is not supported by HeyChomp.")])]))
                 current.state = .blocked; current.detail = "This tool needs a compatible Codex client."; merge(current); return
             }
             let approvalID = UUID().uuidString

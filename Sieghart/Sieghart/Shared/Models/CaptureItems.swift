@@ -26,7 +26,7 @@ enum CaptureToolError: Error, LocalizedError, Equatable {
     case access, cancelled, invalidImage, tooLarge, failed
     var errorDescription: String? {
         switch self {
-        case .access: "Allow Sieghart in System Settings → Privacy & Security → Screen & System Audio Recording, then try again."
+        case .access: "Allow HeyChomp in System Settings → Privacy & Security → Screen & System Audio Recording, then try again."
         case .cancelled: "Capture cancelled."
         case .invalidImage: "This image could not be read."
         case .tooLarge: "Choose a smaller region or image (up to 24 megapixels and 20 MB)."

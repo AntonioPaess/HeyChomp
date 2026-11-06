@@ -26,6 +26,7 @@ private final class NoUtilitySensor: AccelerometerProviding {
     func context() -> AwakeContext { AwakeContext() }
     func acquire(display: Bool) throws -> UInt32 { fatalError("No assertion in previews") }
     func release(_ token: UInt32) { fatalError("No assertion in previews") }
+    func isHeld(_ token: UInt32, display: Bool) -> Bool { fatalError("No assertion in previews") }
 }
 @MainActor private final class PreviewDisplay: DisplayPowerBackend {
     func displays() -> [DisplayInfo] { [DisplayInfo(id: 1, name: "Built-in Liquid Retina", builtIn: true, brightness: 0.65, hdrHeadroom: 2)] }

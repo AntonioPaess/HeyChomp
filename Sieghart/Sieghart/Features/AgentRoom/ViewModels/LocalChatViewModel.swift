@@ -1,6 +1,12 @@
 import Combine
 import Foundation
 
+struct LocalChatMessageFocus: Equatable {
+    let chatID: String
+    let messageID: String
+    let token = UUID()
+}
+
 @MainActor final class LocalChatViewModel: ObservableObject {
     @Published private(set) var conversations: [LocalChatConversation] = []
     @Published private(set) var selectedID: String?
@@ -10,11 +16,17 @@ import Foundation
     let github: AdaGitHubViewModel
     @Published private(set) var loading = false
     @Published private(set) var generatingID: String?
+    @Published private(set) var generationStartedAt: Date?
     @Published private(set) var states: [String: CodingAgentState] = [:]
     @Published private(set) var submitted: [String: UUID] = [:]
     @Published private(set) var failures: [String: UUID] = [:]
+    @Published private(set) var attachments: [String: [CompanionDocument]] = [:]
+    private let documentEngine: any DocumentAnswering = AppleDocumentAnswerService()
     @Published var drafts: [String: String] = [:]
-    @Published var notice: String?
+    @Published var notice: String? { didSet { noticeDetail = nil } }
+    @Published private(set) var noticeDetail: String?
+    @Published private(set) var messageFocus: LocalChatMessageFocus?
+    var artifactLibrary: CompanionArtifactLibrary?
     private let generator: any LocalChatGenerating
     private let store: any LocalChatStoring
     private let defaults: UserDefaults?
@@ -22,13 +34,23 @@ import Foundation
     private var canPersist = false
     private var preparation: Task<Void, Never>?
     private var generation: Task<Void, Never>?
+    private var deadlineTask: Task<Void, Never>?
+    private let responseTimeout: Duration
+    private var pendingTurn: (chat: String, user: LocalChatMessage, reply: LocalChatMessage, previousReply: LocalChatMessage?)?
+    var awakeStatusProvider: (@MainActor () -> KeepAwakeViewModel?)?
+    var screenRetryHandler: (@MainActor (String, String, ScreenSelection?) async -> String?)?
+    var spatialCancellationHandler: (@MainActor (String, UUID) -> Void)?
+    var generationIdentifier: UUID? { runID }
+    private var screenSelections: [String: ScreenSelection] = [:]
     private var runID: UUID?
     private var snapshotTask: Task<Void, Never>?
     private var pendingSnapshot: (chat: String, message: String, text: String)?
 
     init(generator: any LocalChatGenerating, store: any LocalChatStoring = MemoryLocalChatStore(),
-         configuration: AppleChatConfiguration = .init(), github: AdaGitHubViewModel? = nil, defaults: UserDefaults? = nil) {
+         configuration: AppleChatConfiguration = .init(), github: AdaGitHubViewModel? = nil, defaults: UserDefaults? = nil,
+         responseTimeout: Duration = .seconds(45)) {
         self.generator = generator; self.store = store
+        self.responseTimeout = responseTimeout
         self.github = github ?? AdaGitHubViewModel(); self.defaults = defaults
         let mode = defaults?.string(forKey: "ada.apple.mode").flatMap(AppleChatMode.init(rawValue:)) ?? configuration.mode
         let reasoning = defaults?.string(forKey: "ada.apple.reasoning").flatMap(AppleChatReasoning.init(rawValue:)) ?? configuration.reasoning
@@ -58,9 +80,17 @@ import Foundation
             guard let self else { return }
             do {
                 conversations = try await store.load(); canPersist = true
+                // Older builds put all requests in Ada's room. Preserve those
+                // histories while correcting chats started with a Sieg utility.
+                for index in conversations.indices where conversations[index].persona == .ada {
+                    let questions = conversations[index].messages.filter { $0.role == .user }
+                    if let first = questions.first, CompanionConversationRouting.isGeneralUtility(first.text) {
+                        conversations[index].persona = .sig
+                    }
+                }
                 selectedID = conversations.first?.id
             } catch {
-                notice = "Local history could not be read. The original file is preserved. " + error.localizedDescription
+                showNotice("Local history could not be read. The original file is preserved.", detail: error.localizedDescription)
             }
             loaded = true; loading = false
         }
@@ -78,68 +108,252 @@ import Foundation
         defaults?.set(next.reasoning.rawValue, forKey: "ada.apple.reasoning")
         readiness = generator.readiness; modelName = generator.modelName
     }
-    @discardableResult func create(_ persona: LocalChatPersona = .ada) async -> String? {
+    @discardableResult func create(_ persona: LocalChatPersona = .sig) async -> String? {
         await prepare()
         guard conversations.count < 20 else { notice = "You have 20 local chats. Delete a chat before creating another."; return nil }
         let chat = LocalChatConversation(persona: persona, title: "Chat with " + persona.title)
         conversations.insert(chat, at: 0); selectedID = chat.id; states[chat.id] = .ready
         await persist(); return chat.id
     }
-    func select(_ id: String) { if conversations.contains(where: { $0.id == id }) { selectedID = id } }
+    func select(_ id: String) { if conversations.contains(where: { $0.id == id }) { messageFocus = nil; selectedID = id } }
+    func canSaveReply(_ messageID: String, in chatID: String) -> Bool {
+        guard artifactLibrary != nil, let conversation = conversations.first(where: { $0.id == chatID }),
+              let message = conversation.messages.first(where: { $0.id == messageID }), message.role == .assistant,
+              !(conversation.messages.last?.id == messageID && (generatingID == chatID || states[chatID] == .failed || states[chatID] == .interrupted)) else { return false }
+        return !CompanionArtifactLibrary.replyText(message.text).isEmpty
+    }
+    @discardableResult func saveReply(_ messageID: String, in chatID: String, codeBlock: Int? = nil) -> CompanionArtifact? {
+        guard canSaveReply(messageID, in: chatID), let library = artifactLibrary,
+              let conversation = conversations.first(where: { $0.id == chatID }),
+              let message = conversation.messages.first(where: { $0.id == messageID }) else { return nil }
+        let result = library.saveReply(message, in: conversation, codeBlock: codeBlock)
+        notice = result != nil ? "Saved to your library." : (library.issue ?? "This reply could not be saved.")
+        return result
+    }
+    @discardableResult func revealSource(of artifact: CompanionArtifact) -> Bool {
+        guard let chatID = artifact.sourceChatID, let messageID = artifact.sourceMessageID,
+              let conversation = conversations.first(where: { $0.id == chatID }),
+              conversation.messages.contains(where: { $0.id == messageID && $0.role == .assistant }) else {
+            notice = "The original chat is no longer available. Your saved result is preserved."
+            return false
+        }
+        selectedID = chatID; messageFocus = .init(chatID: chatID, messageID: messageID)
+        return true
+    }
+    func matchingConversations(_ query: String = "", archived: Bool = false, persona: LocalChatPersona? = nil) -> [LocalChatConversation] {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return conversations.filter { chat in
+            (chat.archived == true) == archived && (persona == nil || chat.persona == persona) &&
+            (term.isEmpty || ([chat.title] + chat.messages.map(\.text)).contains { $0.localizedStandardContains(term) })
+        }.sorted { a, b in
+            if (a.pinned == true) != (b.pinned == true) { return a.pinned == true }
+            return a.updatedAt > b.updatedAt
+        }
+    }
+    func setPinned(_ id: String, _ value: Bool) async {
+        guard let index = conversations.firstIndex(where: { $0.id == id }) else { return }
+        conversations[index].pinned = value; await persist()
+    }
+    func setArchived(_ id: String, _ value: Bool) async {
+        guard generatingID != id, let index = conversations.firstIndex(where: { $0.id == id }) else { return }
+        conversations[index].archived = value; await persist()
+    }
+    @discardableResult func openPersona(_ persona: LocalChatPersona) async -> String? {
+        await prepare()
+        if let chat = matchingConversations(persona: persona).first { select(chat.id); return chat.id }
+        return await create(persona)
+    }
     func delete(_ id: String) async {
         if generatingID == id { stop() }
-        conversations.removeAll { $0.id == id }; drafts[id] = nil; submitted[id] = nil; failures[id] = nil; states[id] = nil
+        conversations.removeAll { $0.id == id }; drafts[id] = nil; attachments[id] = nil; submitted[id] = nil; failures[id] = nil; states[id] = nil
+        screenSelections[id] = nil
         if selectedID == id { selectedID = conversations.first?.id }
         await persist()
     }
-    func send(to id: String) {
-        guard id == selectedID, let index = conversations.firstIndex(where: { $0.id == id }) else { return }
+    func attach(_ url: URL, to id: String) async {
+        guard generatingID != id, conversations.contains(where: { $0.id == id }), (attachments[id]?.count ?? 0) < 2 else { return }
+        do {
+            let document = try await Task.detached(priority: .userInitiated) { try CompanionDocument.read(url) }.value
+            guard conversations.contains(where: { $0.id == id }), (attachments[id]?.count ?? 0) < 2 else { return }
+            attachments[id, default: []].append(document)
+            SpatialAssistantCoordinator.activeInstance?.artifacts.saveDocument(document)
+        } catch { showNotice("This document could not be read. Try a different file.", detail: error.localizedDescription) }
+    }
+    func removeAttachment(at index: Int, from id: String) {
+        guard attachments[id]?.indices.contains(index) == true else { return }
+        attachments[id]?.remove(at: index)
+    }
+    func rememberScreenSelection(_ selection: ScreenSelection?, for id: String) {
+        guard conversations.contains(where: { $0.id == id }) else { return }
+        screenSelections[id] = selection
+    }
+    func retryScreenRequest(in id: String) {
+        guard generatingID == nil, let chat = conversations.first(where: { $0.id == id }),
+              let reply = chat.messages.last, reply.role == .assistant,
+              [false, true].contains(where: { reply.text == ScreenInspectionFailure.permission.message(english: $0) }),
+              let question = chat.messages.last(where: { $0.role == .user })?.text,
+              ScreenSemanticInspector.isScreenInspectionIntent(question) || CanvasRequest.parse(question) != nil else { return }
+        if screenRetryHandler == nil { SpatialAssistantCoordinator.activeInstance?.registerResearchChat(self, id: id) }
+        guard screenRetryHandler != nil else { notice = "Screen reading could not be resumed. Ask again."; return }
+        send(to: id, screenRetry: question)
+    }
+    func send(to id: String) { send(to: id, screenRetry: nil) }
+    private func send(to id: String, screenRetry: String?) {
+        guard screenRetry != nil || id == selectedID, let index = conversations.firstIndex(where: { $0.id == id }) else { return }
         readiness = generator.readiness
-        guard readiness.available else { notice = readiness.reason; return }
+        guard readiness.available || screenRetry != nil else { notice = readiness.reason; return }
         guard generatingID == nil else { notice = LocalChatError.busy.localizedDescription; return }
-        let text = (drafts[id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = (screenRetry ?? drafts[id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         guard text.utf8.count <= LocalChatContext.maximumPromptBytes else { notice = LocalChatError.inputTooLong.localizedDescription; return }
-        guard conversations[index].messages.count <= 58 else { notice = "This chat has reached its local history limit. Start a new chat to continue."; return }
-        let user = LocalChatMessage(role: .user, text: text), reply = LocalChatMessage(role: .assistant, text: "")
-        conversations[index].messages.append(user)
+        guard screenRetry != nil || conversations[index].messages.count <= 58 else { notice = "This chat has reached its local history limit. Start a new chat to continue."; return }
+        let destination = screenRetry == nil ? CompanionConversationRouting.destination(for: text, current: conversations[index].persona, history: conversations[index].messages) : conversations[index].persona
+        if destination != conversations[index].persona {
+            route(text, from: id, to: destination)
+            return
+        }
+        let documents = screenRetry == nil ? attachments[id] ?? [] : []
+        let previousReply = screenRetry == nil ? nil : conversations[index].messages.last
+        var user = LocalChatMessage(role: .user, text: text)
+        if screenRetry != nil {
+            guard let originalUser = conversations[index].messages.last(where: { $0.role == .user }) else { return }
+            user = originalUser
+        }
+        if screenRetry == nil { user.attachedFiles = documents.isEmpty ? nil : documents.map(\.name) }
+        let reply = LocalChatMessage(role: .assistant, text: "")
+        SpatialAssistantCoordinator.activeInstance?.registerResearchChat(self, id: id)
+        let retryHandler = screenRetryHandler, retrySelection = screenSelections[id]
+        if screenRetry == nil { conversations[index].messages.append(user) }
+        else { conversations[index].messages.removeLast() }
         let history = conversations[index].messages, persona = conversations[index].persona
         conversations[index].messages.append(reply); conversations[index].updatedAt = .now
-        if history.count == 1 { conversations[index].title = String(text.prefix(70)) }
-        drafts[id] = ""; notice = nil; submitted[id] = UUID(); states[id] = .working; generatingID = id
+        if screenRetry == nil {
+            if history.count == 1 { conversations[index].title = String(text.prefix(70)) }
+            drafts[id] = ""; submitted[id] = UUID()
+        }
+        notice = nil; states[id] = .working; generatingID = id
         let run = UUID(); runID = run
+        generationStartedAt = .now; pendingTurn = (id, user, reply, previousReply)
+        deadlineTask?.cancel()
+        deadlineTask = Task { [weak self] in
+            guard let self else { return }
+            do { try await Task.sleep(for: responseTimeout) } catch { return }
+            guard runID == run else { return }
+            abortGeneration(timedOut: true)
+        }
         generation = Task { [weak self] in
             guard let self else { return }
-            defer { if runID == run { generatingID = nil; runID = nil; generation = nil } }
+            defer { if runID == run { generatingID = nil; runID = nil; generation = nil; generationStartedAt = nil; pendingTurn = nil; deadlineTask?.cancel(); deadlineTask = nil } }
             do {
-                let final = try await generator.generate(history: history, persona: persona) { [weak self] snapshot in
-                    guard let self, runID == run, !Task.isCancelled, snapshot.utf8.count <= 16_384 else { return }
-                    pendingSnapshot = (id, reply.id, snapshot)
-                    if snapshotTask == nil { snapshotTask = Task { [weak self] in
-                        try? await Task.sleep(for: .milliseconds(67)); guard !Task.isCancelled else { return }; self?.flush()
-                    } }
+                try Task.checkCancellation()
+                let final = try await LocalChatExecutionContext.$owner.withValue(.init(chatID: id, generationID: run)) {
+                    if screenRetry != nil {
+                        guard let retryHandler, let result = await retryHandler(text, id, retrySelection) else { throw CancellationError() }
+                        return result
+                    } else if documents.isEmpty {
+                        return try await generator.generate(history: history, persona: persona) { [weak self] snapshot in
+                            guard let self, runID == run, !Task.isCancelled, snapshot.utf8.count <= 16_384 else { return }
+                            pendingSnapshot = (id, reply.id, snapshot)
+                            if snapshotTask == nil { snapshotTask = Task { [weak self] in
+                                try? await Task.sleep(for: .milliseconds(67)); guard !Task.isCancelled else { return }; self?.flush()
+                            } }
+                        }
+                    } else {
+                        return try await documentEngine.answer(question: text, documents: documents, persona: persona,
+                            language: SpatialAssistantCoordinator.activeInstance?.responseLanguage ?? "pt-BR")
+                    }
                 }
                 try Task.checkCancellation()
                 guard runID == run else { return }
+                if screenRetry == nil { attachments[id] = nil }
                 guard !final.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, final.utf8.count <= 16_384 else { throw LocalChatError.emptyResponse }
                 flush(); replace(reply.id, in: id, text: final); states[id] = .completed
+                if case .appAction(.keepAwake) = FocusVoiceParser.parse(VoiceAppCommand.resolvedChatRequest(text, history: Array(history.dropLast()))), let awake = awakeStatusProvider?(), awake.enabled,
+                   let chatIndex = conversations.firstIndex(where: { $0.id == id }), let messageIndex = conversations[chatIndex].messages.firstIndex(where: { $0.id == reply.id }) {
+                    conversations[chatIndex].messages[messageIndex].utilityReceipt = .init(kind: .keepAwake, startedAt: .now, deadline: awake.request.end)
+                }
+                SpatialAssistantCoordinator.activeInstance?.remember(prompt: text, reply: AdaThoughtDisclosure.parse(final).visibleReply)
             } catch {
                 guard runID == run else { return }
+                spatialCancellationHandler?(id, run)
                 snapshotTask?.cancel(); snapshotTask = nil; pendingSnapshot = nil
                 // Failed/cancelled output is not saved as a completed answer.
                 if let index = conversations.firstIndex(where: { $0.id == id }) {
-                    conversations[index].messages.removeAll { $0.id == reply.id || $0.id == user.id }
-                    if (drafts[id] ?? "").isEmpty { drafts[id] = text }
+                    if let previousReply {
+                        if let item = conversations[index].messages.firstIndex(where: { $0.id == reply.id }) { conversations[index].messages[item] = previousReply }
+                    } else {
+                        conversations[index].messages.removeAll { $0.id == reply.id || $0.id == user.id }
+                        if (drafts[id] ?? "").isEmpty { drafts[id] = text }
+                    }
                     states[id] = Task.isCancelled || error is CancellationError ? .interrupted : .failed
                     if states[id] == .failed { failures[id] = UUID() }
-                    notice = states[id] == .interrupted ? "Reply stopped. Your message is back in the draft." : error.localizedDescription
+                    notice = states[id] == .interrupted ? "Reply stopped. Your request has been preserved." : error.localizedDescription
                 }
             }
             await persist()
         }
     }
-    func stop() { generation?.cancel() }
-    func shutdown() { generation?.cancel(); snapshotTask?.cancel(); snapshotTask = nil }
+    private func route(_ text: String, from sourceID: String, to persona: LocalChatPersona) {
+        guard let source = conversations.firstIndex(where: { $0.id == sourceID }) else { return }
+        var destination = conversations.first { $0.persona == persona && $0.sourceConversationID == sourceID && $0.archived != true }
+        if destination == nil {
+            if conversations.count >= 20 { destination = matchingConversations(persona: persona).first }
+            else {
+                var chat = LocalChatConversation(persona: persona, title: String(text.prefix(70)))
+                chat.sourceConversationID = sourceID; conversations.append(chat); destination = chat
+            }
+        }
+        guard let destination else { notice = "There is no room for a specialist chat. Delete a chat and try again."; return }
+        let en = SpatialAssistantCoordinator.activeInstance?.responseLanguage.hasPrefix("en") == true
+        var receipt = LocalChatMessage(role: .assistant, text: en ? "Continuing with \(persona.title)." : "Vamos continuar com \(persona.title).")
+        receipt.handoff = .init(conversationID: destination.id, persona: persona)
+        conversations[source].messages += [.init(role: .user, text: text), receipt]
+        conversations[source].updatedAt = .now
+        drafts[sourceID] = nil; attachments[destination.id] = attachments.removeValue(forKey: sourceID)
+        selectedID = destination.id; drafts[destination.id] = text
+        send(to: destination.id)
+    }
+    private func abortGeneration(timedOut: Bool) {
+        guard let turn = pendingTurn else { generation?.cancel(); return }
+        let generationID = runID
+        runID = nil; generation?.cancel(); generation = nil; deadlineTask?.cancel(); deadlineTask = nil
+        if let generationID { spatialCancellationHandler?(turn.chat, generationID) }
+        snapshotTask?.cancel(); snapshotTask = nil; pendingSnapshot = nil
+        generatingID = nil; generationStartedAt = nil; pendingTurn = nil
+        if let index = conversations.firstIndex(where: { $0.id == turn.chat }) {
+            if let previousReply = turn.previousReply {
+                if let item = conversations[index].messages.firstIndex(where: { $0.id == turn.reply.id }) { conversations[index].messages[item] = previousReply }
+            } else {
+                conversations[index].messages.removeAll { $0.id == turn.user.id || $0.id == turn.reply.id }
+                if (drafts[turn.chat] ?? "").isEmpty { drafts[turn.chat] = turn.user.text }
+            }
+            states[turn.chat] = timedOut ? .failed : .interrupted
+            if timedOut { failures[turn.chat] = UUID() }
+        }
+        notice = timedOut ? "The reply took too long. Your request has been preserved; you can try again." : "Reply stopped. Your request has been preserved."
+        Task { [weak self] in await self?.persist() }
+    }
+    func stop() { abortGeneration(timedOut: false) }
+    func appendExternalReply(_ text: String, to id: String) {
+        guard let index = conversations.firstIndex(where: { $0.id == id }) else { return }
+        conversations[index].messages.append(.init(role: .assistant, text: String(text.prefix(16_000))))
+        conversations[index].updatedAt = .now
+        Task { [weak self] in await self?.persist() }
+    }
+    func recordVoiceExchange(question: String, reply: String, persona: LocalChatPersona) async {
+        await prepare()
+        let previousSelection = selectedID
+        let existing = matchingConversations(persona: persona).first { $0.id != generatingID && $0.messages.count <= 56 }
+        let id: String?
+        if let existing { id = existing.id }
+        else { id = await create(persona); selectedID = previousSelection }
+        guard let id, let index = conversations.firstIndex(where: { $0.id == id }) else { return }
+        if conversations[index].messages.count >= 2, conversations[index].messages[conversations[index].messages.count-2].text == question { return }
+        conversations[index].messages += [.init(role: .user, text: question), .init(role: .assistant, text: String(reply.prefix(16000)))]
+        if conversations[index].messages.count == 2 { conversations[index].title = String(question.prefix(70)) }
+        conversations[index].updatedAt = .now; await persist()
+    }
+    func shutdown() { stop(); deadlineTask?.cancel(); snapshotTask?.cancel(); snapshotTask = nil }
     private func replace(_ message: String, in chat: String, text: String) {
         guard let index = conversations.firstIndex(where: { $0.id == chat }), let item = conversations[index].messages.firstIndex(where: { $0.id == message }) else { return }
         conversations[index].messages[item].text = text
@@ -148,6 +362,10 @@ import Foundation
         snapshotTask?.cancel(); snapshotTask = nil
         if let pendingSnapshot { replace(pendingSnapshot.message, in: pendingSnapshot.chat, text: pendingSnapshot.text) }
         pendingSnapshot = nil
+    }
+    private func showNotice(_ message: String, detail: String) {
+        notice = message
+        noticeDetail = detail
     }
     private func persist() async {
         guard canPersist else { return }
@@ -158,6 +376,6 @@ import Foundation
             return value
         }
         do { try await store.save(snapshot) }
-        catch { notice = "This chat is available in memory, but local history could not be saved. " + error.localizedDescription }
+        catch { showNotice("This chat is available in memory, but local history could not be saved.", detail: error.localizedDescription) }
     }
 }

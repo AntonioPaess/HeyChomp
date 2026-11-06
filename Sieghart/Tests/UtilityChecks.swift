@@ -14,6 +14,7 @@ import Foundation
     func context() -> AwakeContext { current }
     func acquire(display: Bool) throws -> UInt32 { if fails { throw UtilityFailure(message: "Fixture refused") }; acquired.append(display); return UInt32(acquired.count) }
     func release(_ token: UInt32) { released.append(token) }
+    func isHeld(_ token: UInt32, display: Bool) -> Bool { token > 0 && Int(token) <= acquired.count && !released.contains(token) && acquired[Int(token) - 1] == display }
 }
 @MainActor private final class SampleDisplay: DisplayPowerBackend {
     var fixture = [DisplayInfo(id: 42, name: "Fixture display", builtIn: true, brightness: 0.7, hdrHeadroom: 2)]

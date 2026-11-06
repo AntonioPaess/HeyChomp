@@ -61,7 +61,7 @@ struct AdaGitHubConnectionView: View {
                             .disabled(model.busy || model.isIsolated)
                             .onSubmit { Task { await model.connect() } }
                     }
-                    Text("Allow read access to the repositories you want Ada to see. The token stays in Sieg’s Keychain and is never sent to the language model.")
+                    Text("Allow read access to the repositories you want Ada to see. The token stays in Chomp’s Keychain and is never sent to the language model.")
                         .font(.system(size: 10.5)).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     HStack {

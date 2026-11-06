@@ -1,0 +1,11 @@
+// Opt-in signing for an Apple-authorized Private Cloud Compute profile.
+// Select this file explicitly with xcodebuild -xcconfig; normal builds do not use it.
+// Supply SIEGHART_PCC_PROFILE and SIEGHART_PCC_IDENTITY for that profile.
+// The entitlement alone does not grant service access. See Design/Workflow/apple-private-cloud-setup-2026-11-03.md.
+DEVELOPMENT_TEAM = JZ8TU3BZ38
+// Inherit the product identifier. Apply only after the HeyChomp identity migration
+// and with a profile granted for that exact identifier.
+CODE_SIGN_STYLE = Manual
+CODE_SIGN_ENTITLEMENTS = Sieghart/Sieghart.PrivateCloud.entitlements
+PROVISIONING_PROFILE_SPECIFIER = $(SIEGHART_PCC_PROFILE)
+CODE_SIGN_IDENTITY = $(SIEGHART_PCC_IDENTITY)

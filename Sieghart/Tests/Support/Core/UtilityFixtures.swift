@@ -14,13 +14,17 @@ import Foundation
   var acquired: [Bool] = []
   var released: [UInt32] = []
   var fails = false
+  var held: [UInt32: Bool] = [:]
+  var confirmsAcquisition = true
   func context() -> AwakeContext { current }
   func acquire(display: Bool) throws -> UInt32 {
     if fails { throw UtilityFailure(message: "Fixture refused") }
     acquired.append(display)
-    return UInt32(acquired.count)
+    let token = UInt32(acquired.count); held[token] = display
+    return token
   }
-  func release(_ token: UInt32) { released.append(token) }
+  func isHeld(_ token: UInt32, display: Bool) -> Bool { confirmsAcquisition && held[token] == display }
+  func release(_ token: UInt32) { held[token] = nil; released.append(token) }
 }
 @MainActor final class CoreSampleDisplay: DisplayPowerBackend {
   var fixture = [

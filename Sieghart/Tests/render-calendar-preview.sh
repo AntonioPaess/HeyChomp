@@ -10,4 +10,4 @@ while IFS= read -r source_file; do sources+=("$source_file"); done < <(
 # EventKit reads, permission prompts, keyboard hooks or live hardware.
 xcrun swiftc -swift-version 6 -module-cache-path /private/tmp/sieghart-check-module-cache \
   "${sources[@]}" Sieghart/Tests/CalendarPreview.swift -o /private/tmp/sieghart-calendar-preview
-/private/tmp/sieghart-calendar-preview "${1:-/private/tmp/sieghart-team-build/Build/Products/Debug/Sieghart.app}"
+/private/tmp/sieghart-calendar-preview "${1:-/private/tmp/sieghart-team-build/Build/Products/Debug/HeyChomp.app}"

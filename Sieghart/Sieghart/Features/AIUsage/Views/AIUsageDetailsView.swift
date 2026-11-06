@@ -362,7 +362,7 @@ private struct UsageSettingsView: View {
                     chargeMessage = pendingCharges.isEmpty ? "All of these charges are already recorded." : "Nothing saved yet. Review the charges below."
                 } catch { pendingCharges = []; chargeMessage = error.localizedDescription }
             }
-            .fileExporter(isPresented: $exporting, document: exportDocument, contentType: exportType, defaultFilename: exportType == .json ? "Sieghart-charges" : "Sieghart-charge-template") { result in
+            .fileExporter(isPresented: $exporting, document: exportDocument, contentType: exportType, defaultFilename: exportType == .json ? "HeyChomp-charges" : "HeyChomp-charge-template") { result in
                 if case .failure(let error) = result { chargeMessage = error.localizedDescription }
             }
             .onAppear {

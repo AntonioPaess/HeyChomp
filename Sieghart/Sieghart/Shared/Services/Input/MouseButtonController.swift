@@ -49,7 +49,7 @@ import Combine
         guard options.enabled || !captured.isEmpty else {
             stopBackend(); status = options.custom ? "Choose an action for a button, or turn on Back and Forward." : "Extra mouse buttons are off."; return
         }
-        guard trusted() else { stopBackend(); status = "Enable this copy of Sieghart in macOS permissions, then retry."; return }
+        guard trusted() else { stopBackend(); status = "Enable this copy of HeyChomp in macOS permissions, then retry."; return }
         if installed {
             status = options.enabled ? "Mouse button actions are ready." : "Finishing the held button release; new clicks keep their mouse default."
             return

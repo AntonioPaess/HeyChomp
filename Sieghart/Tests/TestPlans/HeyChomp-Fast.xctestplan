@@ -1,0 +1,783 @@
+{
+  "configurations": [
+    {
+      "id": "8CDE55D7-0DE2-46DB-9D8C-8212F6919E32",
+      "name": "Isolated macOS",
+      "options": {}
+    }
+  ],
+  "defaultOptions": {
+    "testInteropMode": "complete",
+    "testTimeoutsEnabled": true,
+    "codeCoverage": true,
+    "targetForVariableExpansion": {
+      "containerPath": "container:HeyChomp.xcodeproj",
+      "identifier": "C6AB6C4DC6E52EC8F74130B0",
+      "name": "HeyChompTests"
+    }
+  },
+  "testTargets": [
+    {
+      "parallelizable": false,
+      "target": {
+        "containerPath": "container:HeyChomp.xcodeproj",
+        "identifier": "C6AB6C4DC6E52EC8F74130B0",
+        "name": "HeyChompTests"
+      },
+      "selectedTests": {
+        "suites": [
+          {
+            "name": "LogicTests",
+            "suites": [
+              {
+                "name": "AccountActivityDecodeTests",
+                "testFunctions": [
+                  "accountHeatmap()"
+                ]
+              },
+              {
+                "name": "AgentObservationDecodeTests",
+                "testFunctions": [
+                  "parentAndFork()",
+                  "terminalDoesNotReplay()"
+                ]
+              },
+              {
+                "name": "AppleChatEligibilityTests",
+                "testFunctions": [
+                  "cloud(_:)",
+                  "oldOS(_:_:)",
+                  "onDevice(_:_:)"
+                ]
+              },
+              {
+                "name": "AudioIdentityTests",
+                "testFunctions": [
+                  "ownership()"
+                ]
+              },
+              {
+                "name": "AudioPCMTests",
+                "testFunctions": [
+                  "pcmLayouts()"
+                ]
+              },
+              {
+                "name": "ChargeFileTests",
+                "testFunctions": [
+                  "csvAndJSON()",
+                  "invalidFiles()"
+                ]
+              },
+              {
+                "name": "ClaudeHistoryDecodeTests",
+                "testFunctions": [
+                  "historyVersions()"
+                ]
+              },
+              {
+                "name": "ClipboardPayloadTests",
+                "testFunctions": [
+                  "invalidPayloads()"
+                ]
+              },
+              {
+                "name": "CodexMessageIdentityTests",
+                "testFunctions": [
+                  "clientIdentityAndSubagentSource()"
+                ]
+              },
+              {
+                "name": "CodexProtocolDecodeTests",
+                "testFunctions": [
+                  "state()"
+                ]
+              },
+              {
+                "name": "CodexQuotaTests",
+                "testFunctions": [
+                  "quotas()"
+                ]
+              },
+              {
+                "name": "CompanionActivityTests",
+                "testFunctions": [
+                  "priority()",
+                  "steppedLoading()"
+                ]
+              },
+              {
+                "name": "CompanionAnimationTests",
+                "testFunctions": [
+                  "catalog()"
+                ]
+              },
+              {
+                "name": "CompanionEntranceTests",
+                "testFunctions": [
+                  "arrival()"
+                ]
+              },
+              {
+                "name": "CompanionGazeTests",
+                "testFunctions": [
+                  "gaze()"
+                ]
+              },
+              {
+                "name": "CompanionIdentityTests",
+                "testFunctions": [
+                  "identities()"
+                ]
+              },
+              {
+                "name": "CompanionMotionTests",
+                "testFunctions": [
+                  "blink()",
+                  "moodSamples(_:)",
+                  "voiceGestures(_:_:)"
+                ]
+              },
+              {
+                "name": "DockSpacesLogicTests",
+                "testFunctions": [
+                  "pairedClick()",
+                  "previewAspectAndProtectedBundles()"
+                ]
+              },
+              {
+                "name": "ExchangeQuoteTests",
+                "testFunctions": [
+                  "datedExchange()"
+                ]
+              },
+              {
+                "name": "FileIntakePoseTests",
+                "testFunctions": [
+                  "intakeBounds(_:)"
+                ]
+              },
+              {
+                "name": "FileNameTests",
+                "testFunctions": [
+                  "invalidName(_:)",
+                  "literalName()"
+                ]
+              },
+              {
+                "name": "FileReceiverGeometryTests",
+                "testFunctions": [
+                  "characterBounds(_:)",
+                  "normalize(_:_:)"
+                ]
+              },
+              {
+                "name": "FocusVoiceParserTests",
+                "testFunctions": [
+                  "naturalStarts(_:)",
+                  "pauseAndBreak()",
+                  "portugueseCommands(_:)",
+                  "rejectedCommands(_:)"
+                ]
+              },
+              {
+                "name": "InputGuardsRuleTests",
+                "testFunctions": [
+                  "clickDebounce()",
+                  "keyDebounce()",
+                  "quitProtection()",
+                  "snippetMatching()",
+                  "superKey(_:)"
+                ]
+              },
+              {
+                "name": "IslandGeometryTests",
+                "testFunctions": [
+                  "compactHeight()",
+                  "coverage()",
+                  "interruptedContour()"
+                ]
+              },
+              {
+                "name": "LocalChatContextTests",
+                "testFunctions": [
+                  "boundedHistory()",
+                  "longInput()",
+                  "recentPairs()"
+                ]
+              },
+              {
+                "name": "ModifierShortcutTests",
+                "testFunctions": [
+                  "releases()"
+                ]
+              },
+              {
+                "name": "MonitorReadingTests",
+                "testFunctions": [
+                  "counterDeltas()"
+                ]
+              },
+              {
+                "name": "MouseButtonRules",
+                "testFunctions": [
+                  "menuMatch(_:)",
+                  "navigationScope()",
+                  "options()",
+                  "virtualMenu()"
+                ]
+              },
+              {
+                "name": "PlaybackGateTests",
+                "testFunctions": [
+                  "musicGate()"
+                ]
+              },
+              {
+                "name": "PriceCatalogParserTests",
+                "testFunctions": [
+                  "markdownTables()"
+                ]
+              },
+              {
+                "name": "PriceCatalogTests",
+                "testFunctions": [
+                  "versionedCatalog()"
+                ]
+              },
+              {
+                "name": "QuietHoursTests",
+                "testFunctions": [
+                  "overnight()"
+                ]
+              },
+              {
+                "name": "ScrollTransformTests",
+                "testFunctions": [
+                  "combined(_:)",
+                  "conflict(_:)",
+                  "continuous()",
+                  "inversion(_:)",
+                  "linearScrollCurve()",
+                  "overflow()",
+                  "pointerAccelerationBounds()",
+                  "smoothScrollCurve()"
+                ]
+              },
+              {
+                "name": "ShortcutDeliveryTests",
+                "testFunctions": [
+                  "delivery()"
+                ]
+              },
+              {
+                "name": "SpeechPCMTests",
+                "testFunctions": [
+                  "floatPCM(rate:interleaved:)",
+                  "integerPCM(commonFormat:)"
+                ]
+              },
+              {
+                "name": "TeamFormationTests",
+                "testFunctions": [
+                  "opening()",
+                  "queue()"
+                ]
+              },
+              {
+                "name": "ThreeFingerTapTests",
+                "testFunctions": [
+                  "threeFingerTap()"
+                ]
+              },
+              {
+                "name": "TokenEstimateTests",
+                "testFunctions": [
+                  "decimalEstimates()"
+                ]
+              },
+              {
+                "name": "URLCleanupTests",
+                "testFunctions": [
+                  "encoding()",
+                  "signedAndInvalid()"
+                ]
+              },
+              {
+                "name": "VoiceIntentTests",
+                "testFunctions": [
+                  "localIntents()",
+                  "rejectedIntent(_:)",
+                  "searchTopics(_:)",
+                  "searchVerbs(_:)",
+                  "urlEncoding()"
+                ]
+              },
+              {
+                "name": "VoiceSessionTests",
+                "testFunctions": [
+                  "drain()",
+                  "endpoints()",
+                  "longSpeech()",
+                  "quietSpeechAndRecovery()",
+                  "timeouts()"
+                ]
+              },
+              {
+                "name": "WindowGeometryTests",
+                "testFunctions": [
+                  "displays()",
+                  "edges()",
+                  "layouts(_:)",
+                  "movement()"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "MacContractsTests",
+            "suites": [
+              {
+                "name": "AIActivityStateTests",
+                "testFunctions": [
+                  "processingState()"
+                ]
+              },
+              {
+                "name": "ActivationDispatchTests",
+                "testFunctions": [
+                  "appLaunch()",
+                  "focusCommands()",
+                  "searchResult()",
+                  "toolRouting()"
+                ]
+              },
+              {
+                "name": "AdaGitHubCancellationTests",
+                "testFunctions": [
+                  "cancelConnect()",
+                  "disconnectDuringRefresh()"
+                ]
+              },
+              {
+                "name": "AdaGitHubConnectionTests",
+                "testFunctions": [
+                  "disconnectedAndRestore()",
+                  "invalidToken(_:)",
+                  "restoresWithoutSavingAgain()",
+                  "snapshotAndCache()"
+                ]
+              },
+              {
+                "name": "AdaGitHubErrorTests",
+                "testFunctions": [
+                  "failedRefreshAndBoundedTitle()",
+                  "rejectedStatus(_:)",
+                  "rejectsInvalidBody(_:)",
+                  "rejectsRedirect(_:)"
+                ]
+              },
+              {
+                "name": "AdaGitHubRestoreTests",
+                "testFunctions": [
+                  "restoresOnlyOnOpen()"
+                ]
+              },
+              {
+                "name": "AgentFleetTests",
+                "testFunctions": [
+                  "workersByRoom()"
+                ]
+              },
+              {
+                "name": "AgentRoomPresentationTests",
+                "testFunctions": [
+                  "pinnedPresentation()",
+                  "reconnectAndLimit()"
+                ]
+              },
+              {
+                "name": "AgentRoomStateTests",
+                "testFunctions": [
+                  "explicitConnectionAndDrafts()",
+                  "orderedBatchAndDisconnect()",
+                  "receiptAndApprovals()",
+                  "rejectionAndRetry()",
+                  "staleHistoryAndDeltas()"
+                ]
+              },
+              {
+                "name": "AgentSendAdmissionTests",
+                "testFunctions": [
+                  "claudeAlreadyWorking()",
+                  "externalQueueAndWaitingMetadata()",
+                  "ownedRequestAndStaleSelection()"
+                ]
+              },
+              {
+                "name": "AntigravityPricingTests",
+                "testFunctions": [
+                  "cacheMigration()",
+                  "verifiedRatesAndAliases()"
+                ]
+              },
+              {
+                "name": "AntigravitySecurityTests",
+                "testFunctions": [
+                  "boundedTransport()",
+                  "endpointOwnership()",
+                  "quotaProvenance()",
+                  "rejectedOwnerAndCancellation()",
+                  "transportCancellation()"
+                ]
+              },
+              {
+                "name": "AudioApplicationTests",
+                "testFunctions": [
+                  "applications()"
+                ]
+              },
+              {
+                "name": "AudioDevicePreferenceTests",
+                "testFunctions": [
+                  "devicePreference()"
+                ]
+              },
+              {
+                "name": "AudioPermissionStateTests",
+                "testFunctions": [
+                  "permissionGeneration()"
+                ]
+              },
+              {
+                "name": "AudioRoutingTests",
+                "testFunctions": [
+                  "routeOwnership()",
+                  "routeTopology()"
+                ]
+              },
+              {
+                "name": "CalendarTests",
+                "testFunctions": [
+                  "eventsAndAlerts()",
+                  "permission()",
+                  "ranges()",
+                  "reminders()"
+                ]
+              },
+              {
+                "name": "ChargeImportTests",
+                "testFunctions": [
+                  "atomicConflict()",
+                  "idempotentImport()"
+                ]
+              },
+              {
+                "name": "ChargeLedgerTests",
+                "testFunctions": [
+                  "ledger()"
+                ]
+              },
+              {
+                "name": "ClaudeHistoryModelTests",
+                "testFunctions": [
+                  "historyConsent()"
+                ]
+              },
+              {
+                "name": "ClaudeReportTests",
+                "testFunctions": [
+                  "datedReports()"
+                ]
+              },
+              {
+                "name": "ClipboardConcurrencyTests",
+                "testFunctions": [
+                  "staleReadAndCopy()"
+                ]
+              },
+              {
+                "name": "ClipboardModelTests",
+                "testFunctions": [
+                  "baselineAndDedup()",
+                  "payloadCapture()"
+                ]
+              },
+              {
+                "name": "ClipboardRetentionTests",
+                "testFunctions": [
+                  "retention()"
+                ]
+              },
+              {
+                "name": "CodexQuotaModelTests",
+                "testFunctions": [
+                  "lateQuota()",
+                  "quotaConsent()"
+                ]
+              },
+              {
+                "name": "CompanionPreferenceTests",
+                "testFunctions": [
+                  "legacyRail()"
+                ]
+              },
+              {
+                "name": "CompanionReactionTests",
+                "testFunctions": [
+                  "touchSequence()",
+                  "utilityResult()"
+                ]
+              },
+              {
+                "name": "DesktopContracts",
+                "testFunctions": [
+                  "activation()",
+                  "consent()",
+                  "drag()",
+                  "history()",
+                  "lifecycle()",
+                  "retry()",
+                  "selectedWindow()",
+                  "staleUndo()",
+                  "transaction()"
+                ]
+              },
+              {
+                "name": "DisplayPowerTests",
+                "testFunctions": [
+                  "displayOwnership()",
+                  "displaySleepCancellation()"
+                ]
+              },
+              {
+                "name": "DockObservationTests",
+                "testFunctions": [
+                  "currentHover(_:)",
+                  "rejectedGesture(_:)",
+                  "shortClick()",
+                  "throttledExit()"
+                ]
+              },
+              {
+                "name": "DockSpacesContracts",
+                "testFunctions": [
+                  "autoQuitLastWindow()",
+                  "beforeNativeDockIntent()",
+                  "dockPreviewAndClick()",
+                  "externalSpacesChange()",
+                  "greenButtonMaximizeAndRestore()",
+                  "nativeDockRouting()",
+                  "observedCloseAndUnknown()",
+                  "spacesOrderRestore()"
+                ]
+              },
+              {
+                "name": "FileCaptureContracts",
+                "testFunctions": [
+                  "captureActionsAndCancellation()",
+                  "companionEventDelivery()",
+                  "plainPastePreservesClipboard()"
+                ]
+              },
+              {
+                "name": "InputGuardsContracts",
+                "testFunctions": [
+                  "lifecycleAndExpansion()"
+                ]
+              },
+              {
+                "name": "IslandPresentationTests",
+                "testFunctions": [
+                  "currentAIWork()",
+                  "hoverCrossing()",
+                  "utilityTimer()"
+                ]
+              },
+              {
+                "name": "IslandRevealTests",
+                "testFunctions": [
+                  "revealGrace()",
+                  "shortcutDelivery()"
+                ]
+              },
+              {
+                "name": "IslandSessionTests",
+                "testFunctions": [
+                  "automaticBreak()",
+                  "expandedPages(_:)",
+                  "focusPresentation()",
+                  "noCompletionReplay()"
+                ]
+              },
+              {
+                "name": "IslandToolPreferenceTests",
+                "testFunctions": [
+                  "tools()"
+                ]
+              },
+              {
+                "name": "KeepAwakeTests",
+                "testFunctions": [
+                  "assertionOwnership()",
+                  "conditionalRestore()"
+                ]
+              },
+              {
+                "name": "LocalChatConfigurationTests",
+                "testFunctions": [
+                  "configuration()"
+                ]
+              },
+              {
+                "name": "LocalChatConversationTests",
+                "testFunctions": [
+                  "admissionAndDeletion()",
+                  "cancellation()",
+                  "restoreAndFailure()",
+                  "streamingKeepsOriginalConversation()"
+                ]
+              },
+              {
+                "name": "MiddleClickStateTests",
+                "testFunctions": [
+                  "gestureConsent()",
+                  "obsoleteCallback()"
+                ]
+              },
+              {
+                "name": "MouseButtonContracts",
+                "testFunctions": [
+                  "clickPair()",
+                  "consent()",
+                  "disableWhileHeld()",
+                  "eventBridge()",
+                  "heldRecovery()",
+                  "lifecycle()",
+                  "missedRelease()",
+                  "queue()",
+                  "recovery()",
+                  "revoked()",
+                  "targetChange()",
+                  "unsupported()"
+                ]
+              },
+              {
+                "name": "OnboardingPreferenceTests",
+                "testFunctions": [
+                  "onboarding()"
+                ]
+              },
+              {
+                "name": "PointerDwellRegressionTests",
+                "testFunctions": [
+                  "coalescedMotion()"
+                ]
+              },
+              {
+                "name": "PointerFocusContracts",
+                "testFunctions": [
+                  "cancelMovement()",
+                  "consent()",
+                  "dwellAndSelection()",
+                  "failedMonitor()",
+                  "lifecycle()",
+                  "revoked()",
+                  "staleTarget()"
+                ]
+              },
+              {
+                "name": "PreferenceTests",
+                "testFunctions": [
+                  "appearance()",
+                  "oldAvatar(_:)",
+                  "widgetWidths()"
+                ]
+              },
+              {
+                "name": "ScrollLifecycleTests",
+                "testFunctions": [
+                  "accelerationRestore()",
+                  "consent()",
+                  "externalAccelerationChange()",
+                  "failedStart()",
+                  "lateConflict()",
+                  "nativeFields()",
+                  "permissionRecovery()",
+                  "stale()",
+                  "suspension()",
+                  "trackpadHint()"
+                ]
+              },
+              {
+                "name": "ShortcutLifecycleTests",
+                "testFunctions": [
+                  "abandonedRecorder()",
+                  "lifecycleRecovery()",
+                  "persistenceAndCollisions()",
+                  "shutdownOwnership()"
+                ]
+              },
+              {
+                "name": "SpeechAuthorizationTests",
+                "testFunctions": [
+                  "offMainCallbacks()"
+                ]
+              },
+              {
+                "name": "SpendingModelTests",
+                "testFunctions": [
+                  "providerConsent()"
+                ]
+              },
+              {
+                "name": "SystemMonitorTests",
+                "testFunctions": [
+                  "monitorHistory()"
+                ]
+              },
+              {
+                "name": "TimerTests",
+                "testFunctions": [
+                  "automaticBreaksAndRelaunch()",
+                  "countdown()",
+                  "focusRestore()",
+                  "invalidSettingsAndToolSelection()",
+                  "shortBreakRestore()",
+                  "stopwatch()",
+                  "widgetAndLongBreak()"
+                ]
+              },
+              {
+                "name": "UsagePricingTests",
+                "testFunctions": [
+                  "modelEstimates()",
+                  "priceOverride()"
+                ]
+              },
+              {
+                "name": "VoiceFlowTests",
+                "testFunctions": [
+                  "cancelledAccess()",
+                  "changedInput()",
+                  "deniedAccess()",
+                  "focusCommands(_:)",
+                  "loudFinal()",
+                  "pacedSearchCancellation()",
+                  "pacedTimer()",
+                  "pinnedFinalSearch()",
+                  "portugueseSearches(_:)",
+                  "replacementCue()",
+                  "staleFinal()",
+                  "strictToolFinal()",
+                  "synchronousFinish()"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "version": 1
+}

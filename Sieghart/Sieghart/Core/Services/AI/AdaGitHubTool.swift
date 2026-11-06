@@ -10,7 +10,7 @@ private actor AdaToolBudget {
 @available(macOS 27.0, *)
 struct AdaGitHubTool: Tool {
     let name = "github_context"
-    let description = "Read real GitHub account data from Sieg's configured connection: repositories, stars, own pull requests, requested reviews and default-branch CI. Also reports when GitHub is disconnected. Read only; never modifies GitHub."
+    let description = "Read real GitHub account data from Chomp's configured connection: repositories, stars, own pull requests, requested reviews and default-branch CI. Also reports when GitHub is disconnected. Read only; never modifies GitHub."
     let context: AdaGitHubContext
     private let budget = AdaToolBudget()
     @Generable struct Arguments {

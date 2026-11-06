@@ -96,7 +96,7 @@ enum CompanionNotificationModule: String, CaseIterable, Identifiable {
         for task in pending { await task.value }
     }
     func requestNotificationAccess() {
-        Task { status = await notifier.requestAccess() ? "Notifications allowed" : "Enable Sieghart notifications in System Settings" }
+        Task { status = await notifier.requestAccess() ? "Notifications allowed" : "Enable HeyChomp notifications in System Settings" }
     }
     @discardableResult func post(_ kind: CompanionTaskEvent.Kind, key: String, title: String, detail: String) -> Bool {
         guard !seen.contains(key) else { return false }
