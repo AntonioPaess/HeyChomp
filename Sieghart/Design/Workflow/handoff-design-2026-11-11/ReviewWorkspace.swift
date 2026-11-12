@@ -39,7 +39,7 @@ private struct ReviewChrome<Content: View>: View {
                 Toggle("Reduzir movimento",isOn:$preferences.reduceMotion).toggleStyle(.checkbox)
                 Picker("Tema",selection:$preferences.appearance) {
                     Text("Claro").tag(AppAppearance.light);Text("Escuro").tag(AppAppearance.dark)
-                }.pickerStyle(.segmented).frame(width:140)
+                }.pickerStyle(.segmented).labelsHidden().fixedSize().accessibilityLabel("Tema")
             }.padding(10)
         }.preferredColorScheme(preferences.appearance.colorScheme)
     }
