@@ -1,8 +1,76 @@
-# Comece aqui — HeyChomp
+# Comece aqui — HeyChomp: continuidade do redesign
+
+> **Checkpoint de 11/11/2026, horário de Recife.** Leia este bloco antes dos relatos históricos abaixo. O usuário pediu uma documentação suficiente para outra IA continuar sem o histórico do chat. Este bloco prevalece sobre datas, versões e pendências mais antigas neste arquivo.
+
+## Onde está o trabalho e cuidados imediatos
+
+- Checkout dedicado com os arquivos em trabalho: `/Users/antoniopaesdeandrade/.codex/worktrees/heychomp-design/heychomp-pr11.7y6x55`. Não trabalhar no checkout compartilhado nem sobrescrever alterações de outros chats. A última identidade Git observada antes do problema abaixo era HEAD destacado `fd975384460a5981aba759d40fc753781a09fe73`; ela é histórica, não foi reconfirmada agora.
+- **Problema Git em 11/11:** `git status` e `git rev-parse` retornaram “not a git repository”. O arquivo `.git` aponta para `/private/tmp/heychomp-pr11.7y6x55/.git/worktrees/heychomp-pr11.7y6x55`; esse diretório ainda existe, mas falta `commondir`, e os metadados estão incompletos. Os arquivos de trabalho continuam acessíveis. Não executar `git reset`, `clean`, checkout, recriação de worktree ou copiar alterações por cima de outro checkout. Antes de qualquer operação Git, preservar os arquivos não commitados e diagnosticar/recuperar o vínculo com cuidado. Não presumir que o estado pode ser reconstruído de um commit. Não fazer commit ou push sem pedido específico do usuário.
+- App principal observado em `/Applications/HeyChomp.app`: **build 124**, com seis personagens e clima aprovados. O redesign e a correção do onboarding descritos abaixo são candidatos no checkout, **não estão instalados no 124**. Build anterior 123 foi guardado em `/private/tmp/heychomp-previous-app.sESL5C/HeyChomp.app`, caminho temporário sujeito a limpeza.
+- O usuário proibiu áudio e microfone nesta etapa; não acionar testes de voz. Um único agente ativo; sem Astra. Seguir integralmente `AGENTS.md`, preservar o snapshot para Claude e não permitir duas IAs escrevendo no mesmo checkout.
+- Leia também [CURRENT_WORK.md](CURRENT_WORK.md), [KNOWN_ISSUES.md](KNOWN_ISSUES.md) e [RESEARCH_INDEX.md](RESEARCH_INDEX.md). Atualize o primeiro após cada lote e o segundo quando bugs forem reproduzidos, corrigidos ou validados.
+
+## Direção e decisões do usuário
+
+O usuário rejeitou repetidamente a mistura dos bonecos antigos com novos retratos, olhos, acessórios, luz e animações inconsistentes. A referência aceita é a pintura nova do Chomp aplicada aos seis, com acessórios integrados e gestos adaptados. Também pediu reações do Chomp e do card por clima e temperatura: chuva, tempestade, calor, neve e congelamento, entre outros. Em 10/11 declarou: “tudo validado ta massa pode continuar com tudo que tem que ser feito”. Esse aceite cobre a revisão visual dos bots e do clima apresentada até então; não comprova FPS, hardware físico ou serviço climático real. Preservar esses resultados enquanto o design do app é trabalhado.
+
+Depois, o usuário autorizou seguir com o redesign e lembrou que a animação antiga de onboarding tinha sido retirada. O objetivo atual é terminar a recuperação dessa apresentação **com os modelos novos**, verificar a prévia e continuar o redesign. O usuário quer ver comparações em claro e escuro e testar no app. Não afirmar que o redesign completo ou o onboarding restaurado foram aceitos.
+
+## Feito: bots e clima
+
+- Os seis novos retratos e animações foram integrados ao build 124 instalado. A janela real mostrou os novos personagens e o histórico existente. Os detalhes e tentativas estão em `CURRENT_WORK.md`; código principal em `Sieghart/Sieghart/Shared/Components/Companion/` e `Features/DynamicIsland/Views/`.
+- Correções finais de clima: retirado o braço que parecia outra mão; sombra de contato no corpo; gotas com novo movimento e transparência; neve contínua sobre o contorno; congelamento progressivo da pintura com dois olhos. `Sieghart/Tools/WeatherSurfaceQA.swift` e `render-weather-surface.sh` usam recursos reais.
+- Evidência anterior: build passou; 30 testes em 14 suítes passaram; checagem no catálogo real constatou pixels azulados 250→4648 e olhos creme 197→191 entre 0 e 10 s em −16°C. Houve exportação de 9×288 quadros e dos dois temas. A pasta de visualizações deste chat contém `clima-superficie-corrigida` com vídeo silencioso, comparações e manifesto. São fixtures; não são medições de desempenho, clima real ou notch físico.
+- **Keep Awake:** ao instalar o 124 a reabertura desativou uma sessão anteriormente sem limite com tela ligada. A sessão foi restaurada na UI e então confirmada ativa. Esse é um registro histórico, não garantia do estado atual em 11/11. Antes de qualquer nova instalação, verificar e preservar o estado real e o fluxo de retomada; não assumir que `guard finish` sozinho preserva a sessão.
+
+## Em andamento: redesign do app
+
+A primeira fatia, ainda sem aceite do usuário, foi implementada nestes arquivos:
+
+1. `Sieghart/Sieghart/Features/Workspace/Views/WorkspaceView.swift`: navegação nativa `NavigationSplitView`/lista lateral, título e ações na barra; fallback para renderização de catálogo. A navegação e as ações existentes devem continuar funcionando.
+2. `Sieghart/Sieghart/Features/Workspace/Views/CompanionWorkspaceHome.swift`: boas-vindas, Chomp em destaque, ação de conversa, equipe com retratos maiores e sem cartões decorativos permanentes, histórico pesquisável em linhas, rotinas e estados vazios. Preserva fluxo de conversas, ações e armazenamento existentes.
+3. `Sieghart/Sieghart/Shared/Components/DesignSystem.swift`: superfícies mais planas e hierarquia comum das telas. O comportamento de superfície fora do workspace, incluindo widget/clima, foi preservado. A mudança afeta componentes compartilhados: revisar todas as abas, não só o Início.
+
+Build candidato **125 arm64 ad hoc** passou em 10/11. Não é o build universal instalado nem uma autorização para substituir o app principal. Foram gerados catálogos com 16 abas × dois temas, antes e depois, com dados de teste. Há limitações do `ImageRenderer`: a barra lateral é fallback e alguns controles AppKit aparecem como barras amarelas; só a janela nativa permite revisar esses controles. Capturas do Início em claro e escuro foram copiadas para a pasta de visualizações `handoff-design-2026-11-11`; não incluem conversas pessoais.
+
+Prévia isolada compilada: `/private/tmp/heychomp-workspace-redesign/HeyChomp Inicio.app`, com dados fictícios, sem modelo real e com voz indisponível. **Ainda não foi aberta nem testada interativamente**. `/private/tmp` pode ser limpo. As fontes e script usados para montá-la foram copiados para [handoff-design-2026-11-11](Sieghart/Design/Workflow/handoff-design-2026-11-11/); são evidência de continuidade, não um pacote portátil pronto: o script contém caminhos absolutos temporários e depende dos recursos de um build. Revise esses caminhos antes de reutilizar. Não lançar o executável principal diretamente; usar o bundle e a ferramenta de interface apropriada.
+
+## Em andamento: animação antiga do onboarding
+
+O problema foi confirmado no código: para ilustrações novas, `CompanionGreetingRig` pulava a coreografia original, ocultando queda, anel e luz e usando outra saudação. Alterações no candidato:
+
+- `Shared/Components/Companion/CompanionGreetingRig.swift`: recupera a linha do tempo original de queda, aceno, partículas e halo sobre a pintura nova; usa mãos pintadas do Chomp.
+- `Shared/Components/Companion/CompanionTeamArrival.swift`: mantém a formação da equipe e evita rotação de profundidade indevida para ilustrações; atualiza cenas estáticas de prévia.
+- `Features/Onboarding/Views/CompanionOnboardingView.swift`: passa idioma escolhido, oferece “Repetir apresentação” e reinicia ao voltar à primeira etapa ou reabilitar movimento.
+- `Sieghart/Tools/OnboardingSurfaceQA.swift`: verificação com recursos de produção. Em 10/11 passou para seis ilustrações, mãos pintadas, queda/anel/aceno, replay, Reduzir Movimento e exportação de 373 quadros em 31 s. A taxa de exportação de 12 quadros/s não mede FPS ao vivo. Pranchas `sequencia-claro.png` e `sequencia-escuro.png` foram copiadas para as visualizações do handoff. Inspecionar também a apresentação com texto e movimento na janela real; as pranchas são cenas isoladas, não demonstram a UI inteira.
+- Build 125 passou após a alteração. Seleção dirigida passou **19 testes em 9 suítes**, incluindo onboarding, formação, conversas e apresentação da equipe: `/private/tmp/heychomp-workspace-redesign/contracts.log` e `contracts.xcresult`. Os testes hostless usam fallback sem o catálogo real; por isso a verificação adicional de recursos é necessária.
+
+## Próximos passos, em ordem
+
+1. Resolver com segurança a indisponibilidade dos metadados Git, preservando todo o trabalho local. Não tocar no checkout compartilhado nem na branch/snapshot de outra IA. Conferir novamente status e HEAD só depois do diagnóstico.
+2. Conferir a existência da prévia; se necessário recompilá-la a partir das fontes preservadas e dos recursos do build, ajustando os caminhos temporários. Abrir **a prévia isolada**, não substituir o app principal sem validar a alteração, e inspecionar onboarding desde o início, replay, voltar, idioma e Reduzir Movimento. Não usar voz/microfone. A prévia ainda não foi apresentada ao usuário.
+3. Verificar Início e navegação ao vivo em claro/escuro, larguras e busca/abertura de conversa fictícia; revisar controles ausentes no catálogo e efeitos da mudança de componentes nas 16 abas. A tentativa de renderizar estados adicionais foi interrompida por limite da revisão automática de aprovação; não houve decisão de segurança sobre o código. Repetir somente quando disponível, sem contornar o bloqueio.
+4. Corrigir problemas encontrados, rodar build e testes pertinentes novamente e atualizar `CURRENT_WORK.md`/`KNOWN_ISSUES.md`. Oferecer comparações em claro e escuro e abrir a prévia para avaliação. Não declarar o redesign inteiro pronto por esta primeira fatia.
+5. Somente após validação adequada, tratar a integração no app principal com assinatura, histórico e Keep Awake preservados; o 124 não contém a correção de onboarding. Sem commit/push sem pedido.
+
+## Skills usadas neste trabalho
+
+As seguintes skills foram registradas como aplicadas na etapa de personagens/movimento e na continuação do redesign. Releia a `SKILL.md` correspondente antes de aplicar; caminhos locais podem variar em outro ambiente:
+
+- `imagegen` — `/Users/antoniopaesdeandrade/.codex/skills/.system/imagegen/SKILL.md`: criação/edição das ilustrações e recursos visuais dos personagens/clima.
+- `ios-motion-and-animation` — `/Users/antoniopaesdeandrade/.agents/skills/ios-motion-and-animation/SKILL.md`: coreografia, transições e alternativa de movimento reduzido para SwiftUI.
+- `macos-golden-gate-design` — `/Users/antoniopaesdeandrade/.agents/skills/macos-golden-gate-design/SKILL.md`: revisão/implementação da navegação e das superfícies nativas do Mac; também consultadas as referências de padrões, implementação SwiftUI e fontes da skill.
+- `swiftui-ui-patterns` — `/Users/antoniopaesdeandrade/.agents/skills/swiftui-ui-patterns/SKILL.md`: estrutura de telas, fluxo de estado e verificação incremental do redesign.
+
+Esta lista reflete as skills registradas na continuidade disponível, sem presumir outras usadas em conversas antigas. A skill não substitui o pedido do usuário nem o `AGENTS.md`.
+
+---
+
+# Histórico anterior — HeyChomp
 
 Estado de continuidade em **05/11/2026**, horário de Recife. Este repositório é a fonte principal; não é necessário ter o histórico do chat ou o Obsidian para retomar.
 
-**Estado local atual.** Build **123** universal instalado como `/Applications/HeyChomp.app`. Projeto, targets e esquemas HeyChomp. Chomp é o nome público do antigo Sieg. O ID de desenvolvimento `com.sieghart.app` e a assinatura foram preservados. Histórico e biblioteca conferidos. O usuário rejeitou `com.chompindev.chomp` para distribuição, e o ID definitivo permanece em aberto. O Private Cloud Compute está preparado no código e ausente na assinatura instalada. O 119 passou em Keep Awake, clima (Recife → Lisboa) e OCR de imagem importada. CarPlay e MVVM geraram diagramas reais por texto no 123. Janela correta, recorte físico, consistência semântica dos diagramas e voz física ainda aguardam aceite. [Relatório da rodada 119](Sieghart/Design/Workflow/chomp-rename-acceptance-2026-11-05.md).
+**Estado histórico em 05/11.** Build **123** universal instalado como `/Applications/HeyChomp.app`. Projeto, targets e esquemas HeyChomp. Chomp é o nome público do antigo Sieg. O ID de desenvolvimento `com.sieghart.app` e a assinatura foram preservados. Histórico e biblioteca conferidos. O usuário rejeitou `com.chompindev.chomp` para distribuição, e o ID definitivo permanece em aberto. O Private Cloud Compute está preparado no código e ausente na assinatura instalada. O 119 passou em Keep Awake, clima (Recife → Lisboa) e OCR de imagem importada. CarPlay e MVVM geraram diagramas reais por texto no 123. Janela correta, recorte físico, consistência semântica dos diagramas e voz física ainda aguardam aceite. [Relatório da rodada 119](Sieghart/Design/Workflow/chomp-rename-acceptance-2026-11-05.md).
 
 **Snapshot publicado no GitHub:** [feature/sieghart-claude-handoff-2026-10-23](https://github.com/AntonioPaess/Sieghart/tree/feature/sieghart-claude-handoff-2026-10-23). O commit de código e pesquisa `cf9a118e97fe63d52340f9c9c76266da69e725dc` foi confirmado no remoto em 24/10/2026; este checkpoint documental complementa a entrega. O bloqueio anterior de disco/iCloud está registrado como histórico em `CURRENT_WORK.md`.
 

@@ -39,3 +39,68 @@ Observação histórica: Keep Awake salvo ativo até 18:02:44, com tela ligada e
 5. Design de todas as abas e estados; arquivos/resultados e tarefas maiores.
 
 Para cada ensaio registrar: build, idioma, canal (texto/voz), frase, resultado esperado, resultado real, permissão/dispositivo, evidência e se o resultado foi obtido por fixture ou app/modelo real. Não escrever “resolvido” só porque compilou.
+
+## Validação visual da família arredondada em 06/11/2026
+
+No candidato de design, os selos de carregamento e alguns efeitos tocavam o limite da galeria. O enquadramento foi ajustado mantendo o selo sem giro e com escala fixa. As 294 combinações em render isolado deixaram somente os recortes intencionais na abertura e na saída lateral.
+
+O notebook da Ada mostrava a tela para a câmera durante os toques. Corrigido no rig local, com a tela voltada para Ada, teclas no lado do uso e um teste nativo de posição das mãos, retorno e Reduzir Movimento. A avaliação do ritmo cabe à revisão na janela interativa.
+
+
+Na primeira renderização da arte 2D, a sequência de resultado da Ada mostrou resíduos escuros na textura, um olho encoberto durante a virada e olhos ausentes ao sorrir. O caso foi reproduzido no exportador isolado com o catálogo real e seis quadros de 0 a 2,35 s. A correção preenche as áreas sob as camadas dos olhos usando a cor do corpo, pinta o sorriso numa camada 2D e fixa a ordem do corpo abaixo dos olhos ao virar. A validação da nova sequência e do conjunto de movimentos está em andamento.
+
+
+O caso dos olhos ausentes da Ada foi validado em render isolado com o catálogo real. Os dois olhos aparecem em 72 de 72 quadros após ordenar as camadas. A validação não cobre a qualidade dos cinco especialistas, rejeitada nas capturas da prévia por diferenças de iluminação, contornos e material durante a animação. A arte recortada da prancha será substituída por ilustrações individuais no mesmo acabamento do Chomp.
+
+
+Na versão ilustrada seguinte, o recorte da prancha foi substituído por cinco conjuntos de arte independentes. O problema de luz e contorno foi conferido em claro e escuro em render com os recursos reais do app. Olhos da Rita estreitos e à esquerda dentro das lentes e curvas de Elinor presentes na prévia. Ada usa o notebook desenhado com a tela voltada para ela e os dois olhos aparecem em 72/72 quadros. Aceite visual do usuário e recorte físico ficam em aberto.
+
+
+Em 07/11, o usuário rejeitou o encaixe dos olhos de Rita/Elinor e dos acessórios de Gantt/Toni na janela ilustrada. A contagem de movimentos e os testes anteriores não demonstravam integração visual. A causa é a montagem de peças independentes com proporções e perspectiva inadequadas. Correção em andamento com ilustração completa e deformação localizada dos olhos, mantendo as sombras e a oclusão dos acessórios.
+
+
+07/11 — Render nativo com catálogo real reproduziu halo claro de alpha nos quatro novos retratos e deformação da aba do capacete na piscada de Gantt. A primeira compilação e os 23 testes de contratos passaram, mas não verificam esses defeitos visuais. Limite da deformação corrigido no código; transparência em correção. Validação visual do novo lote pendente; nenhuma conclusão sobre hardware de áudio/microfone.
+
+
+08/11 — Em render nativo com recursos reais, olhos locais substituíram a deformação do rosto; comparação neutro/piscada dos quatro especialistas mostrou zero pixels alterados fora das regiões oculares, incluindo capacete, óculos, fone e pasta. A máscara Gantt foi corrigida para não recortar contornos internos do calendário. As bordas foram revistas sobre claro e escuro. Prévia final e aceite visual ainda pendentes; isso não equivale a validação no recorte físico.
+
+
+08/11 — Reproduzido na janela real de avaliação: a cena Congelado mistura o retrato do Chomp com uma superfície de gelo opaca e um cachecol de geometria antiga. Usuário rejeitou as animações dos cards climáticos. Os 27 quadros climáticos anteriores só comprovaram execução, não aprovação estética. Revisão das nove condições em andamento; nenhuma operação de áudio ou microfone.
+
+
+08/11 — Teste determinístico da nova coreografia reproduziu sobreposição de piscada natural e expressão no Toni: abertura abaixo de 0,04 em irritação, tontura e bocejo. Limite mínimo unificado em 0,06; nova execução pendente. A continuidade das outras identidades e os limites de Rita/Elinor passaram. Isso é validação da trajetória matemática, separada da revisão visual no render com recursos reais.
+
+
+09/11 — O limite de piscada corrigido passou na seleção de 25 testes. A prévia nativa abriu; usuário reproduziu perda de comportamento climático: as reações e efeitos foram reduzidos demais e não preservam os gestos específicos da versão anterior por temperatura/condição. Correção em andamento; o render anterior não equivale a aceite. Sem acesso ao modelo real de clima, áudio ou microfone.
+
+
+09/11 — Perda dos gestos climáticos corrigida no candidato: frio abraça o cachecol/tirita, calor se abana/sua, chuva protege a cabeça, tempestade reage ao clarão, granizo se abaixa e neve acumula com gesto de captura. Intensidade usa temperatura/sensação da observação; card e personagem compartilham relógio. Os 28 testes dirigidos passaram e nove cenas completas foram inspecionadas em render com recursos reais. Na janela HeyChomp Clima, controle -16°C e troca Calor/33°C confirmados. Aceite estético permanece pendente; dados usados são fixtures, não clima buscado no serviço real. Logs dos testes ainda registram avisos do SceneKit boundaryCount e do serviço de Contatos no host de testes, sem falha de teste; não foram tratados como validação de contatos/hardware. Desempenho físico e notch real permanecem fora desta verificação.
+
+
+09/11 — Nova avaliação do usuário mantém a qualidade das animações climáticas em aberto. Revisão técnica identificou mãos sem ligação visual ao corpo em proteção de chuva/granizo e atmosfera reduzida a linhas/ícones simples, abaixo do acabamento do Chomp. Corrigir ligação dos gestos e composição do card; os 28 testes anteriores verificam contratos e continuidade, não aprovação artística.
+
+
+10/11 — Revisão visual final reduziu os braços longos e o brilho excessivo encontrados no primeiro render da atmosfera. As malhas ligam mãos à lateral do corpo e usam a mesma pintura; render com recursos reais e janela HeyChomp Atmosfera confirmaram a correção em chuva. Cards agora usam nuvens/sol pintados, gelo nas bordas, precipitação em profundidade e eventos sincronizados com os gestos. 29 testes de continuidade/contratos passaram; exportação final 9 × 288 quadros não reportou falha de shader. Qualidade estética ainda depende do aceite do usuário, que iniciou teste em Granizo. Clima obtido do serviço real, hardware e desempenho medido não foram verificados nesta prévia de fixtures.
+
+
+10/11 — As capturas do usuário invalidam a conclusão visual anterior sobre os braços: a malha reutiliza a silhueta da mão e parece outra mão, não sombra. Gotas e acúmulo de neve ainda usam pictogramas do rig antigo; corpo não congela porque a revisão deixou apenas gelo no card. Correção em andamento; testes de continuidade anteriores não cobrem esses defeitos visuais.
+
+
+10/11 — Alpha dos efeitos de superfície corrigido e conferido em stills claros/escuros: gotas sem retângulos e neve restrita ao topo. Descoberto limite do alvo de testes hostless: não inclui o catálogo de ilustrações, portanto os testes de geometria não comprovam pintura nova. Novo teste de congelamento falhou por essa ausência; movido ao exportador com catálogo real e verificação explícita de usesIllustration. Sequência completa e prévia ainda pendentes.
+
+
+10/11 — Quatro defeitos da última captura corrigidos no candidato e conferidos em exportação nativa com recursos reais: malha que duplicava mão removida, sombra desenhada no corpo; gotas de superfície com alpha e trajetória novas; manto contínuo de neve; congelamento da pintura com dois olhos preservados. 30 contratos passaram e a checagem de pixels passou no bundle com catálogo, separado do alvo hostless. 9×288 quadros exportados; estética continua aguardando aceite. Janela nova aberta em -16°C, captura confirmou gelo e dois olhos; a ferramenta retornou noWindowsAvailable numa tentativa de clique por coordenadas, portanto interação ao vivo/primeiro plano ainda não validados. Sem teste de clima real ou hardware.
+
+
+10/11 — Usuário declarou todos os bots/animações/clima validados e aprovou continuar. Pendência de aceite estético desta etapa encerrada pelo relato do usuário. As limitações anteriores da ferramenta de interface não invalidam esse aceite; FPS medido, serviço meteorológico real e hardware não foram inferidos. Próxima etapa: atualização do app e redesign das telas preservando a arte aprovada.
+
+
+10/11 — Durante instalação do 124, a reabertura sem --resume-keep-awake-session desativou a proteção original conforme a preferência normal de inicialização. Reproduzido por leitura active=false/sem asserção; restaurada pela UI a sessão Sem limite e Manter tela ligada, mesmas opções, AX confirmou ativa. Em próximas atualizações preservar explicitamente o fluxo de retomada; não assumir sucesso apenas pelo guard finish.
+
+
+10/11 — Regressão de onboarding confirmada: o caminho usesIllustration em CompanionGreetingRig substitui a sequência antiga por CompanionPaintedMotion e oculta partículas/anel. Os testes hostless anteriores carregam o fallback e não detectaram essa perda nos novos avatares. Corrigir a coreografia compartilhada e validar com Assets.car real; aceite anterior dos bots/clima não cobre esta regressão.
+
+
+11/11 — Metadados Git do checkout dedicado indisponíveis: git status e rev-parse retornam not a git repository; .git aponta a /private/tmp/heychomp-pr11.7y6x55/.git/worktrees/heychomp-pr11.7y6x55, onde falta commondir. Os arquivos de trabalho permanecem acessíveis; causa e recuperação não validadas. Não usar reset/clean ou substituir checkout: preservar o trabalho e diagnosticar antes de operações Git.
+
+11/11 — Regressão da abertura do onboarding corrigida no candidato 125 e validada em exportação com Assets.car real: sequência original, mãos pintadas, replay e estado de movimento reduzido passaram. Validação interativa na janela e aceite do usuário ainda pendentes; o build 124 instalado continua sem a correção.

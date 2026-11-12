@@ -2,9 +2,12 @@ import SwiftUI
 
 @MainActor final class CompanionMotionStudioViewModel: ObservableObject {
     @Published var member: CompanionAvatar
-    @Published var animation: CompanionAnimation = .hello
+    @Published var animation: CompanionAnimation
     @Published var replay = 0
-    init(member: CompanionAvatar = .sig) { self.member = member }
+    init(member: CompanionAvatar = .sig) {
+        self.member = member
+        animation = member == .sig ? .idle : .hello
+    }
     func play() { replay += 1 }
 }
 

@@ -26,10 +26,11 @@ struct CompanionMotionStudio: View {
                             CompanionCharacter(size: 40, avatar: member, animates: false)
                             Text(member.name).font(.caption.weight(.medium))
                         }.frame(maxWidth: .infinity).padding(7).modifier(WorkspaceSurface(selected: model.member == member, radius: 14))
-                    }.buttonStyle(.plain).focusEffectDisabled()
+                    }.buttonStyle(.plain)
                 }
             }
-            CompanionCharacter(size: 224, avatar: model.member, animates: animates, animation: model.animation, replay: model.replay)
+            CompanionCharacter(size: 224, avatar: model.member, animates: animates, animation: model.animation,
+                               replay: model.replay)
                 .frame(maxWidth: .infinity).background(CompanionStyle.edge.opacity(0.025), in: RoundedRectangle(cornerRadius: 22))
             VStack(spacing: 4) {
                 Text(model.member.subtitle).font(.headline)

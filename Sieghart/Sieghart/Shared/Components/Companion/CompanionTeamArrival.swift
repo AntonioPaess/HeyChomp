@@ -284,7 +284,7 @@ struct CompanionTeamScene: NSViewRepresentable {
                     let s = rigGLerp(58 * opening.scale / greeting.bounds.height, sigScale, dock)
                     head.scale = SCNVector3(s, s, s)
                     head.position = SCNVector3(-greeting.bounds.midX * s, -greeting.bounds.midY * s, 0)
-                    head.eulerAngles = SCNVector3(0, -0.07 + sin(t * 0.8) * 0.015, 0)
+                    head.eulerAngles = SCNVector3(0, greeting.model.usesIllustration ? 0 : -0.07 + sin(t * 0.8) * 0.015, 0)
                     head.opacity = 1
                     greeting.handL.opacity = 0; greeting.handR.opacity = 0
                     greeting.model.updateEyes(open: 1, joy: 0.2, gaze: CGSize(width: dock * 1.5, height: 0), wink: 0, anger: 0)
@@ -328,7 +328,7 @@ struct CompanionTeamScene: NSViewRepresentable {
                                      CompanionHomeLayout.bodySize(38) / max(bound.width, bound.height), base!.dock)
                     model.head.scale = SCNVector3(s, s, s)
                     model.head.position = SCNVector3(-bound.midX * s, -bound.midY * s, 0)
-                    model.head.eulerAngles = SCNVector3(0, -0.1 + sin(t + Double(index - 1)) * 0.025, sin(t * 1.4 + Double(index - 1)) * 0.012)
+                    model.head.eulerAngles = SCNVector3(0, model.usesIllustration ? 0 : -0.1 + sin(t + Double(index - 1)) * 0.025, sin(t * 1.4 + Double(index - 1)) * 0.008)
                     let blink = (t + Double(index - 1) * 0.37).truncatingRemainder(dividingBy: 4.2)
                     let open = blink > 3.55 && blink < 3.85 ? 1 - sin((blink - 3.55) / 0.3 * .pi) * 0.95 : 1
                     let angles = [150.0, 30, 90, 222, 318]
@@ -367,6 +367,7 @@ struct CompanionTeamScene: NSViewRepresentable {
     }
     func updateNSView(_ view: CompanionRenderView, context: Context) { configure(view, coordinator: context.coordinator) }
     private func configure(_ view: CompanionRenderView, coordinator: Coordinator) {
+        if preview || !animates { coordinator.update(time: time, animates: animates, size: size) }
         coordinator.configure(Input(start: started?.timeIntervalSinceReferenceDate ?? Date.timeIntervalSinceReferenceDate - time,
                                     animates: animates && !preview, size: size))
         view.animationEnabled = animates && !preview && time < CompanionTeamFormation.duration

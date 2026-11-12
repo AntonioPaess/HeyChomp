@@ -12,6 +12,17 @@ struct LocalChatPrompt: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.locale) private var locale
     @State private var followsReply = true
+    @State private var notebookMessageID: String?
+    private struct NotebookResult: Equatable {
+        let conversationID: String
+        let messageID: String?
+    }
+    private var notebookResult: NotebookResult {
+        let message = conversation.messages.last
+        let ready = conversation.persona == .ada && chat.states[conversation.id] == .completed
+        let id = ready && message?.role == .assistant && message?.text.isEmpty == false ? message?.id : nil
+        return NotebookResult(conversationID: conversation.id, messageID: id)
+    }
     private var working: Bool { chat.generatingID == conversation.id }
     private var en: Bool { locale.language.languageCode?.identifier == "en" }
     private var promptPlaceholder: String {
@@ -51,6 +62,11 @@ struct LocalChatPrompt: View {
             for url in urls.prefix(2) { Task { await chat.attach(url, to: conversation.id) } }
             return true
         }
+        .onChange(of: notebookResult) { previous, current in
+            notebookMessageID = active && previous.conversationID == current.conversationID ? current.messageID : nil
+        }
+        .onChange(of: active) { _, visible in if !visible { notebookMessageID = nil } }
+        .onDisappear { notebookMessageID = nil }
         .animation(preview || reduceMotion ? nil : AdaRoomTheme.springAnimation, value: conversation.messages.count)
     }
 
@@ -166,6 +182,12 @@ struct LocalChatPrompt: View {
         }
         ForEach(conversation.messages.filter { $0.role != .system }) { message in
             VStack(alignment: .leading, spacing: 4) {
+                if notebookMessageID == message.id {
+                    CompanionCharacter(size: 64, avatar: .ada, animates: active, animation: .completed)
+                        .id(message.id)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.trailing, 8)
+                }
                 AgentChatBubble(message: CodingMessage(id: message.id, role: message.role == .user ? .user : .assistant, text: message.text + (message.attachedFiles.map { "\n\n📎 " + $0.joined(separator: " · ") } ?? "")),
                     isStreaming: working && message.id == conversation.messages.last?.id)
                 if chat.canSaveReply(message.id, in: conversation.id) {

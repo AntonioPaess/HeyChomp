@@ -5,6 +5,7 @@ struct ContentView: View {
     @StateObject private var viewModel: WorkspaceViewModel
     @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
     @FocusState private var focusedSection: AppSection?
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @Environment(\.islandPreview) private var preview
     @EnvironmentObject private var sensor: SensorViewModel
     @EnvironmentObject private var assistant: AssistantViewModel
@@ -35,23 +36,76 @@ struct ContentView: View {
     }
 
     private var workspace: some View {
-        HStack(spacing: 0) {
-            sidebar
-            Group {
-                if scrollable { ScrollView { page }.scrollIndicators(.hidden) }
-                else { page }
+        Group {
+            // ImageRenderer has no native split-view host. The catalog keeps an
+            // explicit pane map; the live window uses the system source list.
+            if preview {
+                HStack(spacing: 0) { sidebar; pageContent }
+            } else {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
+                    nativeSidebar
+                        .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 280)
+                } detail: {
+                    pageContent
+                        .navigationTitle(viewModel.section.title(english: en))
+                        .toolbar {
+                            ToolbarItemGroup(placement: .primaryAction) {
+                                Button { notch.show() } label: {
+                                    Label(en ? "Show companion" : "Mostrar companheiro", systemImage: "rectangle.topthird.inset.filled")
+                                }.help(en ? "Show the floating companion" : "Mostrar o companheiro flutuante")
+                                Button {
+                                    Task {
+                                        if await notch.agentRoom.localChat.create(.sig) != nil {
+                                            notch.agentRoom.page = .chat; viewModel.section = .agentRoom
+                                        }
+                                    }
+                                } label: {
+                                    Label(en ? "New conversation" : "Nova conversa", systemImage: "square.and.pencil")
+                                }.help(en ? "New conversation" : "Nova conversa")
+                            }
+                        }
+                }.navigationSplitViewStyle(.balanced)
             }
-            .id(viewModel.section) // Each destination starts at its own top, not the previous page’s offset.
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(minWidth: 840, minHeight: 580)
-        .tint(CompanionStyle.accent)
+        .tint(CompanionStyle.accentInk)
         .font(WorkspaceTypography.body)
-        .buttonStyle(CompanionButtonStyle())
-        .focusEffectDisabled()
+        .buttonStyle(.bordered)
         .onChange(of: preferences.impactsEnabled) { _, enabled in
             if enabled { sensor.startIfNeeded() }
             else { sensor.stop(); gestures.cancelPendingImpacts() }
+        }
+    }
+
+    private var pageContent: some View {
+        Group {
+            if scrollable { ScrollView { page } }
+            else { page }
+        }
+        .id(viewModel.section)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(CompanionStyle.background)
+    }
+
+    private var nativeSidebar: some View {
+        List(selection: Binding<AppSection?>(get: { viewModel.section }, set: { if let section = $0 { viewModel.section = section } })) {
+            Section(en ? "Your space" : "Seu espaço") {
+                ForEach(AppSection.workspaceSections) { item in
+                    Label(item.title(english: en), systemImage: item.symbol).tag(item)
+                }
+            }
+            Section(en ? "Preferences" : "Preferências") {
+                ForEach(AppSection.preferenceSections) { item in
+                    Label(item.title(english: en), systemImage: item.symbol).tag(item)
+                }
+            }
+        }
+        .listStyle(.sidebar)
+        .navigationTitle("HeyChomp")
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Button(en ? "Review introduction" : "Rever apresentação") { preferences.onboardingComplete = false }
+                .buttonStyle(.borderless).font(WorkspaceTypography.caption)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(16)
         }
     }
 
@@ -59,7 +113,9 @@ struct ContentView: View {
 
     private var page: some View {
         VStack(alignment: .leading, spacing: WorkspaceMetrics.sectionGap) {
-            WorkspacePageHeading(title: viewModel.section.title(english: en), subtitle: viewModel.section.subtitle(english: en))
+            if viewModel.section != .overview {
+                WorkspacePageHeading(title: viewModel.section.title(english: en), subtitle: viewModel.section.subtitle(english: en))
+            }
             switch viewModel.section {
             case .desktop:
 
@@ -129,7 +185,7 @@ struct ContentView: View {
                     Text(activation.voiceLanguage.hasPrefix("en") ? "Your quiet companion" : "Seu companheiro de todos os dias").font(.system(size: 10)).foregroundStyle(CompanionStyle.muted)
                 }
             }.padding(.horizontal, 8).padding(.top, 12).padding(.bottom, 18)
-            Text(activation.voiceLanguage.hasPrefix("en") ? "YOUR SPACE" : "SEU ESPAÇO").font(.system(size: 9, weight: .semibold)).tracking(1.6)
+            Text(en ? "Your space" : "Seu espaço").font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(CompanionStyle.muted.opacity(0.7)).padding(.horizontal, 12).padding(.bottom, 4)
             Group {
                 if preview { sidebarNavigation }
@@ -151,7 +207,7 @@ struct ContentView: View {
             ForEach(AppSection.workspaceSections) { item in
                 sidebarButton(item.title(english: en), section: item, symbol: item.symbol, selected: viewModel.section == item) { viewModel.section = item }
             }
-            Text(en ? "PREFERENCES" : "PREFERÊNCIAS").font(.system(size: 9, weight: .semibold)).tracking(1.2)
+            Text(en ? "Preferences" : "Preferências").font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(CompanionStyle.muted.opacity(0.7)).padding(.horizontal, 12).padding(.top, 22).padding(.bottom, 8)
             ForEach(AppSection.preferenceSections) { item in
                 sidebarButton(item.title(english: en), section: item, symbol: item.symbol, selected: viewModel.section == item) { viewModel.section = item }
@@ -166,7 +222,7 @@ struct ContentView: View {
                     .foregroundStyle(selected ? CompanionStyle.accentInk : CompanionStyle.muted)
                 Text(title)
                 Spacer()
-                if selected { Circle().fill(CompanionStyle.accent).frame(width: 4, height: 4) }
+
             }
                 .font(.system(size: 12, weight: selected ? .medium : .regular))
                 .frame(maxWidth: .infinity, alignment: .leading)

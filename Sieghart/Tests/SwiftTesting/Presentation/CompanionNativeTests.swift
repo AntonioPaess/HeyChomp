@@ -34,6 +34,36 @@ extension MacContractsTests {
             #expect(actor.halo.renderingOrder < 0 && actor.halo.geometry?.firstMaterial?.readsFromDepthBuffer == false)
         }
 
+        @Test("Ada faces the notebook, reaches its keys and settles after the result")
+        func adaNotebookResult() throws {
+            let actor = CompanionRigActor(.ada, 2)
+            let notebook = try #require(actor.model.notebook)
+            let lid = try #require(actor.model.notebookLid)
+            let completion = CompanionAnimation.completed
+            func update(_ time: Double, animates: Bool = true) {
+                actor.update(id: completion.rawValue, t: time, duration: completion.duration,
+                             global: 0, animates: animates)
+            }
+
+            update(1.02)
+            let displayNormal = lid.convertVector(SCNVector3(0, 0, 1), to: actor.model.root)
+            #expect(displayNormal.x < -0.5 && displayNormal.z < -0.15)
+            #expect(actor.lastPose.yaw > 0.4 && actor.lastPose.gaze.height > 3)
+            for hand in actor.hands {
+                let contact = notebook.convertPosition(hand.position, from: actor.model.head)
+                #expect(abs(contact.x) < 13 && contact.z > 3 && contact.z < 13)
+                #expect(contact.y > 1 && contact.y < 5)
+                #expect(hand.opacity > 0.95)
+            }
+
+            update(2.6)
+            #expect(abs(actor.lastPose.yaw) < 0.15)
+            #expect(actor.hands.allSatisfy { $0.opacity == 0 })
+            update(1.02, animates: false)
+            #expect(actor.lastPose.yaw == 0 && actor.lastPose.gaze == .zero)
+            #expect(actor.hands.allSatisfy { $0.opacity == 0 })
+        }
+
         @Test("G05.04 · Loading advances its contour on persistent meshes and cancels continuously", arguments: CompanionAvatar.allCases)
         func loadingContinuity(_ member: CompanionAvatar) throws {
             let coordinator = CompanionScene.Coordinator(member)
@@ -92,6 +122,124 @@ extension MacContractsTests {
     }
 
     @MainActor @Suite(.tags(.companions, .nativeView)) struct CompanionRigTests {
+        @Test("Surface water grows, slides and disappears before each path restarts")
+        func surfaceWaterContinuity() {
+            for hot in [false,true] {
+                for index in 0..<6 {
+                    var previous=WeatherSurfaceMotion.drop(index:index,time:0,hot:hot,intensity:0.8)
+                    for frame in 1...3600 {
+                        let p=WeatherSurfaceMotion.drop(index:index,time:Double(frame)/120,hot:hot,intensity:0.8)
+                        let finite=[p.x,p.y,p.size,p.stretch,p.opacity].allSatisfy { $0.isFinite }
+                        #expect(finite)
+                        if p.opacity>0.05 && previous.opacity>0.05 {
+                            #expect(abs(p.y-previous.y)<1 && abs(p.x-previous.x)<1)
+                        }
+                        previous=p
+                    }
+                }
+            }
+            #expect(WeatherSurfaceMotion.snowLevel(time:0)==0)
+            #expect(WeatherSurfaceMotion.snowLevel(time:12)>WeatherSurfaceMotion.snowLevel(time:3))
+            let mild=CompanionWeatherIntensity(mood:.frozen,temperature:-2)
+            let severe=CompanionWeatherIntensity(mood:.frozen,temperature:-16)
+            #expect(WeatherSurfaceMotion.freezeDuration(severe)<WeatherSurfaceMotion.freezeDuration(mild))
+        }
+        @Test("Weather reactions retain temperature-dependent intensity and purposeful hand gestures")
+        func weatherTemperatureGestures() {
+            let mild=CompanionWeatherIntensity(mood:.cold,temperature:14)
+            let severe=CompanionWeatherIntensity(mood:.frozen,temperature:-16)
+            #expect(severe.cold>mild.cold)
+            let cold=WeatherCharacterPose.sample(.cold,time:1.4,intensity:mild)
+            let frozen=WeatherCharacterPose.sample(.frozen,time:1.4,intensity:severe)
+            #expect(abs(frozen.x)>abs(cold.x))
+            #expect(frozen.sy<cold.sy)
+            #expect(frozen.hands==1 && cold.hands==1)
+            let warm=WeatherCharacterPose.sample(.hot,time:1.4,intensity:.init(mood:.hot,temperature:29))
+            let hot=WeatherCharacterPose.sample(.hot,time:1.4,intensity:.init(mood:.hot,temperature:42))
+            #expect(hot.sy<warm.sy && hot.open<warm.open)
+            let fanA=WeatherCharacterPose.sample(.hot,time:2)
+            let fanB=WeatherCharacterPose.sample(.hot,time:2.2)
+            #expect(abs(fanA.handRRoll-fanB.handRRoll)>0.1)
+            #expect(WeatherCharacterPose.sample(.rain,time:1).handLY>8)
+            #expect(WeatherCharacterPose.sample(.hail,time:1.5).handRY>17)
+            #expect(WeatherCharacterPose.sample(.snow,time:3.9).handRY > -10)
+        }
+        @Test("Thunder anticipates the reaction and leaves a quiet recovery between impacts")
+        func weatherSharedTiming() {
+            let before=WeatherCharacterPose.sample(.storm,time:2.0)
+            let flash=WeatherChoreography.sample(time:2.65)
+            let recoil=WeatherCharacterPose.sample(.storm,time:2.65)
+            let settled=WeatherCharacterPose.sample(.storm,time:6.5)
+            #expect(flash.flash>0.5)
+            #expect(recoil.sy<before.sy && recoil.open<before.open)
+            #expect(settled.open>recoil.open && WeatherChoreography.sample(time:6.5).flash==0)
+            #expect(WeatherChoreography.sample(time:11.99).startle==0)
+        }
+        @Test("Weather card clock pauses without catch-up and restarts each condition")
+        func weatherClockContinuity() {
+            var clock=WeatherPanelClock()
+            #expect(clock.time(at:Date.distantFuture)==0)
+            clock.restart(playing:true)
+            clock.setPlaying(false)
+            let a=clock.time(at:Date())
+            #expect(a==clock.time(at:Date.distantFuture))
+            clock.restart(playing:false)
+            #expect(clock.time(at:Date.distantFuture)==0)
+        }
+        @Test("Every weather gesture remains continuous across its loop")
+        func weatherLoopContinuity() {
+            var failures:[String]=[]
+            for mood in CompanionWeatherMood.allCases {
+                var previous=WeatherCharacterPose.sample(mood,time:0)
+                for frame in 1...1800 {
+                    let t=Double(frame)/120,p=WeatherCharacterPose.sample(mood,time:t)
+                    let values=[p.x,p.y,p.sx,p.sy,p.open,p.roll,p.handRX,p.handRY,p.handRRoll]
+                    if !values.allSatisfy(\.isFinite) || p.open<0.06 || abs(p.x-previous.x)>1 || abs(p.handRY-previous.handRY)>2 || abs(p.handRRoll-previous.handRRoll)>0.2 {
+                        failures.append("\(mood) at \(t)"); break
+                    }
+                    previous=p
+                }
+            }
+            #expect(failures.isEmpty,"\(failures)")
+        }
+        @Test("Painted motion preserves silhouettes and stays continuous at every loop", arguments: CompanionAvatar.allCases)
+        func paintedMotionContinuity(_ member: CompanionAvatar) {
+            var invalid:[String]=[]
+            for animation in CompanionAnimation.allCases {
+                var previous=CompanionPaintedMotion.sample(member,id:animation.rawValue,time:0,global:0)
+                for frame in 1...1440 {
+                    let t=Double(frame)/120
+                    let p=CompanionPaintedMotion.sample(member,id:animation.rawValue,time:t,global:t)
+                    let values=[p.x,p.y,p.sx,p.sy,p.roll,p.open,p.joy,p.opacity,p.fold]
+                    if !values.allSatisfy(\.isFinite) || p.sx<0.85 || p.sx>1.08 || p.sy<0.85 || p.sy>1.08 || abs(p.roll)>0.12 || p.open<0.04 {
+                        invalid.append("\(animation): bounds at \(t)"); break
+                    }
+                    // At 120 Hz a teleport, flipped plane or abrupt loop reset
+                    // exceeds these limits; normal anticipation and blinking do not.
+                    if abs(p.x-previous.x)>1 || abs(p.y-previous.y)>1 || abs(p.roll-previous.roll)>0.025 || abs(p.open-previous.open)>0.2 {
+                        invalid.append("\(animation): discontinuity at \(t)"); break
+                    }
+                    previous=p
+                }
+            }
+            #expect(invalid.isEmpty, "\(member): \(invalid)")
+        }
+        @Test("Reference faces retain two eyes, Rita lens bounds and Elinor closed curves")
+        func paintedFaceLimits() {
+            var invalid=false
+            for member in [CompanionAvatar.rita,.elinor] {
+                for animation in CompanionAnimation.allCases {
+                    for frame in 0...180 {
+                        let t=Double(frame)/60
+                        let p=CompanionPaintedMotion.sample(member,id:animation.rawValue,time:t,global:t)
+                        if member == .rita { invalid = invalid || p.gaze.width<0 || p.gaze.width>0.4 || abs(p.gaze.height)>0.51 }
+                        else { invalid = invalid || p.wink != 0 || p.joy>0.18 }
+                    }
+                }
+            }
+            #expect(!invalid)
+        }
+
         @Test("G05.05 · All 294 character/animation pairs retain finite, coherent scales", arguments: CompanionAvatar.allCases)
         func allAnimationPoses(_ member: CompanionAvatar) {
             let coordinator = CompanionScene.Coordinator(member)

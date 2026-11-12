@@ -31,7 +31,7 @@ enum WorkspaceMetrics {
 
 enum WorkspaceTypography {
     static let title = Font.system(size: 27, weight: .semibold, design: .rounded)
-    static let section = Font.system(size: 14, weight: .semibold)
+    static let section = Font.system(size: 16, weight: .semibold)
     static let body = Font.system(size: 13)
     static let caption = Font.system(size: 11)
 }
@@ -89,7 +89,7 @@ struct WorkspaceEmptyState: View {
             Text(title).font(WorkspaceTypography.section)
             Text(detail).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted)
                 .multilineTextAlignment(.center).frame(maxWidth: 340)
-        }.padding(26).frame(maxWidth: .infinity).modifier(WorkspaceSurface())
+        }.padding(.vertical, 28).frame(maxWidth: .infinity)
     }
 }
 
@@ -101,39 +101,23 @@ extension EnvironmentValues {
 }
 
 struct WorkspaceBackdrop: View {
-    @Environment(\.accessibilityReduceTransparency) private var opaque
-    @Environment(\.islandPreview) private var preview
-    @Environment(\.surfaceGlassEnabled) private var glass
-    @Environment(\.colorScheme) private var scheme
     var body: some View {
-        ZStack {
-            if !glass || opaque || preview { CompanionStyle.background }
-            else { Rectangle().fill(.regularMaterial) }
-            if glass && !opaque {
-                LinearGradient(colors: [CompanionStyle.background.opacity(0.65), CompanionStyle.background.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                RadialGradient(colors: [CompanionStyle.accent.opacity(scheme == .dark ? 0.09 : 0.04), .clear], center: .topTrailing, startRadius: 20, endRadius: 650)
-            }
-        }.allowsHitTesting(false).accessibilityHidden(true)
+        CompanionStyle.background.allowsHitTesting(false).accessibilityHidden(true)
     }
 }
 
 struct WorkspaceSurface: ViewModifier {
     var selected = false
     var radius: CGFloat = WorkspaceMetrics.cardRadius
-    @Environment(\.accessibilityReduceTransparency) private var opaque
     @Environment(\.colorSchemeContrast) private var contrast
-    @Environment(\.islandPreview) private var preview
-    @Environment(\.surfaceGlassEnabled) private var glass
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        content.background {
-            if !glass || opaque || preview { shape.fill(CompanionStyle.surface) }
-            else if #available(macOS 26, *) { Color.clear.glassEffect(.regular.tint(CompanionStyle.surface.opacity(0.35)), in: shape) }
-            else { shape.fill(.ultraThinMaterial) }
-        }
-        .background(selected ? CompanionStyle.accent.opacity(0.07) : .clear, in: shape)
-        .overlay { shape.strokeBorder(selected ? CompanionStyle.accent.opacity(0.40) : CompanionStyle.edge.opacity(contrast == .increased ? 0.48 : 0.075), lineWidth: selected ? 1 : 0.7).allowsHitTesting(false) }
-        .shadow(color: .black.opacity(!glass || opaque ? 0 : 0.09), radius: 14, y: 6)
+        // Object cards stay opaque. Native navigation and toolbars own material.
+        content.background(CompanionStyle.surface, in: shape)
+            .overlay {
+                shape.strokeBorder(selected ? CompanionStyle.accentInk.opacity(0.65) : CompanionStyle.edge.opacity(contrast == .increased ? 0.48 : 0.075), lineWidth: selected ? 1.5 : 0.7)
+                    .allowsHitTesting(false)
+            }
     }
 }
 
@@ -226,7 +210,12 @@ private struct CompanionCardModifier: ViewModifier {
         let padding: CGFloat = inset ?? (workspace ? WorkspaceMetrics.cardInset : !glass ? 22 : 16)
         let sized = content.frame(maxWidth: .infinity, alignment: .topLeading)
             .frame(height: height.map { max(0, $0 - padding * 2) }, alignment: .topLeading).padding(padding)
-        if workspace { sized.modifier(WorkspaceSurface()) }
+        if workspace {
+            content.frame(maxWidth: .infinity, alignment: .topLeading)
+                .frame(height: height, alignment: .topLeading)
+                .padding(.vertical, inset ?? 18)
+                .overlay(alignment: .bottom) { Divider().allowsHitTesting(false) }
+        }
         else if glass { sized.modifier(IslandControlSurface()) }
         else { sized.background(CompanionStyle.surface, in: RoundedRectangle(cornerRadius: WorkspaceMetrics.cardRadius)) }
     }

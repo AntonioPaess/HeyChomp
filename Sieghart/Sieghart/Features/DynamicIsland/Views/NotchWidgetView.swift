@@ -10,6 +10,8 @@ struct NotchWidgetView: View {
     @EnvironmentObject private var aiActivity: AIUsageViewModel
     @StateObject private var reactions = CompanionReactions()
     @State private var avatarPointer = CGSize.zero
+    @FocusState private var compactEntryFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
     private var scrollable: Bool
 
     init(reactions: CompanionReactions = CompanionReactions(), scrollable: Bool = true) {
@@ -483,11 +485,26 @@ struct NotchWidgetView: View {
             else {
                 Button { notch.clickIsland() } label: {
                     HStack(spacing: 0) {
-                        CompanionCharacter(size: 24, avatar: preferences.avatar, animates: animates, mood: notch.isPointerHovering ? .happy : .idle).frame(maxWidth: .infinity)
+                        Group {
+                            if preferences.avatar == .sig {
+                                CompactChompMark(highlighted: notch.isPointerHovering || compactEntryFocused,
+                                                 animates: animates && !systemReducedMotion && !staticPreview)
+                            } else {
+                                CompanionCharacter(size: 24, avatar: preferences.avatar, animates: animates,
+                                                   mood: notch.isPointerHovering ? .happy : .idle)
+                            }
+                        }.frame(maxWidth: .infinity)
                         Color.clear.frame(width: notch.geometry.cutoutWidth + (notch.geometry.cutoutWidth > 0 ? 8 : 24))
-                        Text("Open").font(.system(size: 11, weight: .medium)).foregroundStyle(CompanionStyle.accentInk).frame(maxWidth: .infinity)
+                        Text("Open").font(.system(size: 11, weight: .medium)).foregroundStyle(CompanionStyle.accentInk)
+                            .padding(.horizontal, 5).padding(.vertical, 3)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 5)
+                                    .strokeBorder(compactEntryFocused ? Color.white : .clear, lineWidth: 1.5)
+                                    .allowsHitTesting(false)
+                            }
+                            .frame(maxWidth: .infinity)
                     }.padding(.horizontal, 8).frame(height: notch.geometry.bodyHeight).contentShape(Rectangle())
-                }.buttonStyle(.plain).accessibilityLabel("Open HeyChomp")
+                }.buttonStyle(.plain).focused($compactEntryFocused).accessibilityLabel("Open HeyChomp")
             }
         }
     }
@@ -617,4 +634,36 @@ struct NotchWidgetView: View {
     }
 
 
+}
+
+private struct CompactChompMark: View {
+    let highlighted: Bool
+    let animates: Bool
+
+    var body: some View {
+        ZStack {
+            UnevenRoundedRectangle(topLeadingRadius: 11, bottomLeadingRadius: 7,
+                                   bottomTrailingRadius: 7, topTrailingRadius: 10)
+                .fill(.linearGradient(colors: [Color(white: 0.24), Color(white: 0.09)],
+                                      startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 23, height: 15)
+                .position(x: 12, y: 14)
+            HStack(spacing: 3) {
+                Capsule().frame(width: 3, height: 5)
+                Capsule().frame(width: 3, height: 5)
+            }
+            .foregroundStyle(Color(red: 1, green: 0.95, blue: 0.84))
+            .position(x: 13, y: 13)
+            Image(systemName: "sparkle")
+                .font(.system(size: 7, weight: .semibold))
+                .foregroundStyle(Color(red: 0.38, green: 0.98, blue: 0.73))
+                .opacity(highlighted ? 1 : 0.65)
+                .scaleEffect(animates && highlighted ? 1.15 : 1)
+                .position(x: 23, y: 5)
+                .animation(animates ? .easeOut(duration: 0.15) : nil, value: highlighted)
+        }
+        .frame(width: 28, height: 24)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }

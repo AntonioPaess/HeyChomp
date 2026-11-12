@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CompanionOnboardingView: View {
     @State private var tutorial = false
+    @State private var arrivalStarted = Date()
     @StateObject private var viewModel: OnboardingViewModel
     @EnvironmentObject private var preferences: CompanionPreferences
     @EnvironmentObject private var codex: CodexUsageViewModel
@@ -53,12 +54,21 @@ struct CompanionOnboardingView: View {
             .animation(moves ? .spring(response: 0.55, dampingFraction: 0.86) : nil, value: viewModel.step)
             .sheet(isPresented: $tutorial) { CompanionVoiceTutorial(language: preferences.introductionLanguage == .english ? "en" : "pt") }
             .onAppear { viewModel.loadTools(usage: usage, clipboard: clipboard) }
+            .onChange(of: viewModel.step) { _, step in if step == 0 { arrivalStarted = Date() } }
+            .onChange(of: moves) { _, enabled in if enabled { arrivalStarted = Date() } }
     }
     private var page: some View {
         VStack(alignment: .leading, spacing: 18) {
             if viewModel.step == 0 {
                 VStack(spacing: 12) {
-                    CompanionTeamArrival(animates: moves, previewTime: arrivalPreviewTime).frame(height: 300)
+                    CompanionTeamArrival(animates: moves, previewTime: arrivalPreviewTime, started: arrivalStarted,
+                                         language: preferences.introductionLanguage)
+                        .id(arrivalStarted).frame(height: 300)
+                    if moves {
+                        Button(preferences.introductionLanguage == .english ? "Replay introduction" : "Repetir apresentação", systemImage: "arrow.counterclockwise") {
+                            arrivalStarted = Date()
+                        }.buttonStyle(.borderless)
+                    }
                     Text("Ready when you are.").font(.title2.weight(.semibold))
                     Text("Keep a timer nearby, find something you copied, or speak a command. Your companion stays with you — without taking over your day.")
                         .font(.callout).foregroundStyle(CompanionStyle.muted).multilineTextAlignment(.center).frame(maxWidth: 470)

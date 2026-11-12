@@ -160,7 +160,7 @@ struct CompanionScene: NSViewRepresentable {
         @MainActor init(_ avatar: CompanionAvatar) {
             self.avatar = avatar
             actor = CompanionRigActor(avatar, CompanionAvatar.allCases.firstIndex(of: avatar) ?? 0)
-            camera = CompanionSceneLighting.configure(scene)
+            camera = CompanionSceneLighting.configure(scene, scale: actor.model.usesIllustration ? 62 : 55)
             super.init()
             let bounds = actor.bounds, scale = 80 / max(bounds.width, bounds.height)
             actor.model.root.scale = SCNVector3(scale, scale, scale)
