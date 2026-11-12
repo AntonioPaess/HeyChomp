@@ -47,8 +47,10 @@ O problema foi confirmado no código: para ilustrações novas, `CompanionGreeti
 
 ## Próximos passos, em ordem
 
-1. Resolver com segurança a indisponibilidade dos metadados Git, preservando todo o trabalho local. Não tocar no checkout compartilhado nem na branch/snapshot de outra IA. Conferir novamente status e HEAD só depois do diagnóstico.
-2. Conferir a existência da prévia; se necessário recompilá-la a partir das fontes preservadas e dos recursos do build, ajustando os caminhos temporários. Abrir **a prévia isolada**, não substituir o app principal sem validar a alteração, e inspecionar onboarding desde o início, replay, voltar, idioma e Reduzir Movimento. Não usar voz/microfone. A prévia ainda não foi apresentada ao usuário.
+1. ~~Resolver os metadados Git~~ — feito em 12/11; ver o item “Git resolvido” acima.
+2. **Prévia (12/11):** `HeyChomp Inicio.app` é um app separado só para revisar o design, com dados fictícios; o app do usuário continua sendo o 124 em `/Applications`. Ela foi aberta e o usuário começou a revisar. Encontrado e corrigido na fonte o crash ao pedir acesso ao Calendário (K22); **a prévia ainda não foi recompilada**, então o binário em `/private/tmp` ainda cai nesse botão. Recompilar com `build-review.sh` (ajustar os caminhos temporários) e conferir onboarding desde o início, replay, voltar, idioma e Reduzir Movimento. Não usar voz/microfone.
+   - Defeitos apontados pelo usuário para o próximo lote do redesign (K23): rótulo “Tema” quebrado na vertical na barra da prévia e “Edge snapping is off.” em inglês na interface em português.
+   - Ainda sem opinião do usuário sobre o Início, a navegação e o onboarding.
 3. Verificar Início e navegação ao vivo em claro/escuro, larguras e busca/abertura de conversa fictícia; revisar controles ausentes no catálogo e efeitos da mudança de componentes nas 16 abas. A tentativa de renderizar estados adicionais foi interrompida por limite da revisão automática de aprovação; não houve decisão de segurança sobre o código. Repetir somente quando disponível, sem contornar o bloqueio.
 4. Corrigir problemas encontrados, rodar build e testes pertinentes novamente e atualizar `CURRENT_WORK.md`/`KNOWN_ISSUES.md`. Oferecer comparações em claro e escuro e abrir a prévia para avaliação. Não declarar o redesign inteiro pronto por esta primeira fatia.
 5. Somente após validação adequada, tratar a integração no app principal com assinatura, histórico e Keep Awake preservados; o 124 não contém a correção de onboarding. Sem commit/push sem pedido.
