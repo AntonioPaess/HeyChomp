@@ -197,12 +197,10 @@ struct ContentView: View {
 
                 CalendarView(model: notch.calendar, events: notch.events).companionCard()
             case .files:
-
-                CompanionArtifactShelf(library: notch.spatialAssistant.artifacts, language: activation.voiceLanguage, openSource: { item in
+                LibraryPage(files: notch.files, artifacts: notch.spatialAssistant.artifacts, language: activation.voiceLanguage) { item in
                     if notch.agentRoom.localChat.revealSource(of: item) { notch.agentRoom.page = .chat; viewModel.section = .agentRoom; return true }
                     return false
-                })
-                FilesView(model: notch.files).companionCard()
+                }
             case .capture:
 
                 CaptureToolsView(model: notch.capture).companionCard()
@@ -217,6 +215,9 @@ struct ContentView: View {
                 activationSettings
                 Text(en ? "Appearance" : "Aparência").font(WorkspaceTypography.section).padding(.top, 12)
                 appearanceSettings
+                Text(en ? "File notifications" : "Notificações de arquivos").font(WorkspaceTypography.section).padding(.top, 12)
+                TaskNotificationPreferences(events: notch.files.events, module: .files)
+                TaskNotificationPreferences(events: notch.files.events, module: .downloads)
                 Text(en ? "Widget" : "Widget").font(WorkspaceTypography.section).padding(.top, 12)
                 IslandLayoutEditor(preferences: preferences, onPreview: { notch.show() })
             case .activation: activationSettings
@@ -754,6 +755,60 @@ private struct RitaNudgeSettings: View {
             }.disabled(!nudges.enabled)
             Text("Rita reads only how long it has been since your last keyboard or mouse input on this Mac. A 5-minute pause counts as a break.")
                 .font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted)
+        }
+    }
+}
+
+/// Biblioteca: one native tab bar (results, shelf, downloads, file helpers) over a calm,
+/// Finder-like content area. Toni's character appears only in the empty state.
+private struct LibraryPage: View {
+    enum Tab: Hashable { case results, shelf, downloads, helpers }
+    @ObservedObject var files: FilesViewModel
+    @ObservedObject var artifacts: CompanionArtifactLibrary
+    let language: String
+    let openSource: (CompanionArtifact) -> Bool
+    @SceneStorage("library.tab") private var tabName = "results"
+    @Environment(\.islandPreview) private var preview
+    private var en: Bool { language.hasPrefix("en") }
+    private var tab: Tab {
+        switch tabName { case "shelf": .shelf; case "downloads": .downloads; case "helpers": .helpers; default: .results }
+    }
+    private func title(_ tab: Tab) -> String {
+        switch tab {
+        case .results: en ? "Results" : "Resultados"
+        case .shelf: en ? "Shelf" : "Prateleira"
+        case .downloads: en ? "Downloads" : "Downloads"
+        case .helpers: en ? "Utilities" : "Utilitários"
+        }
+    }
+    private func name(_ tab: Tab) -> String {
+        switch tab { case .results: "results"; case .shelf: "shelf"; case .downloads: "downloads"; case .helpers: "helpers" }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Picker(en ? "Library section" : "Seção da biblioteca", selection: Binding(get: { tab }, set: { select($0) })) {
+                ForEach([Tab.results, .shelf, .downloads, .helpers], id: \.self) { Text(title($0)).tag($0) }
+            }
+            .pickerStyle(.segmented).labelsHidden().fixedSize()
+            .frame(maxWidth: .infinity, alignment: .center)
+            switch tab {
+            case .results:
+                CompanionArtifactShelf(library: artifacts, language: language, openSource: openSource, showsHeader: false)
+            default:
+                FilesView(model: files, showsChrome: false)
+            }
+        }
+        .onAppear { select(tab) }
+    }
+
+    private func select(_ new: Tab) {
+        tabName = name(new)
+        switch new {
+        case .shelf: files.page = .shelf
+        case .downloads: files.page = .downloads
+        case .helpers: files.page = .helpers
+        case .results: break
         }
     }
 }

@@ -7,6 +7,7 @@ struct CompanionArtifactShelf: View {
     @ObservedObject var library: CompanionArtifactLibrary
     let language: String
     var openSource: ((CompanionArtifact) -> Bool)? = nil
+    var showsHeader = true
     @Environment(\.islandPreview) private var preview
     @State private var selected: CompanionArtifact?
     @State private var search = ""
@@ -23,14 +24,16 @@ struct CompanionArtifactShelf: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
+                if showsHeader { VStack(alignment: .leading, spacing: 4) {
                     Text(en ? "Your library" : "Sua biblioteca").font(.title3.weight(.semibold))
                     Text(en ? "Keep the useful parts. Pick them up anytime." : "Guarde o que importa. Retome quando quiser.")
                         .font(.caption).foregroundStyle(CompanionStyle.muted)
-                }
+                } }
                 Spacer()
-                Button(action: importDocument) { Label(en ? "Import" : "Importar", systemImage: "plus") }
-                    .help(en ? "Import a document" : "Importar documento")
+                if showsHeader || !library.items.isEmpty {
+                    Button(action: importDocument) { Label(en ? "Import" : "Importar", systemImage: "plus") }
+                        .help(en ? "Import a document" : "Importar documento")
+                }
             }
             if let issue = library.issue {
                 HStack(alignment: .top) {
@@ -41,7 +44,17 @@ struct CompanionArtifactShelf: View {
                         .buttonStyle(.plain).accessibilityLabel(en ? "Dismiss notice" : "Fechar aviso")
                 }
             }
-            if library.items.isEmpty {
+            if library.items.isEmpty && !showsHeader {
+                // Library page: a calm, centered empty state with Toni, who keeps your results.
+                VStack(spacing: 10) {
+                    CompanionCharacter(size: 96, avatar: .toni, animates: false).frame(height: 104).accessibilityHidden(true)
+                    Text(en ? "A home for your results" : "Um lugar para seus resultados").font(.system(size: 15, weight: .semibold))
+                    Text(en ? "Save a reply from chat, create a diagram or import a document. Your files stay on this Mac." : "Salve uma resposta do chat, crie um diagrama ou importe um documento. Seus arquivos ficam neste Mac.")
+                        .font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted).multilineTextAlignment(.center).frame(maxWidth: 380)
+                    Button(action: importDocument) { Label(en ? "Import a document" : "Importar um documento", systemImage: "plus") }
+                        .buttonStyle(CompanionButtonStyle(compact: true)).padding(.top, 4)
+                }.frame(maxWidth: .infinity).padding(.vertical, 48)
+            } else if library.items.isEmpty {
                 emptyState(symbol: "tray", title: en ? "A home for your results" : "Um lugar para seus resultados",
                     detail: en ? "Save a reply from chat, create a diagram or import a document. Your files stay on this Mac." : "Salve uma resposta do chat, crie um diagrama ou importe um documento. Seus arquivos ficam neste Mac.")
             } else {
@@ -104,7 +117,7 @@ struct CompanionArtifactShelf: View {
         Button { selected = item; sourceMissing = false } label: {
             VStack(alignment: .leading, spacing: 10) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12).fill(CompanionStyle.accent.opacity(0.07))
+                    RoundedRectangle(cornerRadius: 10, style: .continuous).fill(CompanionStyle.edge.opacity(0.04))
                     if let diagram = item.diagram {
                         CanvasDiagramView(document: .init(title: item.title, spokenSummary: item.title, code: "", codeLanguage: "", elements: [], diagram: diagram), diagram: diagram, progress: 1)
                             .frame(width: 600, height: 600).scaleEffect(0.18).frame(width: 120, height: 108).clipped()

@@ -29,6 +29,7 @@ private actor ReviewStore: LocalChatStoring {
 private struct ReviewChrome<Content: View>: View {
     @ObservedObject var preferences: CompanionPreferences
     let content: Content
+    var island: (Int) -> Void = { _ in }
     var body: some View {
         VStack(spacing:0) {
             content
@@ -36,6 +37,13 @@ private struct ReviewChrome<Content: View>: View {
             HStack {
                 Text("Prévia de design · dados de exemplo · áudio e microfone desativados").font(.caption).foregroundStyle(.secondary)
                 Spacer()
+                Menu("Ilha") {
+                    Button("Ilha aberta (companheiro)") { island(1) }
+                    Button("Ilha aberta com aviso da Rita") { island(3) }
+                    Button("Ilha fechada") { island(2) }
+                    Divider()
+                    Button("Esconder ilha") { island(0) }
+                }.fixedSize()
                 Toggle("Reduzir movimento",isOn:$preferences.reduceMotion).toggleStyle(.checkbox)
                 Picker("Tema",selection:$preferences.appearance) {
                     Text("Claro").tag(AppAppearance.light);Text("Escuro").tag(AppAppearance.dark)
@@ -109,6 +117,7 @@ private struct ReviewChrome<Content: View>: View {
             try shot(KeepAwakeRunningRow(controller:notch.keepAwake).padding(16).background(Color(nsColor:.windowBackgroundColor)),NSSize(width:340,height:180),"keepawake-idle-row")
             try shot(ContentView(initialSection:.settings,scrollable:true),NSSize(width:1180,height:900),"settings")
             try shot(ContentView(initialSection:.team,scrollable:true),NSSize(width:1180,height:760),"team")
+            try shot(ContentView(initialSection:.files,scrollable:true),NSSize(width:1180,height:760),"library")
             notch.ritaNudges.preview(minutes:52)
             try shot(ContentView(initialSection:.overview,scrollable:true),NSSize(width:1180,height:1000),"today")
             notch.show()
@@ -138,7 +147,29 @@ private struct ReviewChrome<Content: View>: View {
             let window=NSWindow(contentRect:NSRect(x:0,y:0,width:1180,height:840),styleMask:[.titled,.closable,.miniaturizable,.resizable],backing:.buffered,defer:false)
             window.title="HeyChomp · Início e navegação";window.isReleasedWhenClosed=false
             window.toolbarStyle = .unifiedCompact;window.contentMinSize=NSSize(width:840,height:700)
-            window.contentView=NSHostingView(rootView:ReviewChrome(preferences:preferences,content:root(scrollable:true)))
+            // Island preview: a real panel at the top of the screen with the live island view.
+            var islandPanel: NSPanel?
+            func presentIsland(_ mode:Int) {
+                islandPanel?.orderOut(nil)
+                guard mode != 0 else { return }
+                if mode == 3 { notch.ritaNudges.preview(minutes:52) } else if mode == 1 { notch.ritaNudges.standUp() }
+                if mode == 2 { notch.showIsland() } else { notch.show() }
+                let compact = mode == 2
+                let size = NSSize(width: notch.geometry.width + (compact ? 0 : 144), height: notch.geometry.height + (compact ? 0 : 64))
+                let screen = NSScreen.main ?? NSScreen.screens[0]
+                let panel = NSPanel(contentRect: NSRect(x: screen.frame.midX - size.width / 2, y: screen.frame.maxY - size.height, width: size.width, height: size.height),
+                                    styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+                panel.level = .statusBar; panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = false
+                panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                panel.contentView = NSHostingView(rootView: NotchWidgetView(scrollable: false)
+                    .environmentObject(assistant).environmentObject(notch).environmentObject(preferences)
+                    .environmentObject(activation).environmentObject(usage).environmentObject(codex)
+                    .environmentObject(sensor).environmentObject(gestures).environmentObject(audio)
+                    .frame(width: size.width, height: size.height, alignment: .top))
+                panel.orderFrontRegardless()
+                islandPanel = panel
+            }
+            window.contentView=NSHostingView(rootView:ReviewChrome(preferences:preferences,content:root(scrollable:true),island:presentIsland))
             delegate.window=window;window.center();window.makeKeyAndOrderFront(nil);app.activate()
             run(app)
             withExtendedLifetime(delegate){}

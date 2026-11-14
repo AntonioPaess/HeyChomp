@@ -84,7 +84,8 @@ struct CompanionOnboardingView: View {
                     .font(.caption).foregroundStyle(CompanionStyle.muted)
             } else {
                 HStack(alignment: .center, spacing: 36) {
-                    OnboardingTeamCluster(animates: moves).frame(width: 320, height: 340)
+                    // Larger and lower, so the team sits level with the copy instead of above it.
+                    OnboardingTeamCluster(animates: moves).scaleEffect(1.12).offset(y: 44).frame(width: 340, height: 440)
                     VStack(alignment: .leading, spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Bring your tools along").font(.system(size: 30, weight: .bold))

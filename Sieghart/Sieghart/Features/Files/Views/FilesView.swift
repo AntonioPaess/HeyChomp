@@ -5,6 +5,9 @@ import UniformTypeIdentifiers
 struct FilesView: View {
     @ObservedObject var model: FilesViewModel
     var compact = false
+    /// The window's Library supplies its own tabs and title; it hides this header and picker.
+    var showsChrome = true
+    @State private var hoveredRow: UUID?
     @Environment(\.islandPreview) private var preview
     @Environment(\.islandReduceMotion) private var reduceMotion
     @State private var surfaceID = UUID()
@@ -20,17 +23,18 @@ struct FilesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 12) {
+            if showsChrome { HStack(spacing: 12) {
                 CompanionTaskCharacter(events: model.events, avatar: .toni, size: compact ? 64 : 78,
                                        animates: !reduceMotion, working: model.isBusy)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("TONI · COMMUNICATION & FILES").font(.system(size: 9, weight: .semibold)).tracking(1).foregroundStyle(CompanionStyle.accentInk)
-                    Text("Keep it within reach.").font(.system(size: compact ? 20 : 24, weight: .semibold))
+                    Text("Toni · files").font(.system(size: 11, weight: .semibold)).foregroundStyle(CompanionStyle.muted)
+                    Text("Keep it within reach.").font(.system(size: compact ? 17 : 20, weight: .semibold))
                     Text("Your files stay on this Mac.").font(.caption).foregroundStyle(CompanionStyle.muted)
                 }
                 Spacer(minLength: 0)
-            }
-            if preview {
+            } }
+            if !showsChrome { EmptyView() }
+            else if preview {
                 HStack(spacing: 14) { ForEach(FilesViewModel.Page.allCases, id: \.self) { Text(LocalizedStringKey($0.rawValue)).font(.caption.weight(model.page == $0 ? .semibold : .regular)).foregroundStyle(model.page == $0 ? CompanionStyle.accentInk : CompanionStyle.muted) } }
             } else {
                 Picker("Files page", selection: $model.page) { ForEach(FilesViewModel.Page.allCases, id: \.self) { Text(LocalizedStringKey($0.rawValue)).tag($0) } }.pickerStyle(.segmented)
@@ -50,7 +54,7 @@ struct FilesView: View {
                 Spacer(minLength: 0)
                 if model.isBusy { ProgressView().controlSize(.small); Button("Cancel") { model.cancelAction() }.buttonStyle(.plain).font(.caption) }
             }
-            TaskNotificationPreferences(events: model.events, module: model.page == .downloads ? .downloads : .files)
+            if showsChrome { TaskNotificationPreferences(events: model.events, module: model.page == .downloads ? .downloads : .files) }
             TaskCardsView(events: model.events, module: model.page == .downloads ? .downloads : .files)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -73,12 +77,19 @@ struct FilesView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Button { model.chooseFiles() } label: { Label("Choose files", systemImage: "plus") }
-                    .buttonStyle(CompanionButtonStyle(primary: true, compact: compact))
+                    .buttonStyle(CompanionButtonStyle(compact: compact))
                 Spacer()
-                if !model.shelf.isEmpty { Button("Clear shelf") { confirmClear = true }.font(.caption).buttonStyle(.plain) }
+                if !model.shelf.isEmpty { Button("Clear shelf") { confirmClear = true }.font(.caption).buttonStyle(.borderless) }
             }
             shelfDropZone
-            ForEach(model.shelf) { reference in
+            if !showsChrome && !model.shelf.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(model.shelf) { reference in
+                        fileRow(reference)
+                        if reference.id != model.shelf.last?.id { Divider().padding(.leading, 52) }
+                    }
+                }
+            } else { ForEach(model.shelf) { reference in
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 10) {
                         if preview { Image(systemName: selected.contains(reference.id) ? "checkmark.circle.fill" : "circle").font(.caption) }
@@ -104,7 +115,7 @@ struct FilesView: View {
                     guard model.problems[reference.id] == nil, let url = model.resolvedURLs[reference.id] else { return NSItemProvider() }
                     return NSItemProvider(object: url as NSURL)
                 }
-            }
+            } }
             if !selected.isEmpty {
                 Button("Prepare selected files to move") { model.cut(model.shelf.filter { selected.contains($0.id) }); model.page = .helpers }
                     .buttonStyle(CompanionButtonStyle(compact: compact))
@@ -113,13 +124,13 @@ struct FilesView: View {
     }
     private var dropZoneContent: some View {
             VStack(spacing: 6) {
-                Image(systemName: "tray.and.arrow.down").font(.system(size: 24)).foregroundStyle(CompanionStyle.accentInk)
+                Image(systemName: "tray.and.arrow.down").font(.system(size: 26, weight: .light)).foregroundStyle(.secondary)
                 Text("Drop files from Finder.").font(.callout.weight(.medium))
                 Text("Park a reference. Drag it onward when you're ready.").font(.caption).foregroundStyle(CompanionStyle.muted)
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 20)
-            .background(CompanionStyle.accent.opacity(dropping ? 0.14 : 0.04), in: RoundedRectangle(cornerRadius: 15))
-            .overlay { RoundedRectangle(cornerRadius: 15).strokeBorder(CompanionStyle.accent.opacity(dropping ? 0.7 : 0.22), style: StrokeStyle(lineWidth: 1, dash: [5, 4])) }
+            .frame(maxWidth: .infinity).padding(.vertical, model.shelf.isEmpty && !showsChrome ? 44 : 20)
+            .background(dropping ? CompanionStyle.accent.opacity(0.10) : CompanionStyle.edge.opacity(0.025), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(dropping ? CompanionStyle.accent : CompanionStyle.edge.opacity(0.15), style: StrokeStyle(lineWidth: 1, dash: [5, 4])) }
     }
     @ViewBuilder private var shelfDropZone: some View {
         if preview { dropZoneContent }
@@ -163,14 +174,17 @@ struct FilesView: View {
                 if let problem = model.problems[folder.id] { Text(problem).font(.caption).foregroundStyle(CompanionStyle.muted) }
             }
             HStack {
-                Text("RECENT FILES").font(.system(size: 9, weight: .semibold)).tracking(1).foregroundStyle(CompanionStyle.muted)
+                Text("Recent files").font(.system(size: 11, weight: .semibold)).foregroundStyle(CompanionStyle.muted)
                 Spacer()
                 Button("Refresh") { model.refreshDownloads() }.buttonStyle(.plain).font(.caption)
                 if !model.recent.isEmpty { Button("Clear list") { model.clearDownloadHistory() }.buttonStyle(.plain).font(.caption) }
             }
             ForEach(model.recent.prefix(compact ? 20 : 40)) { item in
                 HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: item.partial ? "arrow.down.doc" : item.available ? "doc" : "exclamationmark.triangle").foregroundStyle(CompanionStyle.accentInk)
+                    Group {
+                        if item.available && !item.partial { Image(nsImage: NSWorkspace.shared.icon(for: UTType(filenameExtension: (item.name as NSString).pathExtension) ?? .data)).resizable().frame(width: 28, height: 28) }
+                        else { Image(systemName: item.partial ? "arrow.down.doc" : "exclamationmark.triangle").foregroundStyle(.secondary).frame(width: 28, height: 28) }
+                    }
                     VStack(alignment: .leading, spacing: 4) {
                         Text(item.name).font(.callout.weight(.medium)).lineLimit(2)
                         Text("\(item.stateTitle) · \(ByteCountFormatter.string(fromByteCount: item.bytes, countStyle: .file))").font(.caption).foregroundStyle(CompanionStyle.muted)
@@ -266,6 +280,58 @@ struct FilesView: View {
             }
         }.disabled(model.isBusy)
     }
+    /// Finder-style row: the real file icon, name and kind; actions appear on hover.
+    private func fileRow(_ reference: FileReference) -> some View {
+        let url = model.resolvedURLs[reference.id]
+        let hovered = hoveredRow == reference.id
+        return HStack(spacing: 12) {
+            Group {
+                if let url { Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable() }
+                else { Image(systemName: reference.isDirectory ? "folder" : "doc").resizable().scaledToFit().foregroundStyle(.secondary).padding(6) }
+            }.frame(width: 32, height: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(reference.name).font(WorkspaceTypography.body.weight(.medium)).lineLimit(1)
+                if let problem = model.problems[reference.id] {
+                    Text(problem).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted).lineLimit(1)
+                } else if let url {
+                    Text(url.deletingLastPathComponent().lastPathComponent).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted).lineLimit(1)
+                }
+            }
+            Spacer(minLength: 8)
+            if model.problems[reference.id] != nil {
+                Button("Choose again") { model.chooseRelink(reference) }.buttonStyle(.borderless).font(.caption)
+            } else {
+                HStack(spacing: 4) {
+                    rowAction("eye", "Preview") { Task { await model.open(reference, preview: true) } }
+                    rowAction("magnifyingglass", "Reveal") { Task { await model.open(reference, reveal: true) } }
+                    if let url { ShareLink(item: url) { Image(systemName: "square.and.arrow.up").frame(width: 26, height: 24) }.buttonStyle(.borderless).help("Share") }
+                    rowAction("xmark", "Remove") { model.remove(reference.id) }
+                }.opacity(hovered ? 1 : 0)
+            }
+        }
+        .padding(.vertical, 8).padding(.horizontal, 8)
+        .background(hovered ? CompanionStyle.edge.opacity(0.05) : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .contentShape(Rectangle())
+        .onHover { hoveredRow = $0 ? reference.id : nil }
+        .onTapGesture(count: 2) { Task { await model.open(reference) } }
+        .contextMenu {
+            Button("Open") { Task { await model.open(reference) } }
+            Button("Preview") { Task { await model.open(reference, preview: true) } }
+            Button("Reveal") { Task { await model.open(reference, reveal: true) } }
+            Divider()
+            Button("Remove", role: .destructive) { model.remove(reference.id) }
+        }
+        .onDrag {
+            guard model.problems[reference.id] == nil, let url else { return NSItemProvider() }
+            return NSItemProvider(object: url as NSURL)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(reference.name)
+    }
+    private func rowAction(_ symbol: String, _ label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) { Image(systemName: symbol).frame(width: 26, height: 24) }
+            .buttonStyle(.borderless).foregroundStyle(.secondary).help(Text(label)).accessibilityLabel(Text(label))
+    }
     private func previewField(_ text: String) -> some View {
         Text(text).font(.callout).foregroundStyle(CompanionStyle.muted).frame(maxWidth: .infinity, alignment: .leading)
             .padding(9).background(CompanionStyle.edge.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
@@ -279,7 +345,8 @@ struct FilesView: View {
                 Button("Confirm") { confirm() }.buttonStyle(CompanionButtonStyle(primary: true, compact: compact))
                 Button("Cancel") { model.cancelReview() }.buttonStyle(.plain)
             }
-        }.padding(14).background(CompanionStyle.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+        }.padding(14).background(CompanionStyle.edge.opacity(0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CompanionStyle.edge.opacity(0.1), lineWidth: 0.5) }
     }
 }
 

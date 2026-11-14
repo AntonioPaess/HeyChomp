@@ -207,9 +207,12 @@ struct NotchWidgetView: View {
 
     private func floatingButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 18, weight: .medium)).foregroundStyle(.white)
-                .frame(width: 44, height: 44).background(.black.opacity(0.95), in: Circle())
-                .overlay { Circle().strokeBorder(CompanionStyle.accent.opacity(0.35), lineWidth: 1) }
+            Image(systemName: symbol).font(.system(size: 17, weight: .medium)).foregroundStyle(.white.opacity(0.92))
+                .offset(y: 2)
+                .frame(width: 48, height: 42)
+                .background { ChompPebble().fill(.linearGradient(colors: [Color(white: 0.24), Color(white: 0.06)], startPoint: .topLeading, endPoint: .bottomTrailing)) }
+                .overlay { ChompPebble().stroke(.white.opacity(0.10), lineWidth: 0.75) }
+                .shadow(color: .black.opacity(0.35), radius: 6, y: 3)
         }.buttonStyle(IslandButtonStyle()).focusEffectDisabled().accessibilityLabel(label).help(label)
     }
 
@@ -699,30 +702,49 @@ private struct CompactChompMark: View {
     let animates: Bool
 
     var body: some View {
-        ZStack {
-            UnevenRoundedRectangle(topLeadingRadius: 11, bottomLeadingRadius: 7,
-                                   bottomTrailingRadius: 7, topTrailingRadius: 10)
-                .fill(.linearGradient(colors: [Color(white: 0.24), Color(white: 0.09)],
-                                      startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: 23, height: 15)
-                .position(x: 12, y: 14)
-            HStack(spacing: 3) {
-                Capsule().frame(width: 3, height: 5)
-                Capsule().frame(width: 3, height: 5)
+        TimelineView(.animation(minimumInterval: 1.0 / 24, paused: !animates)) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            let blink = animates && t.truncatingRemainder(dividingBy: 4.3) < 0.13
+            let gaze = animates ? Self.gaze() : 0
+            ZStack {
+                ChompPebble()
+                    .fill(.linearGradient(colors: [Color(white: 0.24), Color(white: 0.09)],
+                                          startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 23, height: 15)
+                    .position(x: 12, y: 14)
+                HStack(spacing: 3) {
+                    Capsule().frame(width: 3, height: blink ? 1 : 5)
+                    Capsule().frame(width: 3, height: blink ? 1 : 5)
+                }
+                .foregroundStyle(Color(red: 1, green: 0.95, blue: 0.84))
+                .position(x: 13 + gaze, y: 13)
+                Image(systemName: "sparkle")
+                    .font(.system(size: 7, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.38, green: 0.98, blue: 0.73))
+                    .opacity(highlighted ? 1 : 0.65)
+                    .scaleEffect(animates && highlighted ? 1.15 : 1)
+                    .position(x: 23, y: 5)
             }
-            .foregroundStyle(Color(red: 1, green: 0.95, blue: 0.84))
-            .position(x: 13, y: 13)
-            Image(systemName: "sparkle")
-                .font(.system(size: 7, weight: .semibold))
-                .foregroundStyle(Color(red: 0.38, green: 0.98, blue: 0.73))
-                .opacity(highlighted ? 1 : 0.65)
-                .scaleEffect(animates && highlighted ? 1.15 : 1)
-                .position(x: 23, y: 5)
-                .animation(animates ? .easeOut(duration: 0.15) : nil, value: highlighted)
         }
         .frame(width: 28, height: 24)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    /// Chomp glances toward the pointer: up to 2 pt left or right.
+    @MainActor private static func gaze() -> CGFloat {
+        let pointer = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(pointer) }) else { return 0 }
+        return max(-2, min(2, (pointer.x - screen.frame.midX) / 300))
+    }
+}
+
+/// Chomp's silhouette: a soft, slightly lopsided pebble (used for island controls).
+struct ChompPebble: Shape {
+    func path(in rect: CGRect) -> Path {
+        UnevenRoundedRectangle(topLeadingRadius: rect.height * 0.62, bottomLeadingRadius: rect.height * 0.36,
+                               bottomTrailingRadius: rect.height * 0.36, topTrailingRadius: rect.height * 0.56, style: .continuous)
+            .path(in: rect)
     }
 }
 
@@ -734,6 +756,9 @@ private struct IslandSignatureGlow: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .bottom) {
+                // Clay sheen, like light on Chomp's body, from the upper left.
+                RadialGradient(colors: [Color.white.opacity(0.07), .clear], center: UnitPoint(x: 0.18, y: 0.12), startRadius: 0, endRadius: proxy.size.width * 0.55)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
                 RadialGradient(colors: [CompanionStyle.agent(.sig).opacity(active ? 0.38 : 0.24), .clear],
                                center: .bottom, startRadius: 0, endRadius: proxy.size.width * 0.42)
                     .frame(height: proxy.size.height * 0.55)
