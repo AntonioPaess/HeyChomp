@@ -52,7 +52,7 @@ O problema foi confirmado no código: para ilustrações novas, `CompanionGreeti
    - Textos ainda pendentes de tradução estão listados em K22/K23 (interpolados, recusa do Calendário, fixos em português).
    - Ainda sem opinião do usuário sobre o Início, a navegação e o onboarding.
 3. Verificar Início e navegação ao vivo em claro/escuro, larguras e busca/abertura de conversa fictícia; revisar controles ausentes no catálogo e efeitos da mudança de componentes nas 16 abas. A tentativa de renderizar estados adicionais foi interrompida por limite da revisão automática de aprovação; não houve decisão de segurança sobre o código. Repetir somente quando disponível, sem contornar o bloqueio.
-4. Corrigir problemas encontrados, rodar build e testes pertinentes novamente e atualizar `CURRENT_WORK.md`/`KNOWN_ISSUES.md`. Oferecer comparações em claro e escuro e abrir a prévia para avaliação. Não declarar o redesign inteiro pronto por esta primeira fatia.
+4. (12/11, tarde: Home antiga `overview` removida de `WorkspaceView`, fontes fixas do Início trocadas por `WorkspaceTypography.hero/footnote`, status do Calendário traduzidos; build do app e 522 testes em 136 suítes passaram.) Corrigir problemas encontrados, rodar build e testes pertinentes novamente e atualizar `CURRENT_WORK.md`/`KNOWN_ISSUES.md`. Oferecer comparações em claro e escuro e abrir a prévia para avaliação. Não declarar o redesign inteiro pronto por esta primeira fatia.
 5. Somente após validação adequada, tratar a integração no app principal com assinatura, histórico e Keep Awake preservados; o 124 não contém a correção de onboarding. Sem commit/push sem pedido.
 
 ## Skills usadas neste trabalho

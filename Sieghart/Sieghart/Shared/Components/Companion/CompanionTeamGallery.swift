@@ -44,13 +44,16 @@ struct CompanionTeamDock: View {
                 }.frame(maxWidth: .infinity).padding(.vertical, 4)
             }
         }.padding(.horizontal, 4).frame(height: CompanionHomeLayout.dockHeight)
-            .background(CompanionStyle.edge.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
     }
     private func portrait(_ member: CompanionAvatar) -> some View {
         VStack(spacing: 2) {
-                    if let events {
-                        CompanionTaskCharacter(events: events, avatar: member, size: CompanionHomeLayout.dockAvatarSize, animates: animates, supporting: true)
-                    } else { CompanionCharacter(size: CompanionHomeLayout.dockAvatarSize, avatar: member, animates: animates) }
+                    ZStack(alignment: .bottom) {
+                        // A soft floor so the team stands on the island's lit lip.
+                        Ellipse().fill(Color.black.opacity(0.35)).frame(width: 30, height: 6).blur(radius: 2).offset(y: 2)
+                        if let events {
+                            CompanionTaskCharacter(events: events, avatar: member, size: CompanionHomeLayout.dockAvatarSize, animates: animates, supporting: true)
+                        } else { CompanionCharacter(size: CompanionHomeLayout.dockAvatarSize, avatar: member, animates: animates) }
+                    }
                     Text(member.name).font(.system(size: 9, weight: .medium)).foregroundStyle(CompanionStyle.muted)
         }.frame(maxWidth: .infinity)
             .accessibilityElement(children: .ignore)

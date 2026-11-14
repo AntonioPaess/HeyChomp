@@ -34,7 +34,7 @@ struct CalendarView: View {
                 calendarSelection
                 reminders
                 notificationPreferences
-                Text(model.status).font(.caption).foregroundStyle(CompanionStyle.muted)
+                calendarStatusText(model.status).font(.caption).foregroundStyle(CompanionStyle.muted)
                 if let events { TaskCardsView(events: events, module: .calendar) }
             }
         }
@@ -352,7 +352,7 @@ struct CalendarView: View {
                     .font(.system(size: 10)).foregroundStyle(CompanionStyle.muted)
             }
             if model.status.hasPrefix("Calendar permission request failed") {
-                Text(model.status).font(.caption).foregroundStyle(.orange).multilineTextAlignment(.center)
+                calendarStatusText(model.status).font(.caption).foregroundStyle(.orange).multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: 430)
@@ -381,4 +381,14 @@ private struct CalendarGantt: View {
             greeting = false
         }
     }
+}
+
+
+/// Calendar status is kept in English by the view model; translate it here, where the app locale is known.
+func calendarStatusText(_ status: String) -> Text {
+    let failed = "Calendar permission request failed: ", openFailed = "Could not open Calendar: "
+    if status.hasPrefix(failed) { return Text("Calendar permission request failed: \(String(status.dropFirst(failed.count)))") }
+    if status.hasPrefix(openFailed) { return Text("Could not open Calendar: \(String(status.dropFirst(openFailed.count)))") }
+    if status.hasSuffix(" events"), let count = Int(status.dropLast(" events".count)) { return Text("\(count) events") }
+    return Text(LocalizedStringKey(status))
 }

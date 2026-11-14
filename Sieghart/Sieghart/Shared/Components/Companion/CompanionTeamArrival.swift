@@ -122,10 +122,10 @@ struct CompanionIntroductionCaption: View {
     var copy: CompanionIntroductionCopy
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(member.name).font(.system(size: 10, weight: .semibold)).foregroundStyle(member.tint)
+            Text(member.name).font(.system(size: 10, weight: .semibold)).foregroundStyle(CompanionStyle.muted)
             Text(copy.headline).font(.system(size: 18, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
             Text(copy.description).font(.caption).foregroundStyle(CompanionStyle.muted).lineLimit(2)
-            Text(copy.role).font(.system(size: 10, weight: .medium)).foregroundStyle(member.tint)
+            Text(copy.role).font(.system(size: 10, weight: .medium)).foregroundStyle(CompanionStyle.muted)
         }
     }
 }

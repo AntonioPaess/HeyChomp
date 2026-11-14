@@ -78,7 +78,45 @@ private struct ReviewChrome<Content: View>: View {
                 .environmentObject(activation).environmentObject(sensor).environmentObject(gestures)
                 .environmentObject(codex).environmentObject(usage).environmentObject(audio)
         }
-        if CommandLine.arguments.contains("--render-onboarding") {
+        if CommandLine.arguments.contains("--render-surfaces") {
+            // Live AppKit-hosted snapshots (ImageRenderer cannot draw native controls).
+            let out=URL(fileURLWithPath:CommandLine.arguments.last!,isDirectory:true)
+            try FileManager.default.createDirectory(at:out,withIntermediateDirectories:true)
+            func shot<V: View>(_ view:V,_ size:NSSize,_ name:String) throws {
+                for theme in [AppAppearance.light,.dark] {
+                    preferences.appearance=theme
+                    let window=NSWindow(contentRect:NSRect(origin:.zero,size:size),styleMask:[.borderless],backing:.buffered,defer:false)
+                    window.appearance=NSAppearance(named:theme == .dark ? .darkAqua : .aqua)
+                    let host=NSHostingView(rootView:view
+                        .environmentObject(assistant).environmentObject(notch).environmentObject(preferences)
+                        .environmentObject(activation).environmentObject(sensor).environmentObject(gestures)
+                        .environmentObject(codex).environmentObject(usage).environmentObject(audio)
+                        .environment(\.locale,Locale(identifier:"pt-BR")).frame(width:size.width,height:size.height))
+                    host.frame=NSRect(origin:.zero,size:size); window.contentView=host
+                    window.orderFrontRegardless(); host.layoutSubtreeIfNeeded()
+                    RunLoop.current.run(until:Date().addingTimeInterval(2))
+                    let rep=host.bitmapImageRepForCachingDisplay(in:host.bounds)!
+                    host.cacheDisplay(in:host.bounds,to:rep); window.orderOut(nil)
+                    try rep.representation(using:.png,properties:[:])!.write(to:out.appendingPathComponent("\(name)-\(theme.rawValue).png"))
+                    print("PASS: \(name) \(theme.rawValue)")
+                }
+            }
+            for step in 0..<3 {
+                try shot(CompanionOnboardingView(scrollable:false,initialStep:step,arrivalPreviewTime:30).environment(\.islandPreview,true),NSSize(width:900,height:720),"onboarding-\(step)")
+            }
+            try shot(MenuBarView().background(Color(nsColor:.windowBackgroundColor)),NSSize(width:340,height:300),"popover")
+            notch.keepAwake.request.mode = .duration; notch.keepAwake.request.minutes = 60
+            try shot(KeepAwakeRunningRow(controller:notch.keepAwake).padding(16).background(Color(nsColor:.windowBackgroundColor)),NSSize(width:340,height:180),"keepawake-idle-row")
+            try shot(ContentView(initialSection:.settings,scrollable:true),NSSize(width:1180,height:900),"settings")
+            try shot(ContentView(initialSection:.team,scrollable:true),NSSize(width:1180,height:760),"team")
+            notch.ritaNudges.preview(minutes:52)
+            try shot(ContentView(initialSection:.overview,scrollable:true),NSSize(width:1180,height:1000),"today")
+            notch.show()
+            try shot(NotchWidgetView(scrollable:false).environment(\.islandPreview,true),NSSize(width:notch.geometry.width+144,height:notch.geometry.height+64),"island-home")
+            notch.showIsland()
+            try shot(NotchWidgetView(scrollable:false).environment(\.islandPreview,true),NSSize(width:notch.geometry.width+40,height:notch.geometry.height+10),"island-compact")
+            defaults.removePersistentDomain(forName:suite)
+        } else if CommandLine.arguments.contains("--render-onboarding") {
             try OnboardingSurfaceQA.render(to: URL(fileURLWithPath:CommandLine.arguments.last!,isDirectory:true))
         } else if exporting {
             let out=URL(fileURLWithPath:CommandLine.arguments.last!,isDirectory:true)
