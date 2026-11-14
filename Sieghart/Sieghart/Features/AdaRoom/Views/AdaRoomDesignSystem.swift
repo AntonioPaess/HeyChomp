@@ -36,12 +36,13 @@ struct AdaThoughtDisclosure: Equatable, Sendable {
 enum AdaRoomTheme {
     static let springAnimation = Animation.spring(response: 0.35, dampingFraction: 0.8)
 
-    static let auroraIndigo = Color(red: 0.39, green: 0.40, blue: 0.95)
-    static let auroraViolet = Color(red: 0.62, green: 0.42, blue: 0.98)
-    static let auroraCyan = Color(red: 0.24, green: 0.78, blue: 0.98)
+    // HeyChomp v5: the former indigo/violet "aurora" is Chomp's mint.
+    static let auroraIndigo = Color(red: 0.0, green: 0.58, blue: 0.37)
+    static let auroraViolet = Color(red: 0.24, green: 0.86, blue: 0.60)
+    static let auroraCyan = Color(red: 0.43, green: 0.94, blue: 0.72)
 
     static func titleFont(size: CGFloat = 14) -> Font {
-        .system(size: size, weight: .semibold, design: .rounded)
+        .system(size: size, weight: .semibold)
     }
 
     static func bodyFont(size: CGFloat = 13) -> Font {
@@ -49,11 +50,11 @@ enum AdaRoomTheme {
     }
 
     static func badgeFont(size: CGFloat = 11) -> Font {
-        .system(size: size, weight: .medium, design: .rounded)
+        .system(size: size, weight: .medium)
     }
 
     static func userTextColor(for scheme: ColorScheme) -> Color {
-        .white
+        CompanionStyle.accentOnFill
     }
 
     static func assistantTextColor(for scheme: ColorScheme) -> Color {

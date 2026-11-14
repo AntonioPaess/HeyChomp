@@ -35,7 +35,7 @@ private struct LocalAgentRoomView: View {
                             .padding(.vertical, 4)
                             .background {
                                 if room.page == .room {
-                                    Capsule().fill(CompanionStyle.accent.opacity(0.16))
+                                    Capsule().fill(CompanionStyle.edge.opacity(0.10))
                                 }
                             }
                     }.buttonStyle(.plain)
@@ -53,7 +53,7 @@ private struct LocalAgentRoomView: View {
                             .padding(.vertical, 4)
                             .background {
                                 if room.page == .chat {
-                                    Capsule().fill(CompanionStyle.accent.opacity(0.16))
+                                    Capsule().fill(CompanionStyle.edge.opacity(0.10))
                                 }
                             }
                     }.buttonStyle(.plain)
@@ -172,7 +172,7 @@ private struct LocalChatRooms: View {
                     VStack(spacing: 10) {
                         ZStack {
                             Circle()
-                                .fill(CompanionStyle.accent.opacity(0.18))
+                                .fill(CompanionStyle.edge.opacity(0.06))
                                 .frame(width: 38, height: 38)
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .semibold))
@@ -188,7 +188,7 @@ private struct LocalChatRooms: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .strokeBorder(
-                                CompanionStyle.accentInk.opacity(0.35),
+                                CompanionStyle.edge.opacity(0.15),
                                 style: StrokeStyle(lineWidth: 1, dash: [5, 4])
                             )
                     )

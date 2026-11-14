@@ -90,7 +90,7 @@ struct NotchWidgetView: View {
         .overlay(alignment: .bottom) {
             // HeyChomp's signature: Chomp's mint sparkle lights the island from its lower lip,
             // and breathes while Chomp listens or an agent works.
-            if !compact { IslandSignatureGlow(active: chompActive, animates: animates && !systemReducedMotion) }
+            if !compact { IslandSignatureGlow(active: chompActive, animates: animates && !systemReducedMotion, home: notch.presentation == .home) }
         }
         .clipShape(NotchPanelShape())
         .contentShape(NotchPanelShape())
@@ -748,27 +748,32 @@ struct ChompPebble: Shape {
     }
 }
 
-/// Mint light rising from the island's lower lip. Brighter and slowly breathing while active.
+/// Mint light rising from the island's lower lip. One continuous elliptical falloff over the
+/// whole panel (no clipped layers, so no visible bands). Full strength on the companion page,
+/// a faint lip elsewhere so tool pages keep a calm, even background.
 private struct IslandSignatureGlow: View {
     let active: Bool
     let animates: Bool
+    var home = true
     @State private var breathe = false
+    private var strength: Double { (home ? 1 : 0.35) * (active ? 1.3 : 1) }
     var body: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .bottom) {
-                // Clay sheen, like light on Chomp's body, from the upper left.
-                RadialGradient(colors: [Color.white.opacity(0.07), .clear], center: UnitPoint(x: 0.18, y: 0.12), startRadius: 0, endRadius: proxy.size.width * 0.55)
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                RadialGradient(colors: [CompanionStyle.agent(.sig).opacity(active ? 0.38 : 0.24), .clear],
-                               center: .bottom, startRadius: 0, endRadius: proxy.size.width * 0.42)
-                    .frame(height: proxy.size.height * 0.55)
-                LinearGradient(colors: [.clear, CompanionStyle.agent(.sig).opacity(active ? 1 : 0.8), .clear], startPoint: .leading, endPoint: .trailing)
-                    .frame(width: proxy.size.width * 0.5, height: 1.5)
-                    .padding(.bottom, 1)
-            }
-            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .bottom)
-            .opacity(active && animates ? (breathe ? 1 : 0.6) : 1)
+        let mint = CompanionStyle.agent(.sig)
+        ZStack(alignment: .bottom) {
+            // Clay sheen, like light on Chomp's body, from the upper left.
+            EllipticalGradient(stops: [.init(color: .white.opacity(0.06), location: 0), .init(color: .white.opacity(0.02), location: 0.45), .init(color: .clear, location: 1)],
+                               center: UnitPoint(x: 0.15, y: 0.05), startRadiusFraction: 0, endRadiusFraction: 0.9)
+            EllipticalGradient(stops: [.init(color: mint.opacity(0.26 * strength), location: 0),
+                                       .init(color: mint.opacity(0.14 * strength), location: 0.25),
+                                       .init(color: mint.opacity(0.05 * strength), location: 0.55),
+                                       .init(color: mint.opacity(0.012 * strength), location: 0.8),
+                                       .init(color: .clear, location: 1)],
+                               center: .bottom, startRadiusFraction: 0, endRadiusFraction: 0.85)
+            LinearGradient(colors: [.clear, mint.opacity(min(1, 0.75 * strength + 0.25)), .clear], startPoint: .leading, endPoint: .trailing)
+                .frame(height: 1.5).padding(.horizontal, 120).padding(.bottom, 1)
+                .blur(radius: 0.4)
         }
+        .opacity(active && animates ? (breathe ? 1 : 0.7) : 1)
         .allowsHitTesting(false).accessibilityHidden(true)
         .onAppear { if animates { withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { breathe = true } } }
     }

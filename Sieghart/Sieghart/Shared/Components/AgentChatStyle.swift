@@ -43,7 +43,7 @@ struct AgentChatBubble: View {
                         .padding(.vertical, 9)
                         .background {
                             let bubbleShape = RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            bubbleShape.fill(scheme == .dark ? CompanionStyle.accent.opacity(0.18) : CompanionStyle.accentInk)
+                            bubbleShape.fill(CompanionStyle.accent)
                         }
                         .overlay {
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -115,18 +115,8 @@ struct AgentChatSendStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(width: 30, height: 30)
-            .background(
-                LinearGradient(
-                    colors: [AdaRoomTheme.auroraIndigo, AdaRoomTheme.auroraViolet],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                in: Circle()
-            )
-            .overlay {
-                Circle().strokeBorder(Color.white.opacity(0.35), lineWidth: 0.8)
-            }
-            .shadow(color: AdaRoomTheme.auroraIndigo.opacity(0.35), radius: 6, y: 2)
+            .foregroundStyle(CompanionStyle.accentOnFill)
+            .background(CompanionStyle.accent, in: Circle())
             .scaleEffect(configuration.isPressed ? 0.92 : 1)
             .animation(AdaRoomTheme.springAnimation, value: configuration.isPressed)
     }

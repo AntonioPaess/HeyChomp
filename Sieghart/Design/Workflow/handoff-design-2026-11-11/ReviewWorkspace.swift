@@ -41,6 +41,7 @@ private struct ReviewChrome<Content: View>: View {
                     Button("Ilha aberta (companheiro)") { island(1) }
                     Button("Ilha aberta com aviso da Rita") { island(3) }
                     Button("Ilha fechada") { island(2) }
+                    Button("Widget da barra de menus") { island(4) }
                     Divider()
                     Button("Esconder ilha") { island(0) }
                 }.fixedSize()
@@ -118,6 +119,9 @@ private struct ReviewChrome<Content: View>: View {
             try shot(ContentView(initialSection:.settings,scrollable:true),NSSize(width:1180,height:900),"settings")
             try shot(ContentView(initialSection:.team,scrollable:true),NSSize(width:1180,height:760),"team")
             try shot(ContentView(initialSection:.files,scrollable:true),NSSize(width:1180,height:760),"library")
+            if let first = chat.conversations.first { chat.select(first.id) }
+            room.page = .chat
+            try shot(ContentView(initialSection:.agentRoom,scrollable:true),NSSize(width:1180,height:760),"chat")
             notch.ritaNudges.preview(minutes:52)
             try shot(ContentView(initialSection:.overview,scrollable:true),NSSize(width:1180,height:1000),"today")
             notch.show()
@@ -152,6 +156,20 @@ private struct ReviewChrome<Content: View>: View {
             func presentIsland(_ mode:Int) {
                 islandPanel?.orderOut(nil)
                 guard mode != 0 else { return }
+                if mode == 4 {
+                    let screen = NSScreen.main ?? NSScreen.screens[0]
+                    let size = NSSize(width: 340, height: 330)
+                    let panel = NSPanel(contentRect: NSRect(x: screen.visibleFrame.maxX - size.width - 120, y: screen.visibleFrame.maxY - size.height - 6, width: size.width, height: size.height),
+                                        styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+                    panel.level = .statusBar; panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
+                    panel.contentView = NSHostingView(rootView: MenuBarView()
+                        .environmentObject(assistant).environmentObject(notch).environmentObject(preferences)
+                        .environmentObject(activation).environmentObject(usage).environmentObject(codex).environmentObject(audio)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous)))
+                    panel.orderFrontRegardless(); islandPanel = panel
+                    return
+                }
                 if mode == 3 { notch.ritaNudges.preview(minutes:52) } else if mode == 1 { notch.ritaNudges.standUp() }
                 if mode == 2 { notch.showIsland() } else { notch.show() }
                 let compact = mode == 2

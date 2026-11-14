@@ -73,36 +73,27 @@ struct LocalChatPrompt: View {
     private var headerBar: some View {
         HStack(spacing: 8) {
             ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(red: 0.38, green: 0.44, blue: 0.98).opacity(0.28),
-                                Color(red: 0.62, green: 0.36, blue: 0.96).opacity(0.18)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 28, height: 28)
                 if conversation.persona == .ada { AgentChatCompanion(
                     state: chat.states[conversation.id] ?? .ready,
                     active: active,
-                    size: 22,
+                    size: compact ? 26 : 40,
                     conversationID: conversation.id,
                     failureID: chat.failures[conversation.id],
                     submissionID: chat.submitted[conversation.id]
                 )
                 .allowsHitTesting(false)
-                } else { CompanionCharacter(size: 22, avatar: conversation.persona.avatar, animates: false).allowsHitTesting(false) }
-            }
+                } else {
+                    PersonaChatAvatar(persona: conversation.persona, working: working, active: active && !reduceMotion && !preview, size: compact ? 26 : 40)
+                        .allowsHitTesting(false)
+                }
+            }.frame(width: compact ? 30 : 46, height: compact ? 30 : 46)
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 5) {
                     Text(conversation.persona.title)
-                        .font(AdaRoomTheme.titleFont(size: 12.5))
+                        .font(AdaRoomTheme.titleFont(size: compact ? 12.5 : 15))
                         .foregroundStyle(AdaRoomTheme.assistantTextColor(for: colorScheme))
                     Circle()
-                        .fill(working ? CompanionStyle.accent : chat.readiness.available ? Color.green.opacity(0.85) : .orange)
+                        .fill(working ? CompanionStyle.accent : chat.readiness.available ? CompanionStyle.agent(conversation.persona) : Color.secondary.opacity(0.5))
                         .frame(width: 5.5, height: 5.5).accessibilityHidden(true)
                 }.accessibilityElement(children: .combine)
                     .accessibilityValue(working ? (en ? "Preparing reply" : "Preparando resposta") : chat.readiness.available ? (en ? "Ready" : "Pronto") : (en ? "Model unavailable" : "Modelo indisponível"))
@@ -116,25 +107,14 @@ struct LocalChatPrompt: View {
             Button {
                 followsReply.toggle()
             } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: followsReply ? "arrow.down.circle.fill" : "arrow.down.circle")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(followsReply ? Color(red: 0.48, green: 0.56, blue: 0.98) : CompanionStyle.muted)
-                    Text(en ? "Auto-scroll" : "Acompanhar")
-                        .font(AdaRoomTheme.badgeFont(size: 9.5))
-                }
-                .foregroundStyle(followsReply ? CompanionStyle.ink.opacity(0.9) : CompanionStyle.muted)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(.ultraThinMaterial, in: Capsule())
-                .overlay {
-                    Capsule().strokeBorder(
-                        followsReply ? Color(red: 0.48, green: 0.56, blue: 0.98).opacity(0.45) : Color.white.opacity(0.10),
-                        lineWidth: 0.75
-                    )
-                }
+                Image(systemName: followsReply ? "arrow.down.to.line.compact" : "pause")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(followsReply ? CompanionStyle.ink : CompanionStyle.muted)
+                    .frame(width: 26, height: 24)
+                    .background(CompanionStyle.edge.opacity(followsReply ? 0.08 : 0.04), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(en ? "Auto-scroll" : "Acompanhar")
             .help(en ? "Automatically follow new replies" : "Acompanhar novas respostas automaticamente")
         }
     }
@@ -171,14 +151,31 @@ struct LocalChatPrompt: View {
     }
     @ViewBuilder private var rows: some View {
         if conversation.messages.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(en ? "A small next step, together." : "Um próximo passo, juntos.")
-                    .font(AdaRoomTheme.titleFont(size: 14))
-                    .foregroundStyle(AdaRoomTheme.assistantTextColor(for: colorScheme))
-                Text(en ? "Ask, attach something, or tell me where you’re stuck." : "Pergunte, anexe um documento ou me diga onde você travou.")
-                    .font(AdaRoomTheme.bodyFont(size: 12))
-                    .foregroundStyle(CompanionStyle.muted)
-            }.padding(.top, 18)
+            if compact {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(en ? "A small next step, together." : "Um próximo passo, juntos.")
+                        .font(AdaRoomTheme.titleFont(size: 14))
+                        .foregroundStyle(AdaRoomTheme.assistantTextColor(for: colorScheme))
+                    Text(en ? "Ask, attach something, or tell me where you’re stuck." : "Pergunte, anexe um documento ou me diga onde você travou.")
+                        .font(AdaRoomTheme.bodyFont(size: 12))
+                        .foregroundStyle(CompanionStyle.muted)
+                }.padding(.top, 18)
+            } else {
+                // Each specialist greets you in their own way, says who they are and offers a start.
+                VStack(spacing: 12) {
+                    PersonaChatAvatar(persona: conversation.persona, working: working, active: active && !reduceMotion && !preview, size: 120)
+                        .frame(height: 130)
+                    Text(CompanionTeamProfile.of(conversation.persona, en: en).intro)
+                        .font(.system(size: 15)).multilineTextAlignment(.center).frame(maxWidth: 460)
+                    HStack(spacing: 8) {
+                        ForEach(PersonaChatMotion.suggestions(conversation.persona, en: en), id: \.self) { suggestion in
+                            Button(suggestion) { chat.drafts[conversation.id] = suggestion }
+                                .buttonStyle(CompanionButtonStyle(compact: true))
+                        }
+                    }.padding(.top, 4)
+                }
+                .frame(maxWidth: .infinity).padding(.top, 36)
+            }
         }
         ForEach(conversation.messages.filter { $0.role != .system }) { message in
             VStack(alignment: .leading, spacing: 4) {
@@ -211,7 +208,7 @@ struct LocalChatPrompt: View {
                 }
             }
             .padding(3)
-            .background(CompanionStyle.accent.opacity(chat.messageFocus?.chatID == conversation.id && chat.messageFocus?.messageID == message.id ? 0.12 : 0), in: RoundedRectangle(cornerRadius: 18))
+            .background(CompanionStyle.edge.opacity(chat.messageFocus?.chatID == conversation.id && chat.messageFocus?.messageID == message.id ? 0.07 : 0), in: RoundedRectangle(cornerRadius: 18))
             .id(message.id)
             if let handoff = message.handoff {
                 Button { chat.select(handoff.conversationID) } label: { Label(en ? "Continue with \(handoff.persona.title)" : "Continuar com \(handoff.persona.title)", systemImage: "arrow.up.right") }.buttonStyle(.bordered)
@@ -292,7 +289,7 @@ struct LocalChatPrompt: View {
             Button { chat.notice = nil } label: { Image(systemName: "xmark") }
                 .buttonStyle(.plain).padding(3).accessibilityLabel("Dismiss notice")
         }.font(.caption).foregroundStyle(CompanionStyle.muted).padding(10)
-            .background(CompanionStyle.accent.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+            .background(CompanionStyle.edge.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
     }
     private var picker: some View {
         Group {
@@ -314,13 +311,13 @@ struct LocalChatPrompt: View {
     }
     private var pickerLabel: some View {
         HStack(spacing: 5) {
-            Circle().fill(Color(red: 0.48, green: 0.56, blue: 0.98)).frame(width: 6, height: 6)
+            Circle().fill(CompanionStyle.agent(conversation.persona)).frame(width: 6, height: 6)
             Text(conversation.title).lineLimit(1)
             Image(systemName: "chevron.up.chevron.down").font(.system(size: 8))
         }.font(AdaRoomTheme.badgeFont(size: 10)).foregroundStyle(CompanionStyle.ink.opacity(0.85))
             .padding(.horizontal, 9).padding(.vertical, 4)
             .background(.ultraThinMaterial, in: Capsule())
-            .overlay { Capsule().strokeBorder(Color(red: 0.48, green: 0.56, blue: 0.98).opacity(0.32), lineWidth: 0.75) }
+            .overlay { Capsule().strokeBorder(CompanionStyle.edge.opacity(0.12), lineWidth: 0.75) }
     }
     private var composer: some View {
         HStack(spacing: 8) {
@@ -338,10 +335,10 @@ struct LocalChatPrompt: View {
                     .frame(height: 28)
             }
             if working {
-                Button { chat.stop() } label: { Image(systemName: "stop.fill").font(.system(size: 11)).foregroundStyle(.white) }
+                Button { chat.stop() } label: { Image(systemName: "stop.fill").font(.system(size: 11)) }
                     .buttonStyle(AgentChatSendStyle()).help(en ? "Stop reply" : "Interromper resposta").accessibilityLabel(en ? "Stop reply" : "Interromper resposta")
             } else {
-                Button { chat.send(to: conversation.id) } label: { Image(systemName: "arrow.up").font(.system(size: 13, weight: .bold)).foregroundStyle(.white) }
+                Button { chat.send(to: conversation.id) } label: { Image(systemName: "arrow.up").font(.system(size: 13, weight: .bold)) }
                     .buttonStyle(AgentChatSendStyle()).disabled(!chat.canSend).opacity(chat.canSend ? 1 : 0.4)
                     .help(chat.generatingID == nil ? (en ? "Send message" : "Enviar mensagem") : (en ? "Another conversation is replying. Wait or stop that reply." : "Outra conversa está respondendo. Aguarde ou interrompa a resposta."))
                     .accessibilityLabel(en ? "Send message to \(conversation.persona.title)" : "Enviar mensagem para \(conversation.persona.title)")
@@ -353,4 +350,45 @@ struct LocalChatPrompt: View {
                     .strokeBorder(AdaRoomTheme.subtleBorderGradient(for: colorScheme, isUser: false), lineWidth: 0.95)
             }
     }
+}
+
+/// Each character's own moves in a conversation: a greeting when the chat opens, a
+/// "thinking" loop while the reply is prepared, and a reaction when it is ready.
+enum PersonaChatMotion {
+    static func greeting(_ persona: LocalChatPersona) -> CompanionAnimation {
+        switch persona { case .sig: .hello; case .rita: .wink; case .ada: .proud; case .gantt: .approval; case .elinor: .yawn; case .toni: .dance }
+    }
+    static func thinking(_ persona: LocalChatPersona) -> CompanionAnimation {
+        switch persona { case .sig: .thinking; case .rita: .searching; case .ada: .working; case .gantt: .question; case .elinor: .voiceThinking; case .toni: .listening }
+    }
+    static func done(_ persona: LocalChatPersona) -> CompanionAnimation {
+        switch persona { case .sig: .happy; case .rita: .love; case .ada: .completed; case .gantt: .proud; case .elinor: .understood; case .toni: .happy }
+    }
+    static func suggestions(_ persona: LocalChatPersona, en: Bool) -> [String] {
+        switch persona {
+        case .sig: en ? ["Plan my day", "Explain what's on screen", "Help me start a project"] : ["Organize meu dia", "Explique o que está na tela", "Me ajude a começar um projeto"]
+        case .rita: en ? ["Start a 25 min focus", "When should I take a break?", "How was my focus today?"] : ["Comece um foco de 25 min", "Quando devo fazer uma pausa?", "Como foi meu foco hoje?"]
+        case .ada: en ? ["Explain this code", "Review my last change", "Write a test for this"] : ["Explique este código", "Revise minha última mudança", "Escreva um teste para isto"]
+        case .gantt: en ? ["What's on today?", "Remind me at 3 pm", "Summarize my week"] : ["O que tenho hoje?", "Me lembre às 15h", "Resuma minha semana"]
+        case .elinor: en ? ["How is the battery?", "Keep the Mac awake for 1 h", "What is slowing the Mac?"] : ["Como está a bateria?", "Mantenha o Mac acordado por 1 h", "O que está pesando no Mac?"]
+        case .toni: en ? ["Find a file", "Summarize this document", "Write a short email"] : ["Encontre um arquivo", "Resuma este documento", "Escreva um e-mail curto"]
+        }
+    }
+}
+
+struct PersonaChatAvatar: View {
+    let persona: LocalChatPersona
+    let working: Bool
+    let active: Bool
+    var size: CGFloat = 40
+    @State private var motion: CompanionAnimation?
+    @State private var replay = 0
+    var body: some View {
+        CompanionCharacter(size: size, avatar: persona.avatar, animates: active, animation: active ? motion : nil, replay: replay)
+            .onAppear { play(PersonaChatMotion.greeting(persona)) }
+            .onChange(of: working) { _, now in play(now ? PersonaChatMotion.thinking(persona) : PersonaChatMotion.done(persona)) }
+            .onChange(of: persona) { _, _ in play(PersonaChatMotion.greeting(persona)) }
+            .accessibilityHidden(true)
+    }
+    private func play(_ next: CompanionAnimation) { motion = next; replay += 1 }
 }
