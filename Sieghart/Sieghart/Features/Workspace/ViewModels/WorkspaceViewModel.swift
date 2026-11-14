@@ -54,6 +54,18 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .desktop: english ? "Make room for your work. Arrange windows and spaces." : "Dê espaço ao seu trabalho. Organize janelas e áreas de trabalho."
         }
     }
+    /// The team member who looks after this tool (shown in the tool's page header).
+    var owner: LocalChatPersona? {
+        switch self {
+        case .focus: .rita
+        case .clipboard, .audio, .files, .capture: .toni
+        case .desktop, .displayPower, .keepAwake, .system: .elinor
+        case .aiLimits: .ada
+        case .calendar: .gantt
+        case .settings: .sig
+        case .overview, .team, .agentRoom, .activation, .appearance, .dynamicIsland: nil
+        }
+    }
     var symbol: String {
         switch self {
         case .desktop: "macwindow.on.rectangle"

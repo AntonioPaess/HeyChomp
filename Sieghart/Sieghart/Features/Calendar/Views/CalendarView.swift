@@ -50,11 +50,11 @@ struct CalendarView: View {
         HStack(spacing: 12) {
             gantt(size: compact ? 64 : 78)
             VStack(alignment: .leading, spacing: 5) {
-                Text("GANTT · CALENDAR & ROUTINE")
-                    .font(.system(size: 9, weight: .semibold)).tracking(1.1)
-                    .foregroundStyle(CompanionStyle.accentInk)
+                Text("Gantt · Calendar & routine")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(CompanionStyle.muted)
                 Text("One commitment at a time.")
-                    .font(.system(size: compact ? 18 : 23, weight: .semibold))
+                    .font(.system(size: compact ? 17 : 20, weight: .semibold))
                 if let next = model.nextEvent {
                     Text("Next: \(next.title)").font(.caption).foregroundStyle(CompanionStyle.muted).lineLimit(2)
                     HStack(spacing: 10) {
@@ -334,9 +334,9 @@ struct CalendarView: View {
                         .frame(width: 200, height: 150)
                 }
             VStack(spacing: 8) {
-                Text("GANTT · CALENDAR & ROUTINE").font(.system(size: 9, weight: .semibold)).tracking(1.1)
-                    .foregroundStyle(CompanionStyle.accentInk)
-                Text("Let's make room for your day.").font(.system(size: compact ? 22 : 27, weight: .semibold))
+                Text("Gantt · Calendar & routine").font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(CompanionStyle.muted)
+                Text("Let's make room for your day.").font(.system(size: compact ? 18 : 22, weight: .semibold))
                 Text(denied
                      ? "Allow Calendar access in System Settings. I'll keep your next commitment close."
                      : "Your next commitment and a gentler reminder, together. You choose which calendars appear.")

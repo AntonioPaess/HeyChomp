@@ -32,7 +32,7 @@ struct CompanionWeatherCard: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(observation.location).font(.callout.weight(.semibold)).lineLimit(1)
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text("\(Int(observation.temperature.rounded()))°").font(.system(size: 37, weight: .light, design: .rounded)).monospacedDigit()
+                    Text("\(Int(observation.temperature.rounded()))°").font(.system(size: 37, weight: .light)).monospacedDigit()
                     VStack(alignment: .leading, spacing: 3) {
                         Text(observation.condition(language: language)).font(.callout)
                         Text(english ? "Feels like \(Int(observation.feelsLike.rounded()))°C" : "Sensação de \(Int(observation.feelsLike.rounded()))°C")

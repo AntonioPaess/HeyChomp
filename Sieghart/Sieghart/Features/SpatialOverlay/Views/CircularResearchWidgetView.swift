@@ -78,16 +78,16 @@ struct CircularResearchWidgetView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 5) {
                             Text("PESQUISANDO EM BACKGROUND")
-                                .font(.system(size: 9, weight: .bold, design: .rounded))
+                                .font(.system(size: 9, weight: .bold))
                                 .tracking(0.6)
                                 .foregroundStyle(aquaCyan)
                             Text("\(Int(agent.progress * 100))%")
-                                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                                .font(.system(size: 9, weight: .semibold))
                                 .monospacedDigit()
                                 .foregroundStyle(.secondary)
                         }
                         Text(topic)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                         Text(agent.statusStep)
@@ -132,12 +132,12 @@ struct ResearchArtifactCardView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(accentCyan)
                 Text(artifact.title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Spacer(minLength: 0)
                 Text(artifact.completionCue.uppercased())
-                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                    .font(.system(size: 8.5, weight: .bold))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(accentCyan.opacity(0.18), in: Capsule())
@@ -176,7 +176,7 @@ struct ResearchArtifactCardView: View {
                 if let onOpenInAdaRoom {
                     Button(action: onOpenInAdaRoom) {
                         Label("Abrir na Ada Room", systemImage: "bubble.left.and.bubble.right.fill")
-                            .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                            .font(.system(size: 10.5, weight: .semibold))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
                             .background(accentCyan.opacity(0.22), in: Capsule())
@@ -188,7 +188,7 @@ struct ResearchArtifactCardView: View {
                     NSPasteboard.general.setString(artifact.markdownRepresentation, forType: .string)
                 } label: {
                     Label("Copiar Resumo", systemImage: "doc.on.doc")
-                        .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                        .font(.system(size: 10.5, weight: .medium))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                         .background(Color.primary.opacity(0.08), in: Capsule())

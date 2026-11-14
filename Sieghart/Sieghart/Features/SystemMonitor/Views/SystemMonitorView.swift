@@ -55,7 +55,7 @@ struct SystemMonitorView: View {
     private func metric(_ title: String, symbol: String, value: String, detail: String? = nil, progress: Double? = nil) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(LocalizedStringKey(title), systemImage: symbol).font(.caption.weight(.semibold)).foregroundStyle(CompanionStyle.muted)
-            Text(LocalizedStringKey(value)).font(.system(size: compact ? 21 : 28, weight: .semibold, design: .rounded)).monospacedDigit().minimumScaleFactor(0.6).lineLimit(1)
+            Text(LocalizedStringKey(value)).font(.system(size: compact ? 21 : 28, weight: .semibold)).monospacedDigit().minimumScaleFactor(0.6).lineLimit(1)
             if let progress { UtilityMeter(value: progress) }
             else { Color.clear.frame(height: 4) }
             Text(LocalizedStringKey(detail ?? " ")).font(.system(size: 10)).foregroundStyle(CompanionStyle.muted).lineLimit(1)

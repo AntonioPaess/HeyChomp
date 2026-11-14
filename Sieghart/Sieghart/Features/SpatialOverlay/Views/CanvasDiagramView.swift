@@ -19,7 +19,7 @@ struct CanvasDiagramView: View {
                     .frame(width: outer.width, height: outer.height).position(x: outer.midX, y: outer.midY)
                 HStack(spacing: 9) {
                     Image(systemName: "point.3.connected.trianglepath.dotted").foregroundStyle(.cyan)
-                    Text(document.title).font(.system(size: 20, weight: .semibold, design: .rounded))
+                    Text(document.title).font(.system(size: 20, weight: .semibold))
                 }.foregroundStyle(.white).frame(width: outer.width - 60, alignment: .leading)
                     .position(x: outer.midX, y: outer.minY + 35)
                 ForEach(Array(layout.connections.enumerated()), id: \.offset) { _, connection in
@@ -37,7 +37,7 @@ struct CanvasDiagramView: View {
                     nodeCard(box.node).frame(width: box.frame.width, height: box.frame.height)
                         .position(x: box.frame.midX, y: box.frame.midY)
                 }
-                Text("CHOMP").font(.system(size: 10, weight: .bold, design: .rounded)).tracking(3)
+                Text("CHOMP").font(.system(size: 10, weight: .bold)).tracking(3)
                     .foregroundStyle(.white.opacity(0.30)).position(x: outer.midX, y: outer.maxY - 22)
             }
         }.allowsHitTesting(false)
@@ -48,7 +48,7 @@ struct CanvasDiagramView: View {
         return VStack(spacing: 6) {
             HStack(spacing: 7) {
                 if node.kind == .decision { Image(systemName: "arrow.triangle.branch").font(.caption) }
-                Text(node.title).font(.system(size: 16, weight: .semibold, design: .rounded))
+                Text(node.title).font(.system(size: 16, weight: .semibold))
                     .multilineTextAlignment(.center).lineLimit(3).minimumScaleFactor(0.78)
             }.foregroundStyle(.white)
             if !node.detail.isEmpty {

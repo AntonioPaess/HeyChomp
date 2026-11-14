@@ -148,7 +148,7 @@ struct AdaThoughtDisclosureView: View {
                     ForEach(Array(steps.enumerated()), id: \.offset) { idx, step in
                         HStack(alignment: .top, spacing: 7) {
                             Text("\(idx + 1)")
-                                .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                                .font(.system(size: 9.5, weight: .bold))
                                 .foregroundStyle(AdaRoomTheme.auroraCyan)
                                 .frame(width: 15, height: 15)
                                 .background(AdaRoomTheme.auroraCyan.opacity(0.16), in: Circle())

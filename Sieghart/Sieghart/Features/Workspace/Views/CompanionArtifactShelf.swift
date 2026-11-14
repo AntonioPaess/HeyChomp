@@ -102,7 +102,7 @@ struct CompanionArtifactShelf: View {
         Button { kind = value } label: {
             Text(kindTitle(value)).font(.caption.weight(.medium)).padding(.horizontal, 12).padding(.vertical, 7)
                 .foregroundStyle(kind == value ? CompanionStyle.accentInk : CompanionStyle.muted)
-                .background(kind == value ? CompanionStyle.accent.opacity(0.15) : CompanionStyle.edge.opacity(0.035), in: Capsule())
+                .background(CompanionStyle.edge.opacity(kind == value ? 0.10 : 0.035), in: Capsule())
         }.buttonStyle(.plain).accessibilityAddTraits(kind == value ? .isSelected : [])
     }
     private func emptyState(symbol: String, title: String, detail: String) -> some View {

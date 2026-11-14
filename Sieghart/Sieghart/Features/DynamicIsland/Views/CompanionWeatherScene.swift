@@ -107,7 +107,7 @@ struct CompanionWeatherScene: View {
                         character.frame(width: 154, height: 156)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(observation.location).font(.system(size: 13, weight: .medium)).lineLimit(2).padding(.trailing, 60)
-                            Text("\(Int(observation.temperature.rounded()))°").font(.system(size: 60, weight: .light, design: .rounded)).monospacedDigit()
+                            Text("\(Int(observation.temperature.rounded()))°").font(.system(size: 60, weight: .light)).monospacedDigit()
                             Text(condition).font(.callout)
                             Text(en ? "Feels like \(Int(observation.feelsLike.rounded()))°C" : "Sensação de \(Int(observation.feelsLike.rounded()))°C")
                                 .font(.caption).foregroundStyle(.secondary)

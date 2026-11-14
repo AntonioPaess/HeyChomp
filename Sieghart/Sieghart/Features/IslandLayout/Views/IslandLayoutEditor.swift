@@ -15,7 +15,7 @@ struct IslandLayoutEditor: View {
         VStack(alignment: .leading, spacing: 22) {
             if !workspace {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Dynamic Island").font(.system(size: 29, weight: .semibold, design: .rounded))
+                Text("Dynamic Island").font(.system(size: 29, weight: .semibold))
                 Text("Your companion, controls and everyday tools, together at the top of your screen.")
                     .foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
             }
@@ -63,7 +63,7 @@ struct IslandLayoutEditor: View {
 
             HStack(spacing: 14) {
                 Image(systemName: "sparkles").font(.title2).foregroundStyle(CompanionStyle.accentInk)
-                    .frame(width: 38, height: 38).background(CompanionStyle.accent.opacity(0.09), in: RoundedRectangle(cornerRadius: 11))
+                    .frame(width: 38, height: 38).background(CompanionStyle.edge.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Liquid Glass").font(.callout.weight(.semibold))
                     Text("Optional translucent island panels.").font(.caption).foregroundStyle(CompanionStyle.muted)
@@ -248,7 +248,7 @@ struct IslandLayoutEditor: View {
                 Text(size.rawValue).font(.callout.weight(.semibold))
             }.foregroundStyle(selected ? CompanionStyle.accentInk : CompanionStyle.muted)
                 .frame(maxWidth: .infinity).frame(height: 106)
-                .background(selected ? CompanionStyle.accent.opacity(0.10) : CompanionStyle.edge.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                .background(CompanionStyle.edge.opacity(selected ? 0.09 : 0.04), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(selected ? CompanionStyle.accent.opacity(0.8) : .clear, lineWidth: 1.5) }
         }.buttonStyle(.plain).focusEffectDisabled().accessibilityLabel("\(size.rawValue) widget")
             .accessibilityValue(selected ? "Selected" : "")
@@ -300,7 +300,7 @@ private struct IslandLayoutMiniature: View {
             HStack(spacing: 24) {
                 CompanionCharacter(size: 78, avatar: avatar, animates: false).frame(width: 94, height: 84)
                 VStack(alignment: .leading, spacing: 9) {
-                    Text("YOUR COMPANION").font(.system(size: 9, weight: .semibold)).tracking(1.3).foregroundStyle(.white.opacity(0.5))
+                    Text("Your companion").font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.5))
                     Text("Ready when you are.").font(.system(size: 17, weight: .semibold))
                     Text("A little company for your day.").font(.system(size: 12)).foregroundStyle(.white.opacity(0.6))
                 }

@@ -6,7 +6,7 @@ struct ContentView: View {
     @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
     @FocusState private var focusedSection: AppSection?
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
-    @SceneStorage("workspace.toolsExpanded") private var toolsExpanded = false
+    @AppStorage("workspace.toolsExpanded") private var toolsExpanded = false
     @State private var typeToChatMonitor: Any?
     @Environment(\.islandPreview) private var preview
     @EnvironmentObject private var sensor: SensorViewModel
@@ -25,7 +25,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if preferences.onboardingComplete { workspace }
-            else { CompanionOnboardingView(clipboard: notch.clipboard, onFinish: { notch.showWelcome() }, prepareVoice: { await activation.prepareVoiceAccess() }) }
+            else { CompanionOnboardingView(clipboard: notch.clipboard, onFinish: { notch.showWelcome() }, prepareVoice: { await activation.prepareVoiceAccess() }, showCompanion: { notch.show() }) }
         }
         .frame(minWidth: 840, minHeight: 660)
         .preferredColorScheme(preferences.appearance.colorScheme)
@@ -182,7 +182,10 @@ struct ContentView: View {
 
     private var page: some View {
         VStack(alignment: .leading, spacing: WorkspaceMetrics.sectionGap) {
-            if viewModel.section != .overview {
+            if let owner = viewModel.section.owner, ![.calendar, .capture, .files].contains(viewModel.section) {
+                ToolPageHeading(title: viewModel.section.title(english: en), subtitle: viewModel.section.subtitle(english: en), owner: owner,
+                                en: en, animates: preferences.characterMotion && !preferences.usesReducedMotion)
+            } else if viewModel.section != .overview {
                 WorkspacePageHeading(title: viewModel.section.title(english: en), subtitle: viewModel.section.subtitle(english: en))
             }
             switch viewModel.section {
@@ -449,7 +452,7 @@ struct ContentView: View {
                                 .overlay { RoundedRectangle(cornerRadius: 11).strokeBorder(preferences.appearance == choice ? CompanionStyle.accent : CompanionStyle.edge.opacity(0.1), lineWidth: preferences.appearance == choice ? 2 : 0.7) }
                             Text(LocalizedStringKey(choice.rawValue)).font(.callout.weight(.medium)).foregroundStyle(CompanionStyle.ink)
                         }.padding(10).frame(maxWidth: .infinity)
-                            .background(preferences.appearance == choice ? CompanionStyle.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 15))
+                            .background(preferences.appearance == choice ? CompanionStyle.edge.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }.buttonStyle(.plain).focusEffectDisabled().accessibilityLabel(Text(LocalizedStringKey(choice.rawValue)))
                         .accessibilityAddTraits(preferences.appearance == choice ? .isSelected : [])
                 }
@@ -767,7 +770,7 @@ private struct LibraryPage: View {
     @ObservedObject var artifacts: CompanionArtifactLibrary
     let language: String
     let openSource: (CompanionArtifact) -> Bool
-    @SceneStorage("library.tab") private var tabName = "results"
+    @AppStorage("library.tab") private var tabName = "results"
     @Environment(\.islandPreview) private var preview
     private var en: Bool { language.hasPrefix("en") }
     private var tab: Tab {
@@ -810,5 +813,34 @@ private struct LibraryPage: View {
         case .helpers: files.page = .helpers
         case .results: break
         }
+    }
+}
+
+/// Tool page header: the team member who looks after the tool, then title and subtitle.
+private struct ToolPageHeading: View {
+    let title: String
+    let subtitle: String
+    let owner: LocalChatPersona
+    let en: Bool
+    let animates: Bool
+    @State private var hovered = false
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            CompanionCharacter(size: 58, avatar: owner.avatar, animates: animates && hovered)
+                .frame(width: 66, height: 62)
+                .onHover { hovered = $0 }
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(WorkspaceTypography.title)
+                Text(subtitle).font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 6) {
+                    Capsule().fill(CompanionStyle.agent(owner)).frame(width: 3, height: 12)
+                    Text(en ? "With \(owner.title)" : "Com \(owner.title == "Rita" || owner.title == "Ada" || owner.title == "Elinor" ? "a" : "o") \(owner.title)")
+                        .font(WorkspaceTypography.caption.weight(.medium)).foregroundStyle(CompanionStyle.muted)
+                }.padding(.top, 2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.bottom, 4)
     }
 }

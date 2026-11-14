@@ -18,7 +18,7 @@ struct CompanionTeamGallery: View {
                         CompanionCharacter(size: compact ? 52 : 78, avatar: member, animates: animates)
                         Text(member.name).font(.callout.weight(.semibold))
                         Text(LocalizedStringKey(member.subtitle)).font(.system(size: compact ? 9 : 11)).foregroundStyle(CompanionStyle.muted).lineLimit(1).minimumScaleFactor(0.7)
-                        if !compact { Text(LocalizedStringKey(member == .sig ? "Main companion" : "Specialist")).font(.caption2).foregroundStyle(member.tint) }
+                        if !compact { Text(LocalizedStringKey(member == .sig ? "Main companion" : "Specialist")).font(.caption2).foregroundStyle(CompanionStyle.muted) }
                     }.frame(maxWidth: .infinity).padding(compact ? 9 : 16).modifier(WorkspaceSurface(radius: 18))
                 }.accessibilityLabel(member == .ada && onAda != nil ? "Ada. Open her room." : "\(member.name). \(member.subtitle). Explore movements.")
             }

@@ -223,6 +223,7 @@ struct CompanionTeamPage: View {
     let language: String
     let animates: Bool
     var open: (LocalChatPersona) -> Void = { _ in }
+    var showsChat = true
     @State private var selected: LocalChatPersona = .sig
     @State private var typed = 0
     @State private var revealTask: Task<Void, Never>?
@@ -295,8 +296,10 @@ struct CompanionTeamPage: View {
                 }
             }
             Text(profile.notices).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted).frame(maxWidth: 460, alignment: .leading)
-            Button(en ? "Chat with \(selected.title)" : "Conversar com \(selected.title)") { open(selected) }
-                .buttonStyle(CompanionButtonStyle(primary: true)).padding(.top, 4)
+            if showsChat {
+                Button(en ? "Chat with \(selected.title)" : "Conversar com \(selected.title)") { open(selected) }
+                    .buttonStyle(CompanionButtonStyle(primary: true)).padding(.top, 4)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -8,7 +8,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var detected: Set<AIProvider> = []
     @Published var allowUsage = true
     @Published var allowClipboard = false
-    init(initialStep: Int = 0) { step = min(2, max(0, initialStep)) }
+    init(initialStep: Int = 0) { step = min(3, max(0, initialStep)) }
     func loadTools(usage: AIUsageViewModel, clipboard: ClipboardViewModel?) {
         detected = InstalledAIProviders.detect()
         allowUsage = usage.automaticDetection

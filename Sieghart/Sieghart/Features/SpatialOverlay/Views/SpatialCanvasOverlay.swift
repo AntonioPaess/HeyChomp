@@ -112,7 +112,7 @@ struct SpatialCanvasOverlay: View {
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(laserCyan)
                             Text("Chomp · \(drawing.shape.displayTitle)")
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(.white)
                         }
                         .padding(.horizontal, 12)
@@ -163,7 +163,7 @@ private struct SpatialVectorLabelView: View {
 
     var body: some View {
         Text(label.text)
-            .font(.system(size: 18, weight: .semibold, design: .rounded))
+            .font(.system(size: 18, weight: .semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
