@@ -106,6 +106,7 @@ struct NotchWidgetView: View {
         HStack {
             Text(pageTitle).font(.system(size: 20, weight: .semibold))
             Spacer()
+            railStrip
             if notch.welcomeStartedAt != nil {
                 Button(activation.voiceLanguage.hasPrefix("en") ? "Skip introduction" : "Pular apresentação") { notch.finishWelcome() }
                     .buttonStyle(CompanionButtonStyle(compact: true))
@@ -165,13 +166,7 @@ struct NotchWidgetView: View {
     private var quickAccess: some View {
         let width = notch.geometry.width + 144
         return ZStack(alignment: .topLeading) {
-            ForEach(0..<6) { slot in
-                let action = preferences.railActions[slot]
-                if action != .none {
-                    floatingButton(action.symbol, label: action.rawValue) { activateRail(action) }
-                        .position(x: slot < 3 ? 28 : width - 28, y: notch.geometry.contentTop + 52 + CGFloat(slot % 3) * 54)
-                }
-            }
+            // Quick actions now live inside the panel header (railStrip), not floating beside it.
             if notch.presentation != .home {
                 // On other pages Chomp hangs from the island's lip; a tap brings you back to him.
                 Button { notch.show() } label: {
@@ -181,6 +176,21 @@ struct NotchWidgetView: View {
                     .position(x: width / 2, y: notch.geometry.height + 14)
             }
         }.frame(width: width, height: notch.geometry.height + 64)
+    }
+
+    /// The user's quick actions as a quiet row of icons in the panel header.
+    private var railStrip: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(preferences.railActions.enumerated()).filter { $0.element != .none }, id: \.offset) { _, action in
+                Button { activateRail(action) } label: {
+                    Image(systemName: action.symbol).font(.system(size: 13, weight: .medium))
+                        .frame(width: 30, height: 26)
+                        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                }
+                .buttonStyle(IslandButtonStyle()).focusEffectDisabled()
+                .help(Text(LocalizedStringKey(action.rawValue))).accessibilityLabel(Text(LocalizedStringKey(action.rawValue)))
+            }
+        }.padding(.trailing, 6)
     }
 
     private func activateRail(_ action: IslandRailAction) {
@@ -697,6 +707,9 @@ struct NotchWidgetView: View {
 
 }
 
+/// The compact island *is* Chomp: the black notch is his body, so only his eyes and his
+/// mint sparkle are drawn. The eyes blink, glance toward the pointer and squint happily
+/// on hover.
 private struct CompactChompMark: View {
     let highlighted: Bool
     let animates: Bool
@@ -706,27 +719,24 @@ private struct CompactChompMark: View {
             let t = context.date.timeIntervalSinceReferenceDate
             let blink = animates && t.truncatingRemainder(dividingBy: 4.3) < 0.13
             let gaze = animates ? Self.gaze() : 0
+            let eyeHeight: CGFloat = blink ? 1.5 : highlighted ? 5 : 10
             ZStack {
-                ChompPebble()
-                    .fill(.linearGradient(colors: [Color(white: 0.24), Color(white: 0.09)],
-                                          startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 23, height: 15)
-                    .position(x: 12, y: 14)
-                HStack(spacing: 3) {
-                    Capsule().frame(width: 3, height: blink ? 1 : 5)
-                    Capsule().frame(width: 3, height: blink ? 1 : 5)
+                HStack(spacing: 6) {
+                    Capsule().frame(width: 6, height: eyeHeight)
+                    Capsule().frame(width: 6, height: eyeHeight)
                 }
                 .foregroundStyle(Color(red: 1, green: 0.95, blue: 0.84))
-                .position(x: 13 + gaze, y: 13)
+                .offset(x: gaze * 1.5, y: highlighted ? 1 : 0)
                 Image(systemName: "sparkle")
-                    .font(.system(size: 7, weight: .semibold))
+                    .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(Color(red: 0.38, green: 0.98, blue: 0.73))
-                    .opacity(highlighted ? 1 : 0.65)
-                    .scaleEffect(animates && highlighted ? 1.15 : 1)
-                    .position(x: 23, y: 5)
+                    .shadow(color: Color(red: 0.24, green: 0.86, blue: 0.6).opacity(highlighted ? 0.9 : 0.4), radius: highlighted ? 4 : 2)
+                    .scaleEffect(animates && highlighted ? 1.2 : 1)
+                    .offset(x: 16, y: -8)
             }
+            .animation(.spring(duration: 0.18, bounce: 0.2), value: highlighted)
         }
-        .frame(width: 28, height: 24)
+        .frame(width: 40, height: 26)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }

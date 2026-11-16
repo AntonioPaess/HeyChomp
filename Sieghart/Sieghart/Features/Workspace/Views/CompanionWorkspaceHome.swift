@@ -25,7 +25,7 @@ struct CompanionWorkspaceHome: View {
         VStack(alignment: .leading, spacing: 28) {
             WorkspacePageHeading(title: en ? "Today" : "Hoje", subtitle: subtitle)
             RitaNudgeRow(nudges: notch.ritaNudges)
-            RunningNowSection(hidesWhenEmpty: true)
+            RunningNowSection(hidesWhenEmpty: true, perches: true)
             CompanionTeamStrip(language: language, animates: animates, isWorking: isWorking, open: open)
             if !coordinator.taskJournal.tasks.isEmpty || coordinator.taskJournal.storageIssue != nil {
                 CompanionTaskShelf(journal: coordinator.taskJournal, language: language,

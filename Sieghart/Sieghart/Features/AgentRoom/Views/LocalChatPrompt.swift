@@ -349,6 +349,9 @@ struct LocalChatPrompt: View {
                 RoundedRectangle(cornerRadius: 15, style: .continuous)
                     .strokeBorder(AdaRoomTheme.subtleBorderGradient(for: colorScheme, isUser: false), lineWidth: 0.95)
             }
+            // While a reply is prepared, the specialist climbs onto the composer and works there.
+            .perched(conversation.persona, animates: active && !reduceMotion, size: 40, enabled: working && !compact && !preview)
+            .animation(reduceMotion ? nil : .spring(duration: 0.4, bounce: 0.3), value: working)
     }
 }
 

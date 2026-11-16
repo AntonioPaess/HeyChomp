@@ -12,44 +12,43 @@ struct MenuBarView: View {
     @Environment(\.islandPreview) private var preview
     init(initialPage: String = "Companion") { _viewModel = StateObject(wrappedValue: MenuBarViewModel(initialPage: initialPage)) }
 
+    @State private var showsAllTools = false
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
-            Group {
-                if viewModel.page == .companion { RunningNowSection(showsEmptyActions: true) }
-                else { toolPage }
-            }.fixedSize(horizontal: false, vertical: true)
-            Divider()
-            HStack {
-                Button { openWindow(id: "main"); notch.focusMainWindow() } label: { Text("Open HeyChomp") }
-                    .buttonStyle(.borderless).keyboardShortcut("o")
-                Spacer()
-                Button("Quit") { NSApp.terminate(nil) }.buttonStyle(.borderless)
-            }.font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted)
-        }.padding(16).frame(width: 340).foregroundStyle(CompanionStyle.ink)
+        VStack(alignment: .leading, spacing: 6) {
+            if viewModel.page == .companion {
+                HStack(spacing: 8) {
+                    AvatarView(persona: .sig, size: 26).padding(-6)
+                    Text("Chomp").font(.system(size: 15, weight: .semibold))
+                    Spacer()
+                }.padding(.horizontal, 6).padding(.bottom, 4)
+                RitaNudgeRow(nudges: notch.ritaNudges, compact: true)
+                RunningNowSection(hidesWhenEmpty: true).padding(.bottom, 4)
+                MenuRow(symbol: "timer", title: "Timers") { viewModel.page = .timers }
+                MenuRow(symbol: "square.grid.2x2", title: "All tools", trailing: showsAllTools ? "chevron.down" : "chevron.right") {
+                    withAnimation(.spring(duration: 0.25, bounce: 0)) { showsAllTools.toggle() }
+                }
+                if showsAllTools {
+                    VStack(spacing: 0) {
+                        ForEach(MenuPage.allCases.filter { $0 != .companion && $0 != .timers }, id: \.self) { item in
+                            MenuRow(symbol: item.symbol, title: LocalizedStringKey(item.rawValue), indent: true) { viewModel.page = item }
+                        }
+                    }.transition(.opacity)
+                }
+                Divider().padding(.vertical, 4)
+                MenuRow(symbol: "bubble.left", title: "Talk to Chomp") { notch.show() }
+                MenuRow(symbol: "arrow.up.forward.square", title: "Open HeyChomp") { openWindow(id: "main"); notch.focusMainWindow() }
+                Divider().padding(.vertical, 4)
+                MenuRow(symbol: "power", title: "Quit") { NSApp.terminate(nil) }
+            } else {
+                Button { viewModel.page = .companion } label: { Label("Chomp", systemImage: "chevron.left") }
+                    .buttonStyle(.borderless).font(WorkspaceTypography.section).padding(.bottom, 6)
+                toolPage.fixedSize(horizontal: false, vertical: true)
+            }
+        }.padding(10).frame(width: 320).foregroundStyle(CompanionStyle.ink)
             .background { WorkspaceBackdrop() }.preferredColorScheme(preferences.appearance.colorScheme)
             .environment(\.workspaceGlass, true).environment(\.surfaceGlassEnabled, preferences.windowGlass).environment(\.islandReduceMotion, preferences.usesReducedMotion).focusEffectDisabled()
             .environment(\.companionMotionEnabled, preferences.characterMotion)
-    }
-
-    private var header: some View {
-        HStack(spacing: 8) {
-            if viewModel.page == .companion {
-                AvatarView(persona: .sig, size: 22).padding(-6)
-                Text("HeyChomp").font(WorkspaceTypography.section)
-            } else {
-                Button { viewModel.page = .companion } label: { Label("Running now", systemImage: "chevron.left") }
-                    .buttonStyle(.borderless).font(WorkspaceTypography.section)
-            }
-            Spacer()
-            Menu {
-                ForEach(MenuPage.allCases.filter { $0 != .companion }, id: \.self) { item in
-                    Button { viewModel.page = item } label: { Label(LocalizedStringKey(item.rawValue), systemImage: item.symbol) }
-                }
-            } label: { Image(systemName: "square.grid.2x2") }
-                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                .help(Text("Tools")).accessibilityLabel(Text("Tools"))
-        }
     }
 
     @ViewBuilder private var toolPage: some View {
@@ -75,6 +74,7 @@ struct MenuBarView: View {
 struct RunningNowSection: View {
     var showsEmptyActions = false
     var hidesWhenEmpty = false
+    var perches = false
     @EnvironmentObject private var assistant: AssistantViewModel
     @EnvironmentObject private var notch: NotchWidgetViewModel
     private var running: Bool { notch.keepAwake.enabled || assistant.hasTimerActivity }
@@ -87,8 +87,8 @@ struct RunningNowSection: View {
         VStack(alignment: .leading, spacing: 8) {
             if showsEmptyActions { RitaNudgeRow(nudges: notch.ritaNudges, compact: true) }
             Text("Running now").font(WorkspaceTypography.caption.weight(.semibold)).foregroundStyle(CompanionStyle.muted)
-            if notch.keepAwake.enabled { KeepAwakeRunningRow(controller: notch.keepAwake) }
-            if assistant.hasTimerActivity { timerRow }
+            if notch.keepAwake.enabled { KeepAwakeRunningRow(controller: notch.keepAwake).perched(.elinor, enabled: perches).padding(.top, perches ? 18 : 0) }
+            if assistant.hasTimerActivity { timerRow.perched(.rita, enabled: perches).padding(.top, perches ? 18 : 0) }
             if !notch.keepAwake.enabled && !assistant.hasTimerActivity {
                 Text("Nothing running.").font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted)
                 if showsEmptyActions {
@@ -192,9 +192,37 @@ struct RitaNudgeRow: View {
             }
             .padding(12)
             .background(CompanionStyle.edge.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .perched(.rita, enabled: !compact)
+            .padding(.top, compact ? 0 : 18)
             .transition(.move(edge: .top).combined(with: .opacity))
             .accessibilityElement(children: .contain)
             .accessibilityLabel(Text("Rita"))
         }
+    }
+}
+
+/// A native-feeling menu row: icon, title, full-width hover highlight.
+private struct MenuRow: View {
+    let symbol: String
+    let title: LocalizedStringKey
+    var trailing: String? = nil
+    var indent = false
+    let action: () -> Void
+    @State private var hovered = false
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: symbol).font(.system(size: 14)).frame(width: 20)
+                Text(title).font(.system(size: 13))
+                Spacer(minLength: 0)
+                if let trailing { Image(systemName: trailing).font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary) }
+            }
+            .padding(.leading, indent ? 30 : 8).padding(.trailing, 8).padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(hovered ? CompanionStyle.edge.opacity(0.09) : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 }
     }
 }

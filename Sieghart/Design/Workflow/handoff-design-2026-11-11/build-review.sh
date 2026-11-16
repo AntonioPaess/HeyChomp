@@ -8,7 +8,7 @@ q="${REVIEW_OUT:-/private/tmp/heychomp-workspace-redesign}"
 source_bundle="${SOURCE_BUNDLE:-/private/tmp/heychomp-team.lxTqfq/DerivedData/Build/Products/Debug/HeyChomp.app}"
 module_cache="${MODULE_CACHE:-$q/module-cache}"
 review="$q/HeyChomp Inicio.app"
-[ -d "$source_bundle/Contents/Resources" ] || { echo "SOURCE_BUNDLE sem recursos: $source_bundle" >&2; exit 1; }
+[ -d "$source_bundle/Contents/Resources" ] || { echo "error: SOURCE_BUNDLE sem recursos: $source_bundle (compile o app com xcodebuild e passe SOURCE_BUNDLE=<.../Debug/HeyChomp.app>)" >&2; exit 1; }
 mkdir -p "$review/Contents/MacOS" "$review/Contents/Resources" "$module_cache"
 ditto "$source_bundle/Contents/Resources" "$review/Contents/Resources"
 # As traduções vêm sempre da fonte atual, não do bundle de origem.

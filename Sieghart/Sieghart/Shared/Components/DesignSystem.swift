@@ -285,3 +285,18 @@ struct AvatarView: View {
         .help(persona.title)
     }
 }
+
+extension View {
+    /// The agent who owns a card sits on its top edge, peeking over it (a HeyChomp signature).
+    func perched(_ persona: LocalChatPersona, animates: Bool = false, size: CGFloat = 36, enabled: Bool = true) -> some View {
+        overlay(alignment: .topTrailing) {
+            if enabled {
+                CompanionCharacter(size: size, avatar: persona.avatar, animates: animates)
+                    .frame(width: size + 8, height: size)
+                    .offset(x: -22, y: -size * 0.58)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+}
