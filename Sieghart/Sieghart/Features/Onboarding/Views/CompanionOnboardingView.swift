@@ -18,6 +18,9 @@ struct CompanionOnboardingView: View {
     @State private var greeted = false
     @State private var greetReplay = 0
     @State private var calledCompanion = false
+    /// What Chomp calls you. Asked in the first mission and used by the island greeting.
+    @AppStorage("companion.userName") private var userName = ""
+    @State private var arrived = false
     private var en: Bool { preferences.introductionLanguage == .english }
     init(scrollable: Bool = true, clipboard: ClipboardViewModel? = nil, initialStep: Int = 0, arrivalPreviewTime: Double? = nil, onFinish: @escaping () -> Void = {}, prepareVoice: (() async -> String)? = nil, showCompanion: (() -> Void)? = nil) {
         self.scrollable = scrollable; self.clipboard = clipboard; self.arrivalPreviewTime = arrivalPreviewTime; self.onFinish = onFinish; self.prepareVoice = prepareVoice; self.showCompanion = showCompanion
@@ -26,12 +29,18 @@ struct CompanionOnboardingView: View {
     private var chosen: CompanionAvatar { .sig }
     private var moves: Bool { preferences.characterMotion && !preferences.usesReducedMotion && !reducedMotion }
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(spacing: 22) {
             // HeyClicky-style: you learn by doing. Four short missions, checked off as you go.
-            missionStrip
-            Group {
-                if scrollable { ScrollView { page }.scrollIndicators(.hidden) }
-                else { page; Spacer(minLength: 0) }
+            // One idea per screen, centred, with the character on stage.
+            missionStrip.frame(maxWidth: 860).padding(.horizontal, 40).padding(.top, 40)
+            GeometryReader { proxy in
+                Group {
+                    if scrollable {
+                        // Full window width so glows and characters are never clipped by the column.
+                        ScrollView { page.frame(maxWidth: 860).padding(.horizontal, 40).padding(.vertical, 24).frame(maxWidth: .infinity, minHeight: proxy.size.height) }
+                            .scrollIndicators(.hidden)
+                    } else { page.frame(maxWidth: 860).padding(.horizontal, 40).frame(maxWidth: .infinity, maxHeight: .infinity) }
+                }
             }
             HStack {
                 if viewModel.step > 0 { Button("Back") { viewModel.step -= 1 }.buttonStyle(CompanionButtonStyle()) }
@@ -48,8 +57,8 @@ struct CompanionOnboardingView: View {
                         onFinish()
                     }
                 }.buttonStyle(CompanionButtonStyle(primary: true)).disabled(viewModel.preparingAccess)
-            }
-        }.padding(40).frame(maxWidth: 860, maxHeight: .infinity, alignment: .top).frame(maxWidth: .infinity)
+            }.frame(maxWidth: 860).padding(.horizontal, 40).padding(.bottom, 40)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(CompanionStyle.ink).background { WorkspaceBackdrop() }.preferredColorScheme(preferences.appearance.colorScheme)
             .environment(\.workspaceGlass, true).environment(\.surfaceGlassEnabled, preferences.windowGlass)
             .environment(\.islandReduceMotion, preferences.usesReducedMotion)
@@ -60,7 +69,7 @@ struct CompanionOnboardingView: View {
             .onChange(of: moves) { _, enabled in if enabled { arrivalStarted = Date() } }
     }
     private var page: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .center, spacing: 18) {
             if viewModel.step == 0 { helloMission }
             else if viewModel.step == 1 { teamMission }
             else if viewModel.step == 2 { anywhereMission }
@@ -131,73 +140,90 @@ struct CompanionOnboardingView: View {
         .animation(moves ? .spring(duration: 0.3, bounce: 0.2) : nil, value: done)
     }
 
-    /// Mission 1: watch Chomp arrive, then say hi. He answers with a wave.
+    private func heading(_ title: LocalizedStringKey, _ subtitle: LocalizedStringKey? = nil) -> some View {
+        VStack(spacing: 8) {
+            Text(title).font(.system(size: 30, weight: .bold)).multilineTextAlignment(.center)
+            if let subtitle {
+                Text(subtitle).font(.system(size: 15)).foregroundStyle(CompanionStyle.muted)
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true).frame(maxWidth: 520)
+            }
+        }
+    }
+
+    /// Mission 1: watch the team arrive; then Chomp asks your name and waves when you answer.
     private var helloMission: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 18) {
             if greeted {
                 CompanionCharacter(size: 170, avatar: .sig, animates: moves, animation: .hello, replay: greetReplay)
-                    .frame(height: 190).transition(.scale(scale: 0.8).combined(with: .opacity))
-                Text("Nice to meet you! That's all it takes.").font(.system(size: 26, weight: .bold))
-                Text("Type or speak to Chomp whenever you need. Next, meet the team that works with him.")
-                    .font(.system(size: 15)).foregroundStyle(CompanionStyle.muted).multilineTextAlignment(.center).frame(maxWidth: 520)
+                    .frame(height: 200).transition(.scale(scale: 0.8).combined(with: .opacity))
+                heading(LocalizedStringKey(en ? "Nice to meet you, \(userName)!" : "Prazer, \(userName)!"),
+                        "Type or speak to Chomp whenever you need. Next, meet the team that works with him.")
             } else {
                 CompanionTeamArrival(animates: moves, previewTime: arrivalPreviewTime, started: arrivalStarted,
                                      language: preferences.introductionLanguage)
-                    .id(arrivalStarted).frame(height: 280)
-                Text("Say hi to Chomp.").font(.system(size: 26, weight: .bold))
-                HStack(spacing: 8) {
-                    TextField(en ? "Write hi…" : "Escreva oi…", text: $hello)
-                        .textFieldStyle(.plain).font(.system(size: 15)).onSubmit(greet)
-                    Button { greet() } label: { Image(systemName: "arrow.up").font(.system(size: 13, weight: .bold)) }
-                        .buttonStyle(AgentChatSendStyle()).disabled(hello.trimmingCharacters(in: .whitespaces).isEmpty)
-                        .accessibilityLabel(en ? "Send" : "Enviar")
+                    .id(arrivalStarted).frame(width: 600, height: 320)
+                    // The 3D stage draws its spotlight inside a rectangle; fade every edge so it never shows.
+                    .mask { Rectangle().padding(36).blur(radius: 28) }
+                if arrived || !moves || arrivalPreviewTime != nil {
+                    VStack(spacing: 16) {
+                        heading("What should I call you?")
+                        HStack(spacing: 8) {
+                            TextField(en ? "Your name…" : "Seu nome…", text: $hello)
+                                .textFieldStyle(.plain).font(.system(size: 15)).onSubmit(greet)
+                            Button { greet() } label: { Image(systemName: "arrow.up").font(.system(size: 13, weight: .bold)) }
+                                .buttonStyle(AgentChatSendStyle()).disabled(hello.trimmingCharacters(in: .whitespaces).isEmpty)
+                                .accessibilityLabel(en ? "Send" : "Enviar")
+                        }
+                        .padding(.leading, 16).padding(.trailing, 6).padding(.vertical, 6)
+                        .background(CompanionStyle.edge.opacity(0.05), in: Capsule())
+                        .overlay { Capsule().strokeBorder(CompanionStyle.edge.opacity(0.12), lineWidth: 0.75) }
+                        .frame(maxWidth: 420)
+                    }.transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .padding(.leading, 16).padding(.trailing, 6).padding(.vertical, 6)
-                .background(CompanionStyle.edge.opacity(0.05), in: Capsule())
-                .overlay { Capsule().strokeBorder(CompanionStyle.edge.opacity(0.12), lineWidth: 0.75) }
-                .frame(maxWidth: 420)
             }
         }
-        .frame(maxWidth: .infinity).padding(.top, 8)
+        .frame(maxWidth: .infinity)
+        .task(id: arrivalStarted) {
+            // The question appears once the team has finished arriving.
+            arrived = false
+            guard moves, arrivalPreviewTime == nil else { arrived = true; return }
+            try? await Task.sleep(for: .seconds(6))
+            withAnimation(.spring(duration: 0.5, bounce: 0.25)) { arrived = true }
+        }
     }
     private func greet() {
-        guard !hello.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        let name = hello.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        userName = String(name.prefix(32))
         withAnimation(moves ? .spring(duration: 0.45, bounce: 0.3) : nil) { greeted = true }
         greetReplay += 1
     }
 
     /// Mission 2: the character select, so each specialist introduces themself.
     private var teamMission: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Meet your team.").font(.system(size: 30, weight: .bold))
-                Text("Hover over each one. They'll tell you what they do.").font(.system(size: 15)).foregroundStyle(CompanionStyle.muted)
-            }
+        VStack(spacing: 22) {
+            heading("Meet your team.", "Hover over each one. They'll tell you what they do.")
             CompanionTeamPage(language: en ? "en" : "pt", animates: moves, showsChat: false)
         }
     }
 
     /// Mission 3: bring Chomp up for real, at the top of the screen.
     private var anywhereMission: some View {
-        HStack(alignment: .center, spacing: 36) {
+        VStack(spacing: 18) {
             CompanionCharacter(size: 170, avatar: .sig, animates: moves, animation: calledCompanion ? .proud : .wink, replay: calledCompanion ? 1 : 0)
-                .frame(width: 260, height: 260)
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Call me from anywhere.").font(.system(size: 30, weight: .bold)).fixedSize(horizontal: false, vertical: true)
-                Text("Chomp lives at the top of your screen, in any app. Click him there, or use your shortcut and just talk.")
-                    .font(.system(size: 15)).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 10) {
-                    Button { showCompanion?(); withAnimation { calledCompanion = true } } label: { Label("Show Chomp now", systemImage: "arrow.up.to.line") }
-                        .buttonStyle(CompanionButtonStyle())
-                    Button(en ? "Rehearse voice and selection" : "Ensaiar voz e seleção") { tutorial = true }.buttonStyle(.borderless)
-                }
-                if calledCompanion {
-                    Label("There he is, at the top of the screen.", systemImage: "checkmark.circle.fill")
-                        .font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.ink)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
-            }.frame(maxWidth: .infinity, alignment: .leading)
-        }.padding(.top, 16)
+                .frame(width: 240, height: 220)
+            heading("Call me from anywhere.", "Chomp lives at the top of your screen, in any app. Click him there, or use your shortcut and just talk.")
+            HStack(spacing: 12) {
+                Button { showCompanion?(); withAnimation { calledCompanion = true } } label: { Label("Show Chomp now", systemImage: "arrow.up.to.line") }
+                    .buttonStyle(CompanionButtonStyle(primary: !calledCompanion))
+                Button(en ? "Rehearse voice and selection" : "Ensaiar voz e seleção") { tutorial = true }.buttonStyle(CompanionButtonStyle())
+            }
+            if calledCompanion {
+                Label("There he is, at the top of the screen.", systemImage: "checkmark.circle.fill")
+                    .font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.ink)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }.frame(maxWidth: .infinity)
     }
 
     private func featureRow(_ symbol: String, _ text: LocalizedStringKey) -> some View {

@@ -87,7 +87,7 @@ struct RunningNowSection: View {
         VStack(alignment: .leading, spacing: 8) {
             if showsEmptyActions { RitaNudgeRow(nudges: notch.ritaNudges, compact: true) }
             Text("Running now").font(WorkspaceTypography.caption.weight(.semibold)).foregroundStyle(CompanionStyle.muted)
-            if notch.keepAwake.enabled { KeepAwakeRunningRow(controller: notch.keepAwake).perched(.elinor, enabled: perches).padding(.top, perches ? 40 : 0) }
+            if notch.keepAwake.enabled { KeepAwakeRunningRow(controller: notch.keepAwake).perched(.sig, enabled: perches).padding(.top, perches ? 40 : 0) }
             if assistant.hasTimerActivity { timerRow.perched(.rita, enabled: perches).padding(.top, perches ? 40 : 0) }
             if !notch.keepAwake.enabled && !assistant.hasTimerActivity {
                 Text("Nothing running.").font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted)
@@ -188,7 +188,8 @@ struct RitaNudgeRow: View {
                 // Rita leaves the team row and peeks over her own card.
                 .perched(.rita, animates: true, size: 42)
             }
-            .padding(.top, 36)
+            // Rita peeks into the free space beside Chomp's actions, so the team below keeps its place.
+            .padding(.top, 2)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .accessibilityElement(children: .contain)
             .accessibilityLabel(Text("Rita"))

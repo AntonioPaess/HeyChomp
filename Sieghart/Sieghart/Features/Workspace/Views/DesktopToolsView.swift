@@ -37,7 +37,7 @@ struct DesktopToolsView: View {
                         }
                     }
                     if matchingWindows.isEmpty {
-                        Text(model.apps.isEmpty ? LocalizedStringKey("Refresh to choose a window.") : LocalizedStringKey("No matching windows. Open a window outside full screen, then refresh.")).font(.caption).foregroundStyle(CompanionStyle.muted)
+                        OwnerSays(persona: .sig, text: model.apps.isEmpty ? LocalizedStringKey("Refresh to choose a window.") : LocalizedStringKey("No matching windows. Open a window outside full screen, then refresh."))
                     }
                     Text("Apps — bring an app forward").font(.caption.weight(.semibold)).padding(.top, 8)
                     ForEach(model.apps.filter { query.isEmpty || $0.name.localizedCaseInsensitiveContains(query) }) { app in

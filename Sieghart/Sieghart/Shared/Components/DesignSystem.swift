@@ -327,3 +327,25 @@ struct PeekingCharacter: View {
             }
     }
 }
+
+/// A teammate says something in a speech bubble: used for empty states and hints, so
+/// quiet screens still feel like the team is there.
+struct OwnerSays: View {
+    let persona: LocalChatPersona
+    let text: LocalizedStringKey
+    var compact = false
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            CompanionCharacter(size: compact ? 26 : 34, avatar: persona.avatar, animates: false)
+                .frame(width: compact ? 30 : 40, height: compact ? 26 : 34)
+                .accessibilityHidden(true)
+            Text(text).font(.system(size: compact ? 11 : 12.5)).foregroundStyle(CompanionStyle.ink.opacity(0.85))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12).padding(.vertical, compact ? 6 : 9)
+                .background { ChompSpeechBubble().fill(CompanionStyle.agent(persona).opacity(0.10)) }
+                .overlay { ChompSpeechBubble().stroke(CompanionStyle.agent(persona).opacity(0.22), lineWidth: 0.75) }
+        }
+        .padding(.vertical, 4)
+    }
+}
+

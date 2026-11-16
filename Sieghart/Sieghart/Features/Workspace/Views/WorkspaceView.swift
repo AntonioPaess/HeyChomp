@@ -183,6 +183,7 @@ struct ContentView: View {
     private var page: some View {
         VStack(alignment: .leading, spacing: WorkspaceMetrics.sectionGap) {
             if let owner = viewModel.section.owner, ![.calendar, .capture, .files].contains(viewModel.section) {
+                // Where the owner peeks over the page's main card, the heading skips the portrait (no duplicates).
                 ToolPageHeading(title: viewModel.section.title(english: en), subtitle: viewModel.section.subtitle(english: en), owner: owner,
                                 en: en, animates: preferences.characterMotion && !preferences.usesReducedMotion)
             } else if viewModel.section != .overview {
@@ -816,31 +817,32 @@ private struct LibraryPage: View {
     }
 }
 
-/// Tool page header: the team member who looks after the tool, then title and subtitle.
+/// Tool page header: a quiet card with the page's title, and the teammate who looks after
+/// the tool peeking over its edge (the same signature as the island and the Today page).
 private struct ToolPageHeading: View {
     let title: String
     let subtitle: String
     let owner: LocalChatPersona
     let en: Bool
     let animates: Bool
-    @State private var hovered = false
     var body: some View {
-        HStack(alignment: .center, spacing: 16) {
-            CompanionCharacter(size: 58, avatar: owner.avatar, animates: animates && hovered)
-                .frame(width: 66, height: 62)
-                .onHover { hovered = $0 }
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(WorkspaceTypography.title)
-                Text(subtitle).font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 6) {
-                    Capsule().fill(CompanionStyle.agent(owner)).frame(width: 3, height: 12)
-                    Text(en ? "With \(owner.title)" : "Com \(owner.title == "Rita" || owner.title == "Ada" || owner.title == "Elinor" ? "a" : "o") \(owner.title)")
-                        .font(WorkspaceTypography.caption.weight(.medium)).foregroundStyle(CompanionStyle.muted)
-                }.padding(.top, 2)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.system(size: 22, weight: .bold))
+            Text(subtitle).font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                Circle().fill(CompanionStyle.agent(owner)).frame(width: 7, height: 7)
+                Text(en ? "With \(owner.title)" : "Com \(owner.title == "Rita" || owner.title == "Ada" || owner.title == "Elinor" ? "a" : "o") \(owner.title)")
+                    .font(WorkspaceTypography.caption.weight(.semibold))
             }
-            Spacer(minLength: 0)
+            .padding(.horizontal, 9).frame(height: 22)
+            .background(CompanionStyle.agent(owner).opacity(0.12), in: Capsule())
+            .padding(.top, 4)
         }
-        .padding(.bottom, 4)
+        .padding(.horizontal, 20).padding(.vertical, 18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CompanionStyle.edge.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(CompanionStyle.edge.opacity(0.08), lineWidth: 0.75) }
+        .perched(owner, animates: animates, size: 52)
+        .padding(.top, 34).padding(.bottom, 4)
     }
 }

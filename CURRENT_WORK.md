@@ -591,3 +591,13 @@ O usuário pediu refazer todas as animações para os novos bots, incluindo os c
 
 16/11 — Pedido de exportação individual concluído: seis PNGs RGBA 1536×1024 gerados separadamente com imagegen, em Design/Concepts/peeking-team-2026-11-16/individuais, nomes Chomp/Rita/Ada/Gantt/Elinor/Toni. Canal alpha verificado nos seis; originais preservados. ZIP bots-sem-fundo.zip contém imagens, instruções e validação. Arte em camada única com efeitos suaves semitransparentes; sem rig/animação ou integração no app.
 - PNGs do usuário (Design/Concepts/peeking-team-2026-11-16/bots-sem-fundo) normalizados em Peek-<persona>.imageset (480×340 @2x, borda na linha 250, corpo 330 px) em ProviderAssets.xcassets; PeekingCharacter agora desenha esses assets em vez de recortar o personagem 3D. Testes 522 ok. Sem commit.
+
+## 2026-11-16 (noite) — onboarding centralizado e equipe com status
+- Onboarding: passos centralizados, ScrollView na largura toda (brilhos não cortam), missão 1 pergunta o nome após a chegada da equipe (AppStorage companion.userName) e responde "Prazer, <nome>!".
+- Widget: fileira da equipe com status ao vivo (Ada IA/Livre, Gantt próxima reunião, Elinor estado térmico, Toni estante, Rita foco) em uma linha.
+- Espiando: card de clima (Chomp), Keep Awake (Elinor) e Timers (Rita); cabeçalho dessas páginas sem retrato duplicado.
+- Traduções: Medindo…, Estado térmico, Atualizado, Modelos/Projetos, dicas do gráfico de IA, conflito de arquivos.
+- Galeria: estado "Ouvindo" via ActivationController.previewListening (só prévia, sem microfone).
+- Pendente: design interno das páginas de ferramentas (Janelas, Uso de IA, Áudio, Sistema, Timers); decisões (animação Ada laptop, oi falado, Chomp no cursor); instalar/push/PR só com pedido. Testes 522 ok. Sem commit.
+- Ajustes (noite 2): cartão da Rita no widget sem espaço extra (equipe não desce para a borda verde); chegada do onboarding com bordas esmaecidas (sem retângulo) e centralizada em 600 pt; páginas de ferramentas com cartão de cabeçalho e dono espiando (ToolPageHeading); estados vazios com OwnerSays (balão do dono) em Janelas e Uso de IA. Snapshot de Keep Awake sai deslocado no --render-tools (não conferido ao vivo). Sem commit.
+- Papéis corrigidos (pedido do usuário 16/11): Chomp orquestrador e dono das ferramentas do Mac; Rita foco e saúde (Apple Saúde em breve); Ada código; Gantt agenda + diário (bullet journal), e-mail em breve; Elinor só finanças (Apple Pay em breve; hoje custos de IA); Toni como está. Ajustados textos da equipe, apresentação, sugestões do chat, donos das páginas, pedrinhas e legenda da equipe no widget. Roteamento da IA (CompanionSpecialists: comunicação→Toni) não alterado. Testes 522 ok. Sem commit.

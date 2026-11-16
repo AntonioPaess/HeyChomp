@@ -59,7 +59,8 @@ enum AppSection: String, CaseIterable, Identifiable {
         switch self {
         case .focus: .rita
         case .clipboard, .audio, .files, .capture: .toni
-        case .desktop, .displayPower, .keepAwake, .system: .elinor
+        // Mac utilities belong to Chomp, the orchestrator; Elinor is finances only.
+        case .desktop, .displayPower, .keepAwake, .system: .sig
         case .aiLimits: .ada
         case .calendar: .gantt
         case .settings: .sig

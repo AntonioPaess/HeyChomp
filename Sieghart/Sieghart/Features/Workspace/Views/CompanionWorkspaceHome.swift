@@ -198,20 +198,20 @@ enum CompanionTeamCopy {
     static func short(_ person: LocalChatPersona, en: Bool) -> String {
         switch person {
         case .sig: en ? "Your coordinator" : "Seu coordenador"
-        case .rita: en ? "Focus and breaks" : "Foco e pausas"
+        case .rita: en ? "Focus and health" : "Foco e saúde"
         case .ada: en ? "Code" : "Código"
-        case .gantt: en ? "Your day" : "Seu dia"
-        case .elinor: en ? "Resources" : "Recursos"
+        case .gantt: en ? "Calendar and journal" : "Agenda e diário"
+        case .elinor: en ? "Finances" : "Finanças"
         case .toni: en ? "Files and writing" : "Arquivos e escrita"
         }
     }
     static func long(_ person: LocalChatPersona, en: Bool) -> String {
         switch person {
         case .sig: en ? "Starts the conversation and brings in the others." : "Começa a conversa e chama os outros."
-        case .rita: en ? "Will notice long stretches without moving and help you pace your focus." : "Vai notar longos períodos sem se mexer e ajudar você a dosar o foco."
+        case .rita: en ? "Looks after your focus and your body: time sitting, movement and breaks." : "Cuida do seu foco e do seu corpo: tempo sentado, movimento e pausas."
         case .ada: en ? "Reviews, explains and writes code with you." : "Revisa, explica e escreve código com você."
-        case .gantt: en ? "Calendar, reminders and what comes next." : "Agenda, lembretes e o que vem a seguir."
-        case .elinor: en ? "Your Mac's battery, memory and usage." : "Bateria, memória e uso do seu Mac."
+        case .gantt: en ? "Your calendar, what is booked and how the day went, like a bullet journal." : "Sua agenda, o que já está marcado e como foi o dia, como um bullet journal."
+        case .elinor: en ? "Keeps an eye on your spending, so your money is organized." : "De olho nos seus gastos, para o seu dinheiro ficar organizado."
         case .toni: en ? "Finds, organizes and drafts your files and texts." : "Encontra, organiza e redige seus arquivos e textos."
         }
     }
@@ -360,11 +360,11 @@ struct CompanionTeamProfile {
                             .init(symbol: "text.viewfinder", text: en ? "Reads your screen when you ask" : "Lê a tela quando você pede")],
                 notices: en ? "Notices: what you ask and what is running." : "Nota: o que você pede e o que está em andamento.")
         case .rita:
-            return .init(intro: en ? "I'm Rita. I keep your focus steady and remind you to stand up." : "Eu sou a Rita. Cuido do seu foco e lembro você de levantar.",
+            return .init(intro: en ? "I'm Rita. I look after your focus and your health, and remind you to move." : "Eu sou a Rita. Cuido do seu foco e da sua saúde, e lembro você de se mexer.",
                 abilities: [.init(symbol: "leaf", text: en ? "Focus sessions and breaks" : "Sessões de foco e pausas"),
-                            .init(symbol: "figure.stand", text: en ? "Stand-up reminders" : "Avisos para levantar"),
-                            .init(symbol: "timer", text: en ? "Timers and stopwatch" : "Timers e cronômetro")],
-                notices: en ? "Notices: long stretches of continuous use on this Mac." : "Nota: longos períodos de uso contínuo neste Mac.")
+                            .init(symbol: "figure.stand", text: en ? "Notices when you sit too long" : "Percebe quando você fica muito tempo sentado"),
+                            .init(symbol: "heart", text: en ? "Apple Health: steps and exercise (coming)" : "Apple Saúde: passos e exercícios (em breve)")],
+                notices: en ? "Today: continuous use on this Mac. Apple Health only when you connect it." : "Hoje: uso contínuo neste Mac. Apple Saúde só quando você conectar.")
         case .ada:
             return .init(intro: en ? "I'm Ada. Show me code and I'll explain, review or write it with you." : "Eu sou a Ada. Me mostre o código e eu explico, reviso ou escrevo com você.",
                 abilities: [.init(symbol: "chevron.left.forwardslash.chevron.right", text: en ? "Explains and reviews code" : "Explica e revisa código"),
@@ -372,17 +372,17 @@ struct CompanionTeamProfile {
                             .init(symbol: "magnifyingglass", text: en ? "Researches in the background" : "Pesquisa em segundo plano")],
                 notices: en ? "Notices: repositories you allow her to read." : "Nota: os repositórios que você permitir.")
         case .gantt:
-            return .init(intro: en ? "I'm Gantt. I keep your day in order, from the next meeting to the last reminder." : "Eu sou o Gantt. Organizo o seu dia, da próxima reunião ao último lembrete.",
-                abilities: [.init(symbol: "calendar", text: en ? "Calendar and reminders" : "Agenda e lembretes"),
-                            .init(symbol: "bell", text: en ? "Meeting alerts" : "Alertas de reunião"),
-                            .init(symbol: "list.bullet.clipboard", text: en ? "Daily summaries" : "Resumos do dia")],
+            return .init(intro: en ? "I'm Gantt. I keep your calendar and write down how your day went." : "Eu sou o Gantt. Cuido da sua agenda e anoto como foi o seu dia.",
+                abilities: [.init(symbol: "calendar.badge.plus", text: en ? "Checks and adds to your calendar" : "Confere e cria eventos na agenda"),
+                            .init(symbol: "list.bullet.clipboard", text: en ? "Daily journal, bullet style" : "Diário do dia, estilo bullet journal"),
+                            .init(symbol: "envelope", text: en ? "Emails (coming)" : "E-mails (em breve)")],
                 notices: en ? "Notices: calendars you share with HeyChomp." : "Nota: as agendas que você compartilhar.")
         case .elinor:
-            return .init(intro: en ? "I'm Elinor. I watch your Mac's energy so it keeps up with you." : "Eu sou a Elinor. Cuido da energia do seu Mac para ele acompanhar você.",
-                abilities: [.init(symbol: "cpu", text: en ? "System monitor" : "Monitor do sistema"),
-                            .init(symbol: "cup.and.saucer", text: en ? "Keep Awake" : "Keep Awake"),
-                            .init(symbol: "sun.max", text: en ? "Display and power" : "Tela e energia")],
-                notices: en ? "Notices: battery, memory and temperature." : "Nota: bateria, memória e temperatura.")
+            return .init(intro: en ? "I'm Elinor. I keep your money organized, around the clock." : "Eu sou a Elinor. Deixo o seu dinheiro organizado, o dia todo.",
+                abilities: [.init(symbol: "creditcard", text: en ? "Apple Pay purchases, by category (coming)" : "Compras no Apple Pay, por categoria (em breve)"),
+                            .init(symbol: "chart.pie", text: en ? "Where your money goes" : "Para onde vai o seu dinheiro"),
+                            .init(symbol: "sparkles", text: en ? "AI costs recorded in the app" : "Custos de IA registrados no app")],
+                notices: en ? "Today: AI costs recorded here. Never invents balances or bank data." : "Hoje: custos de IA registrados aqui. Nunca inventa saldo ou dados do banco.")
         case .toni:
             return .init(intro: en ? "I'm Toni. I find, organize and draft your files and texts." : "Eu sou o Toni. Encontro, organizo e escrevo seus arquivos e textos.",
                 abilities: [.init(symbol: "tray", text: en ? "Library and files" : "Biblioteca e arquivos"),

@@ -57,6 +57,8 @@ struct CompanionWeatherCard: View {
                 .fill(LinearGradient(colors: [tint.opacity(0.18), tint.opacity(0.035)], startPoint: .topLeading, endPoint: .bottomTrailing))
                 .overlay(RoundedRectangle(cornerRadius: 20).stroke(tint.opacity(0.20), lineWidth: 1))
         }
+        // Chomp brought the forecast: he peeks over the card's edge.
+        .perched(.sig, animates: animates, size: 40)
         .accessibilityElement(children: .contain)
     }
 }

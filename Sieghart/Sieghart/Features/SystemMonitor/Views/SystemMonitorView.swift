@@ -19,11 +19,11 @@ struct SystemMonitorView: View {
                         .help("Compressed \(bytes(Double(reading.compressedBytes))) · Cached \(bytes(Double(reading.cachedBytes))) · Swap \(reading.swapBytes.map { bytes(Double($0)) } ?? "Unavailable")")
                     metric("Network", symbol: "network", value: "↓ \(rate(reading.download))", detail: "↑ \(rate(reading.upload))")
                     metric("Battery", symbol: "battery.75percent", value: percent(reading.battery), detail: reading.battery == nil ? "No battery reported" : reading.charging ? "Charging" : reading.onAC ? "Power adapter" : "Battery power", progress: reading.battery)
-                    metric("Power", symbol: "bolt", value: reading.watts.map { String(format: "%.1f W", $0) } ?? "Unavailable", detail: reading.batteryHealth.map { "Battery health \(percent($0))" } ?? "Battery draw, when reported")
+                    metric("Power", symbol: "bolt", value: reading.watts.map { String(format: "%.1f W", $0) } ?? "Unavailable", detail: reading.batteryHealth.map { String(localized: "Battery health \(percent($0))") } ?? "Battery draw, when reported")
                         .help("\(reading.batteryMinutes.map { "Estimated \($0) min" } ?? "No time estimate") · \(reading.batteryCycles.map { "\($0) cycles" } ?? "Cycles unavailable")")
                 }
                 Text("GPU, temperature and fan readings depend on your Mac. Unavailable readings are never estimated.").font(.caption).foregroundStyle(CompanionStyle.muted)
-                Text("Thermal state: \(reading.thermalState)").font(.caption).foregroundStyle(CompanionStyle.muted)
+                Text("Thermal state: \(String(localized: String.LocalizationValue(reading.thermalState)))").font(.caption).foregroundStyle(CompanionStyle.muted)
             case .disks:
                 if reading.disks.isEmpty { Text("No disk readings yet").foregroundStyle(CompanionStyle.muted) }
                 ForEach(reading.disks) { disk in
@@ -63,5 +63,5 @@ struct SystemMonitorView: View {
     }
     private func percent(_ value: Double?) -> String { value.map { String(format: "%.0f%%", $0 * 100) } ?? "Unavailable" }
     private func bytes(_ value: Double) -> String { ByteCountFormatter.string(fromByteCount: Int64(max(0, value)), countStyle: .decimal) }
-    private func rate(_ value: Double?) -> String { value.map { bytes($0) + "/s" } ?? "Measuring…" }
+    private func rate(_ value: Double?) -> String { value.map { bytes($0) + "/s" } ?? String(localized: "Measuring…") }
 }

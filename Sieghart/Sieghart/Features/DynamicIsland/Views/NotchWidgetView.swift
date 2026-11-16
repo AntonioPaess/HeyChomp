@@ -395,7 +395,8 @@ struct NotchWidgetView: View {
                     cancelReview: { notch.spatialAssistant.screenControls.cancelReview() })
             }
             if notch.ritaNudges.nudge != nil { RitaNudgeRow(nudges: notch.ritaNudges, compact: true, bubble: true) }
-            CompanionTeamDock(animates: animates, events: notch.events, away: notch.ritaNudges.nudge != nil ? LocalChatPersona.rita.avatar : nil, onAda: { notch.showAgentRoom() }, onSelect: { member in
+            CompanionTeamDock(animates: animates, events: notch.events, away: notch.ritaNudges.nudge != nil ? LocalChatPersona.rita.avatar : nil,
+                              caption: { AnyView(TeamStatusCaption(member: $0, calendar: notch.calendar, monitor: notch.monitor, files: notch.files)) }, onAda: { notch.showAgentRoom() }, onSelect: { member in
                 Task { if await notch.agentRoom.localChat.openPersona(LocalChatPersona(rawValue: member.rawValue) ?? .sig) != nil {
                     notch.showAgentRoom(); notch.agentRoom.page = .chat
                 } }
@@ -825,10 +826,9 @@ private extension IslandRailAction {
         switch self {
         case .timer: .rita
         case .clipboard, .audio, .files, .downloads, .capture: .toni
-        case .system, .keepAwake, .displayPower: .elinor
         case .ai: .ada
         case .calendar: .gantt
-        case .tools, .preferences, .avatars, .voice, .companion, .none: .sig
+        case .tools, .preferences, .avatars, .voice, .companion, .system, .keepAwake, .displayPower, .none: .sig
         }
     }
 }
@@ -857,3 +857,32 @@ struct ChompPill: ViewModifier {
             .contentShape(Capsule())
     }
 }
+
+/// What each teammate is doing right now, in a few words (shown under their name in the island).
+private struct TeamStatusCaption: View {
+    let member: CompanionAvatar
+    @ObservedObject var calendar: CalendarViewModel
+    @ObservedObject var monitor: SystemMonitorViewModel
+    @ObservedObject var files: FilesViewModel
+    @EnvironmentObject private var assistant: AssistantViewModel
+    @EnvironmentObject private var aiActivity: AIUsageViewModel
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            switch member {
+            case .rita: assistant.hasActiveSession ? Text(verbatim: assistant.pomodoroTimeLabel).monospacedDigit() : Text("Ready to focus")
+            case .ada:
+                if let work = aiActivity.analytics.work.first(where: { $0.isCurrent(at: context.date) }) {
+                    Text(verbatim: "\(work.provider.title) · \(work.elapsed(at: context.date))").monospacedDigit().foregroundStyle(CompanionStyle.accentInk)
+                } else { Text("Free") }
+            case .gantt:
+                if let event = calendar.nextEvent {
+                    Text(verbatim: "\(event.startDate.formatted(date: .omitted, time: .shortened)) \(event.title)")
+                } else { Text("No meetings") }
+            case .elinor: Text("No spending recorded")
+            case .toni: files.shelf.isEmpty ? Text("Shelf empty") : Text("\(files.shelf.count) on the shelf")
+            default: Text(verbatim: "")
+            }
+        }
+    }
+}
+

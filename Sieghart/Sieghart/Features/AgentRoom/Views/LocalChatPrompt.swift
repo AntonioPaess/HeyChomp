@@ -372,8 +372,8 @@ enum PersonaChatMotion {
         case .sig: en ? ["Plan my day", "Explain what's on screen", "Help me start a project"] : ["Organize meu dia", "Explique o que está na tela", "Me ajude a começar um projeto"]
         case .rita: en ? ["Start a 25 min focus", "When should I take a break?", "How was my focus today?"] : ["Comece um foco de 25 min", "Quando devo fazer uma pausa?", "Como foi meu foco hoje?"]
         case .ada: en ? ["Explain this code", "Review my last change", "Write a test for this"] : ["Explique este código", "Revise minha última mudança", "Escreva um teste para isto"]
-        case .gantt: en ? ["What's on today?", "Remind me at 3 pm", "Summarize my week"] : ["O que tenho hoje?", "Me lembre às 15h", "Resuma minha semana"]
-        case .elinor: en ? ["How is the battery?", "Keep the Mac awake for 1 h", "What is slowing the Mac?"] : ["Como está a bateria?", "Mantenha o Mac acordado por 1 h", "O que está pesando no Mac?"]
+        case .gantt: en ? ["What's on today?", "Add a meeting at 3 pm", "How did my day go?"] : ["O que tenho hoje?", "Crie um evento às 15h", "Como foi o meu dia?"]
+        case .elinor: en ? ["How much did I spend on AI this month?", "Where is my money going?", "Help me plan this month's budget"] : ["Quanto gastei com IA este mês?", "Para onde está indo meu dinheiro?", "Me ajude a planejar o orçamento do mês"]
         case .toni: en ? ["Find a file", "Summarize this document", "Write a short email"] : ["Encontre um arquivo", "Resuma este documento", "Escreva um e-mail curto"]
         }
     }

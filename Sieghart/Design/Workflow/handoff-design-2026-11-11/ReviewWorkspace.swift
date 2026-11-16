@@ -207,6 +207,9 @@ private struct ReviewChrome<Content: View>: View {
                 shots.append(("Modo foco",capture(compact(),size,usage:usage)))
                 assistant.resetPomodoro(); notch.presentCompactForPreview()
                 shots.append(("IA trabalhando (Claude)",capture(compact(),size,usage:working)))
+                activation.previewListening(true); notch.presentCompactForPreview()
+                shots.append(("Ouvindo (voz, sem microfone)",capture(compact(),size,usage:usage)))
+                activation.previewListening(false)
                 notch.show()
                 let weather=[
                     VoiceWeatherObservation(location:"Recife",temperature:31,feelsLike:34,date:Date(),timezone:"America/Recife",code:0,isDay:true),
