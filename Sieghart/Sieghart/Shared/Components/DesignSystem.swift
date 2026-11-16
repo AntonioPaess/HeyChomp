@@ -349,3 +349,41 @@ struct OwnerSays: View {
     }
 }
 
+/// A titled group on a tool page: quiet card, generous spacing (Things-like), our neutrals.
+struct ToolGroup<Content: View>: View {
+    let title: LocalizedStringKey
+    var detail: LocalizedStringKey? = nil
+    @ViewBuilder var content: Content
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title).font(.system(size: 13, weight: .semibold))
+                Spacer(minLength: 8)
+                if let detail { Text(detail).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted) }
+            }
+            VStack(alignment: .leading, spacing: 10) { content }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(CompanionStyle.edge.opacity(0.035), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CompanionStyle.edge.opacity(0.08), lineWidth: 0.75) }
+        }
+    }
+}
+
+/// A switch row with its status line underneath, for tool settings.
+struct ToolToggleRow: View {
+    let title: LocalizedStringKey
+    var status: LocalizedStringKey? = nil
+    @Binding var isOn: Bool
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.system(size: 13, weight: .medium))
+                if let status { Text(status).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true) }
+            }
+            Spacer(minLength: 8)
+            Toggle(title, isOn: $isOn).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
+        }
+    }
+}
+

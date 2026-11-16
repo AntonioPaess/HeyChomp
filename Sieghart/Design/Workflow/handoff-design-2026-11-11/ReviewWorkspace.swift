@@ -93,14 +93,14 @@ private struct ReviewChrome<Content: View>: View {
             try FileManager.default.createDirectory(at:out,withIntermediateDirectories:true)
             preferences.appearance = .dark
             for section in AppSection.tools {
-                let window=NSWindow(contentRect:NSRect(x:0,y:0,width:1180,height:1100),styleMask:[.borderless],backing:.buffered,defer:false)
+                let window=NSWindow(contentRect:NSRect(x:0,y:0,width:1180,height:2400),styleMask:[.borderless],backing:.buffered,defer:false)
                 window.appearance=NSAppearance(named:.darkAqua)
                 let host=NSHostingView(rootView:ContentView(initialSection:section,scrollable:false)
                     .environmentObject(assistant).environmentObject(notch).environmentObject(preferences)
                     .environmentObject(activation).environmentObject(sensor).environmentObject(gestures)
                     .environmentObject(codex).environmentObject(usage).environmentObject(audio)
-                    .environment(\.locale,Locale(identifier:"pt-BR")).frame(width:1180,height:1100,alignment:.top))
-                host.frame=NSRect(x:0,y:0,width:1180,height:1100); window.contentView=host
+                    .environment(\.locale,Locale(identifier:"pt-BR")).frame(width:1180,height:2400,alignment:.top))
+                host.frame=NSRect(x:0,y:0,width:1180,height:2400); window.contentView=host
                 window.orderFrontRegardless(); host.layoutSubtreeIfNeeded()
                 RunLoop.current.run(until:Date().addingTimeInterval(1.5))
                 let rep=host.bitmapImageRepForCachingDisplay(in:host.bounds)!

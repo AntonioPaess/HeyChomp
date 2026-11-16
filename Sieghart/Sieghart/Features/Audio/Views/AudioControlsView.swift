@@ -17,17 +17,24 @@ struct AudioControlsView: View {
             switch page {
             case .mixer: mixer
             case .devices:
-                VStack(alignment: .leading, spacing: 20) {
-                    Label("Output", systemImage: "speaker.wave.2").font(.headline)
-                    deviceMenu(input: false)
-                    Divider()
-                    Label("Input", systemImage: "mic").font(.headline)
-                    deviceMenu(input: true)
-                    Text("Changes the Mac's default audio device.").font(.caption).foregroundStyle(CompanionStyle.muted)
-                    UtilityToggle(title: "Use preferred devices when they connect", isOn: $audio.automaticDevices).toggleStyle(WorkspaceSwitchStyle())
-                    Text("Your manual choice stays until devices connect or disconnect. Preferences use device identity, including AirPods.").font(.caption).foregroundStyle(CompanionStyle.muted)
-                    priorityList(input: false)
-                    priorityList(input: true)
+                VStack(alignment: .leading, spacing: 18) {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .top, spacing: 16) {
+                            ToolGroup(title: "Output", detail: "Changes the Mac's default audio device.") { deviceMenu(input: false) }
+                            ToolGroup(title: "Input") { deviceMenu(input: true) }
+                        }
+                        VStack(spacing: 16) {
+                            ToolGroup(title: "Output", detail: "Changes the Mac's default audio device.") { deviceMenu(input: false) }
+                            ToolGroup(title: "Input") { deviceMenu(input: true) }
+                        }
+                    }
+                    ToolGroup(title: "Preferred devices") {
+                        ToolToggleRow(title: "Use preferred devices when they connect",
+                                      status: "Your manual choice stays until devices connect or disconnect. Preferences use device identity, including AirPods.",
+                                      isOn: $audio.automaticDevices)
+                        priorityList(input: false)
+                        priorityList(input: true)
+                    }
                 }.frame(maxWidth: .infinity, minHeight: 190, alignment: .topLeading)
             case .microphone:
                 HStack(spacing: 30) {

@@ -23,9 +23,10 @@ struct SystemMonitorView: View {
                         .help("\(reading.batteryMinutes.map { "Estimated \($0) min" } ?? "No time estimate") · \(reading.batteryCycles.map { "\($0) cycles" } ?? "Cycles unavailable")")
                 }
                 Text("GPU, temperature and fan readings depend on your Mac. Unavailable readings are never estimated.").font(.caption).foregroundStyle(CompanionStyle.muted)
-                Text("Thermal state: \(String(localized: String.LocalizationValue(reading.thermalState)))").font(.caption).foregroundStyle(CompanionStyle.muted)
+                if !compact { OwnerSays(persona: .sig, text: "Thermal state: \(String(localized: String.LocalizationValue(reading.thermalState)))") }
+                else { Text("Thermal state: \(String(localized: String.LocalizationValue(reading.thermalState)))").font(.caption).foregroundStyle(CompanionStyle.muted) }
             case .disks:
-                if reading.disks.isEmpty { Text("No disk readings yet").foregroundStyle(CompanionStyle.muted) }
+                if reading.disks.isEmpty { OwnerSays(persona: .sig, text: "No disk readings yet", compact: compact) }
                 ForEach(reading.disks) { disk in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack { Label(disk.name, systemImage: "internaldrive").font(.headline); Spacer(); Text("\(bytes(Double(disk.free))) free").monospacedDigit() }

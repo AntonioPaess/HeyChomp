@@ -42,9 +42,9 @@ struct AIUsageView: View {
                 HStack(spacing: 3) {
                     ForEach(UsagePeriod.allCases, id: \.self) { choice in
                         Button(choice == .today ? "Today" : choice == .week ? "Week" : "Month") { period = choice }
-                            .buttonStyle(.plain).font(.caption.weight(.medium)).padding(.horizontal, 10).padding(.vertical, 7)
-                            .foregroundStyle(period == choice ? CompanionStyle.ink : CompanionStyle.muted)
-                            .background(period == choice ? CompanionStyle.separator : .clear, in: RoundedRectangle(cornerRadius: 8))
+                            .buttonStyle(.plain).font(.caption.weight(.semibold)).padding(.horizontal, 11).frame(height: 26)
+                            .foregroundStyle(period == choice ? CompanionStyle.accentInk : CompanionStyle.muted)
+                            .background(period == choice ? CompanionStyle.accent.opacity(0.14) : .clear, in: Capsule())
                             .accessibilityValue(period == choice ? "Selected" : "")
                     }
                 }
@@ -55,10 +55,16 @@ struct AIUsageView: View {
             }
             if let onOpenRoom { Button(action: onOpenRoom) { Label("Open Ada’s room", systemImage: "bubble.left.and.bubble.right") }.buttonStyle(CompanionButtonStyle()) }
             currentWork
-            trend
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: dense ? 10 : 16) { ranking("Models", symbol: "cpu", key: \.model).frame(minWidth: 240, maxWidth: .infinity); ranking("Projects", symbol: "folder", key: \.project).frame(minWidth: 240, maxWidth: .infinity) }
-                VStack(spacing: 16) { ranking("Models", symbol: "cpu", key: \.model); ranking("Projects", symbol: "folder", key: \.project) }
+            if points.isEmpty && !dense && !preview {
+                // Nothing recorded yet: Ada says so once, instead of a page of empty charts.
+                OwnerSays(persona: .ada, text: "Nothing recorded in this period. When you use Codex, Claude Code or Antigravity on this Mac, the hours, models and projects show up here.")
+                    .padding(.vertical, 8)
+            } else {
+                trend
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: dense ? 10 : 16) { ranking("Models", symbol: "cpu", key: \.model).frame(minWidth: 240, maxWidth: .infinity); ranking("Projects", symbol: "folder", key: \.project).frame(minWidth: 240, maxWidth: .infinity) }
+                    VStack(spacing: 16) { ranking("Models", symbol: "cpu", key: \.model); ranking("Projects", symbol: "folder", key: \.project) }
+                }
             }
             activity
             HStack {
