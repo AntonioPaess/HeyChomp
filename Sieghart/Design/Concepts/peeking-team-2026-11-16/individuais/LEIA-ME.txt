@@ -1,0 +1,6 @@
+Seis PNGs individuais com canal alpha, gerados a partir da prancha equipe-na-borda.
+Pose: cabeça espiando acima da borda, duas mãos apoiadas. Sem nome nem linha do card.
+Cada arquivo contém a ilustração completa em uma camada; não é um rig nem animação.
+Os efeitos suaves semitransparentes ao redor fazem parte do PNG.
+Não achatar em JPEG: preservar alpha ao importar.
+Não foram integrados ao app.

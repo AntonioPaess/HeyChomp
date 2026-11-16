@@ -287,16 +287,43 @@ struct AvatarView: View {
 }
 
 extension View {
-    /// The agent who owns a card sits on its top edge, peeking over it (a HeyChomp signature).
-    func perched(_ persona: LocalChatPersona, animates: Bool = false, size: CGFloat = 36, enabled: Bool = true) -> some View {
+    /// The agent who owns a card peeks over its top edge: head and eyes above the line,
+    /// two little hands gripping the border, a few motion ticks in their colour.
+    /// One component for the app, the menu bar widget and the island (a HeyChomp signature).
+    func perched(_ persona: LocalChatPersona, animates: Bool = false, size: CGFloat = 48, enabled: Bool = true) -> some View {
         overlay(alignment: .topTrailing) {
             if enabled {
-                CompanionCharacter(size: size, avatar: persona.avatar, animates: animates)
-                    .frame(width: size + 8, height: size)
-                    .offset(x: -22, y: -size * 0.58)
+                PeekingCharacter(persona: persona, animates: animates, size: size)
+                    // The peek's bottom (the hands' line) sits on the card's top edge.
+                    .offset(x: -16, y: -PeekingCharacter.edge(size))
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
         }
+    }
+}
+
+/// A teammate peeking over an edge (illustrated assets `Peek-<persona>`).
+/// Every asset shares one geometry: 480×340 at 2x, the edge at row 250, body width 330.
+struct PeekingCharacter: View {
+    let persona: LocalChatPersona
+    var animates = false
+    /// Roughly the width of the head, in points.
+    var size: CGFloat = 48
+    @State private var popped = false
+    static func width(_ size: CGFloat) -> CGFloat { size * 1.6 }
+    static func height(_ size: CGFloat) -> CGFloat { width(size) * 340 / 480 }
+    /// Distance from the view's top to the edge the hands hold on to.
+    static func edge(_ size: CGFloat) -> CGFloat { height(size) * 250 / 340 }
+    var body: some View {
+        Image("Peek-\(persona.rawValue)")
+            .resizable().interpolation(.high)
+            .frame(width: Self.width(size), height: Self.height(size))
+            .offset(y: popped ? 0 : size * 0.18)
+            .opacity(popped ? 1 : 0)
+            .onAppear {
+                guard animates else { popped = true; return }
+                withAnimation(.spring(duration: 0.45, bounce: 0.35)) { popped = true }
+            }
     }
 }

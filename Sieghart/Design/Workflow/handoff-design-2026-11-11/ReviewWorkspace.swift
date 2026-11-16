@@ -42,6 +42,7 @@ private struct ReviewChrome<Content: View>: View {
                     Button("Ilha aberta com aviso da Rita") { island(3) }
                     Button("Ilha fechada") { island(2) }
                     Button("Widget da barra de menus") { island(4) }
+                    Button("Galeria: ilha fechada e clima") { island(5) }
                     Divider()
                     Button("Esconder ilha") { island(0) }
                 }.fixedSize()
@@ -174,9 +175,81 @@ private struct ReviewChrome<Content: View>: View {
             window.toolbarStyle = .unifiedCompact;window.contentMinSize=NSSize(width:840,height:700)
             // Island preview: a real panel at the top of the screen with the live island view.
             var islandPanel: NSPanel?
+            var galleryWindow: NSWindow?
+            // Every closed-island state, captured away from the camera housing, plus the weather cards.
+            func showGallery() {
+                func capture<V: View>(_ view: V, _ size: NSSize, usage u: AIUsageViewModel) -> NSImage {
+                    let window=NSWindow(contentRect:NSRect(origin:.zero,size:size),styleMask:[.borderless],backing:.buffered,defer:false)
+                    window.appearance=NSAppearance(named:.darkAqua)
+                    let host=NSHostingView(rootView:view
+                        .environmentObject(assistant).environmentObject(notch).environmentObject(preferences)
+                        .environmentObject(activation).environmentObject(sensor).environmentObject(gestures)
+                        .environmentObject(codex).environmentObject(u).environmentObject(audio)
+                        .environment(\.locale,Locale(identifier:"pt-BR")).frame(width:size.width,height:size.height))
+                    host.frame=NSRect(origin:.zero,size:size); window.contentView=host
+                    window.orderFrontRegardless(); host.layoutSubtreeIfNeeded()
+                    RunLoop.current.run(until:Date().addingTimeInterval(0.8))
+                    let rep=host.bitmapImageRepForCachingDisplay(in:host.bounds)!
+                    host.cacheDisplay(in:host.bounds,to:rep); window.orderOut(nil)
+                    let image=NSImage(size:size); image.addRepresentation(rep); return image
+                }
+                let working=AIUsageViewModel(defaults:defaults,readClaude:{nil},readAntigravity:{nil},
+                    initialAnalytics:AIAnalytics(work:[AIWork(id:"review",provider:.claude,model:"claude",project:"HeyChomp",startedAt:Date().addingTimeInterval(-754),lastSeen:Date(),output:12_000)]),
+                    read:{_ in nil})
+                let size=NSSize(width:notch.geometry.width+40,height:notch.geometry.height+10)
+                let compact={ NotchWidgetView(scrollable:false).environment(\.islandPreview,true) }
+                var shots:[(String,NSImage)]=[]
+                assistant.resetPomodoro(); notch.ritaNudges.later(); notch.presentCompactForPreview()
+                shots.append(("Em repouso: só os olhos do Chomp",capture(compact(),size,usage:usage)))
+                notch.ritaNudges.preview(minutes:52); notch.presentCompactForPreview()
+                shots.append(("Aviso da Rita",capture(compact(),size,usage:usage)))
+                notch.ritaNudges.later(); assistant.startFocusSession(minutes:25); notch.presentCompactForPreview()
+                shots.append(("Modo foco",capture(compact(),size,usage:usage)))
+                assistant.resetPomodoro(); notch.presentCompactForPreview()
+                shots.append(("IA trabalhando (Claude)",capture(compact(),size,usage:working)))
+                notch.show()
+                let weather=[
+                    VoiceWeatherObservation(location:"Recife",temperature:31,feelsLike:34,date:Date(),timezone:"America/Recife",code:0,isDay:true),
+                    VoiceWeatherObservation(location:"São Paulo",temperature:19,feelsLike:18,date:Date(),timezone:"America/Sao_Paulo",code:61,isDay:true),
+                    VoiceWeatherObservation(location:"Lisboa",temperature:12,feelsLike:10,date:Date(),timezone:"Europe/Lisbon",code:0,isDay:false)]
+                let cutout=CGSize(width:notch.geometry.cutoutWidth,height:notch.geometry.cutoutHeight)
+                let gallery=ScrollView {
+                    VStack(alignment:.leading,spacing:28) {
+                        Text("Ilha fechada").font(.title2.bold())
+                        Text("O tracejado mostra onde fica a câmera: no Mac com notch, só as laterais aparecem.").foregroundStyle(.secondary)
+                        ForEach(Array(shots.enumerated()),id:\.offset) { _,shot in
+                            VStack(alignment:.leading,spacing:8) {
+                                Text(shot.0).font(.headline)
+                                Image(nsImage:shot.1).overlay(alignment:.top) {
+                                    RoundedRectangle(cornerRadius:8).strokeBorder(style:StrokeStyle(lineWidth:1,dash:[4,3])).foregroundStyle(.white.opacity(0.5))
+                                        .frame(width:cutout.width,height:cutout.height)
+                                }
+                                .padding(12).background(Color(white:0.55),in:RoundedRectangle(cornerRadius:12))
+                            }
+                        }
+                        Text("Clima").font(.title2.bold()).padding(.top,12)
+                        ForEach(Array(weather.enumerated()),id:\.offset) { _,item in
+                            VStack(alignment:.leading,spacing:12) {
+                                Text(item.location).font(.headline)
+                                CompanionWeatherCard(observation:item,language:"pt-BR",animates:true,dismiss:{}).frame(width:560)
+                                CompanionWeatherScene(observation:item,language:"pt-BR",animates:true).frame(width:560,height:CompanionWeatherScene.height)
+                            }
+                            .padding(16).background(Color.black,in:RoundedRectangle(cornerRadius:16))
+                        }
+                    }.padding(28).frame(maxWidth:.infinity,alignment:.leading)
+                }
+                .environmentObject(assistant).environmentObject(notch).environmentObject(preferences)
+                .environmentObject(activation).environmentObject(codex).environmentObject(usage).environmentObject(audio)
+                .environment(\.locale,Locale(identifier:"pt-BR")).preferredColorScheme(.dark)
+                let window=galleryWindow ?? NSWindow(contentRect:NSRect(x:0,y:0,width:820,height:900),styleMask:[.titled,.closable,.resizable],backing:.buffered,defer:false)
+                window.title="Galeria · ilha fechada e clima"; window.isReleasedWhenClosed=false
+                window.contentView=NSHostingView(rootView:gallery)
+                window.center(); window.makeKeyAndOrderFront(nil); galleryWindow=window
+            }
             func presentIsland(_ mode:Int) {
                 islandPanel?.orderOut(nil)
                 guard mode != 0 else { return }
+                if mode == 5 { showGallery(); return }
                 if mode == 4 {
                     let screen = NSScreen.main ?? NSScreen.screens[0]
                     let size = NSSize(width: 340, height: 330)
@@ -192,7 +265,8 @@ private struct ReviewChrome<Content: View>: View {
                     return
                 }
                 if mode == 3 { notch.ritaNudges.preview(minutes:52) } else if mode == 1 { notch.ritaNudges.standUp() }
-                if mode == 2 { notch.showIsland() } else { notch.show() }
+                // The closed island only exists while something runs, so the preview starts a focus timer.
+                if mode == 2 { if !assistant.hasTimerActivity { assistant.startFocusSession(minutes: 25) }; notch.showIsland() } else { notch.show() }
                 let compact = mode == 2
                 let size = NSSize(width: notch.geometry.width + (compact ? 0 : 144), height: notch.geometry.height + (compact ? 0 : 64))
                 let screen = NSScreen.main ?? NSScreen.screens[0]

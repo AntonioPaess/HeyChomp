@@ -1,0 +1,50 @@
+{
+  "Chomp": {
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGBA",
+    "fullyTransparentPixels": 1153068
+  },
+  "Rita": {
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGBA",
+    "fullyTransparentPixels": 1017212
+  },
+  "Ada": {
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGBA",
+    "fullyTransparentPixels": 1123898
+  },
+  "Gantt": {
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGBA",
+    "fullyTransparentPixels": 962515
+  },
+  "Elinor": {
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGBA",
+    "fullyTransparentPixels": 1099853
+  },
+  "Toni": {
+    "size": [
+      1536,
+      1024
+    ],
+    "mode": "RGBA",
+    "fullyTransparentPixels": 962473
+  }
+}

@@ -373,6 +373,10 @@ final class NotchWidgetViewModel: ObservableObject {
         reveal()
     }
 
+    /// Design previews and QA only: show the closed island even when nothing is running,
+    /// so every compact state can be inspected side by side.
+    func presentCompactForPreview() { presentation = .island }
+
     func restoreSessionPresence() { if assistant.hasTimerActivity || !(aiUsage?.analytics.work.isEmpty ?? true) { showIsland() } }
 
     func observeAIActivity() {

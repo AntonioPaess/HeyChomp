@@ -570,3 +570,24 @@ O usuário pediu refazer todas as animações para os novos bots, incluindo os c
 
 
 16/11 — Inspirado no mock do usuário (Claude). /private/tmp foi limpo: app e prévia recompilados (SOURCE_BUNDLE no DerivedData do scratchpad); build-review.sh agora falha com “error:” visível se faltar o bundle. Ilha fechada: o notch é o corpo do Chomp — só olhos claros (piscam, olham para o cursor, apertam no hover) e o brilho menta. Ilha aberta: botões laterais flutuantes removidos; ações rápidas viraram ícones no cabeçalho do painel. Widget da barra de menus em formato de menu (Chomp, Timers, Todas as ferramentas expansível, Conversar, Abrir, Sair; aviso e Em andamento no topo quando existem). Personagem sentado na borda dos cartões (.perched): Rita no aviso, Elinor no Keep Awake, Rita no timer, e o especialista sobe no campo da conversa enquanto responde. Testes: 522 ok; G16.10 (FileReception, processo filho com prazo) falhou uma vez por tempo e passou em duas novas execuções — instável, sem relação com o design. Sem commit.
+
+## 2026-11-16 — Ilha: pedrinhas de volta e queixo do Chomp
+- Botões laterais em formato de pedrinha voltaram (até 6), cada um com o brilho da cor do personagem dono da ferramenta; railStrip no cabeçalho removido.
+- Olhos do Chomp espiam numa aba preta sob o lábio inferior do painel (substitui o Chomp pendurado; toque volta à página do Chomp).
+- Fundo escuro do painel virou "tinta Chomp" (preto com leve menta).
+- Prévia: modo "Ilha fechada" inicia timer de foco de 25 min, pois a ilha compacta só existe com atividade.
+- Build Debug ok; 522 testes passando. Sem commit (aguardando aprovação).
+- Conteúdo do widget reorganizado: cabeçalho mostra a data (sem "Chomp" repetido); Chomp fala num balão; Falar e Foco viram pílulas (Foco abre Timers); aviso da Rita virou balão da Rita (RitaNudgeRow bubble:). Testes 522 ok. Sem commit.
+- Ilha fechada: só aparece com atividade (timer/IA/voz); em repouso nada aparece no notch, por desenho.
+- Personagem espiando (PeekingCharacter): cabeça acima da borda, mãozinhas na borda, risquinhos na cor do agente; `.perched` agora usa esse estilo em app, menu e ilha (padrão 48 pt). Rita sai da fileira da equipe quando está avisando e espia o cartão dela; avatar duplicado removido do cartão do app.
+- Prévia: menu Ilha > "Galeria: ilha fechada e clima" (repouso, Rita, foco, IA trabalhando + 3 climas, com contorno da câmera). Hook `presentCompactForPreview()` no NotchWidgetViewModel só para prévia/QA. Galeria compilada, ainda não conferida visualmente por mim. Voz não incluída. Testes 522 ok. Sem commit.
+
+
+16/11 — Pedido novo: desenhar os seis bots espiando sobre a borda de um card, com duas mãos apoiadas, conforme duas capturas enviadas; desenho prioritário, hover opcional. Usuário autorizou explicitamente Astra para este pedido, sobrepondo a restrição anterior apenas neste escopo; sem delegação. Gerar prancha visual com imagegen, preservando identidades e sem modificar a implementação PeekingCharacter nem alterações de outros trabalhos. Próximo: conferir a arte, guardar o resultado e apresentar; integração/hover não devem ser declarados prontos.
+
+
+16/11 — Prancha dos seis bots na borda concluída e apresentada, em Sieghart/Design/Concepts/peeking-team-2026-11-16/equipe-na-borda.png. Revisão visual corrigiu os olhos de Elinor para U. Skill imagegen, duas gerações (criação + correção localizada). Desenho aguardando avaliação; não integrado ao app, sem animação nova nem assets individuais. Nenhuma alteração no código/arte já existente. Próximo, se solicitado: preparar recursos individuais e integrar a pose nos cards; hover opcional.
+
+
+16/11 — Pedido de exportação individual concluído: seis PNGs RGBA 1536×1024 gerados separadamente com imagegen, em Design/Concepts/peeking-team-2026-11-16/individuais, nomes Chomp/Rita/Ada/Gantt/Elinor/Toni. Canal alpha verificado nos seis; originais preservados. ZIP bots-sem-fundo.zip contém imagens, instruções e validação. Arte em camada única com efeitos suaves semitransparentes; sem rig/animação ou integração no app.
+- PNGs do usuário (Design/Concepts/peeking-team-2026-11-16/bots-sem-fundo) normalizados em Peek-<persona>.imageset (480×340 @2x, borda na linha 250, corpo 330 px) em ProviderAssets.xcassets; PeekingCharacter agora desenha esses assets em vez de recortar o personagem 3D. Testes 522 ok. Sem commit.

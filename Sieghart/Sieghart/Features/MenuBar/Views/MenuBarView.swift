@@ -87,8 +87,8 @@ struct RunningNowSection: View {
         VStack(alignment: .leading, spacing: 8) {
             if showsEmptyActions { RitaNudgeRow(nudges: notch.ritaNudges, compact: true) }
             Text("Running now").font(WorkspaceTypography.caption.weight(.semibold)).foregroundStyle(CompanionStyle.muted)
-            if notch.keepAwake.enabled { KeepAwakeRunningRow(controller: notch.keepAwake).perched(.elinor, enabled: perches).padding(.top, perches ? 18 : 0) }
-            if assistant.hasTimerActivity { timerRow.perched(.rita, enabled: perches).padding(.top, perches ? 18 : 0) }
+            if notch.keepAwake.enabled { KeepAwakeRunningRow(controller: notch.keepAwake).perched(.elinor, enabled: perches).padding(.top, perches ? 40 : 0) }
+            if assistant.hasTimerActivity { timerRow.perched(.rita, enabled: perches).padding(.top, perches ? 40 : 0) }
             if !notch.keepAwake.enabled && !assistant.hasTimerActivity {
                 Text("Nothing running.").font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted)
                 if showsEmptyActions {
@@ -171,10 +171,31 @@ struct KeepAwakeRunningRow: View {
 struct RitaNudgeRow: View {
     @ObservedObject var nudges: RitaStandNudges
     var compact = false
+    /// Island style: Rita steps forward and says it in a speech bubble.
+    var bubble = false
     var body: some View {
-        if let nudge = nudges.nudge {
+        if let nudge = nudges.nudge, bubble {
+            HStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    Text("You've been sitting for \(nudge.minutes) min").font(.system(size: 12, weight: .semibold)).lineLimit(1)
+                    Spacer(minLength: 4)
+                    Button("Stand up") { nudges.standUp() }.buttonStyle(.plain).modifier(ChompPill(primary: true))
+                    Button("Later") { nudges.later() }.buttonStyle(.plain).modifier(ChompPill())
+                }
+                .padding(.leading, 14).padding(.trailing, 8).padding(.vertical, 7)
+                .background(CompanionStyle.agent(.rita).opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CompanionStyle.agent(.rita).opacity(0.28), lineWidth: 0.75) }
+                // Rita leaves the team row and peeks over her own card.
+                .perched(.rita, animates: true, size: 42)
+            }
+            .padding(.top, 36)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(Text("Rita"))
+        } else if let nudge = nudges.nudge {
             HStack(alignment: .top, spacing: 12) {
-                AvatarView(persona: .rita, size: compact ? 24 : 28, speaking: true)
+                // Rita peeks over the card in the full layout, so her avatar only shows when compact.
+                if compact { AvatarView(persona: .rita, size: 24, speaking: true) }
                 VStack(alignment: .leading, spacing: 4) {
                     Text("You've been sitting for \(nudge.minutes) min").font(WorkspaceTypography.body.weight(.semibold))
                     if !compact {
@@ -193,7 +214,7 @@ struct RitaNudgeRow: View {
             .padding(12)
             .background(CompanionStyle.edge.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .perched(.rita, enabled: !compact)
-            .padding(.top, compact ? 0 : 18)
+            .padding(.top, compact ? 0 : 40)
             .transition(.move(edge: .top).combined(with: .opacity))
             .accessibilityElement(children: .contain)
             .accessibilityLabel(Text("Rita"))

@@ -29,11 +29,13 @@ struct CompanionTeamGallery: View {
 struct CompanionTeamDock: View {
     var animates: Bool
     var events: CompanionEventCenter? = nil
+    /// A teammate who stepped out of the row to talk (e.g. Rita peeking over her nudge).
+    var away: CompanionAvatar? = nil
     var onAda: (() -> Void)?
     var onSelect: ((CompanionAvatar) -> Void)? = nil
     var body: some View {
         HStack(spacing: CompanionHomeLayout.dockSpacing) {
-            ForEach(CompanionAvatar.specialists) { member in
+            ForEach(CompanionAvatar.specialists.filter { $0 != away }) { member in
                 Group {
                     if let onSelect {
                         Button { onSelect(member) } label: { portrait(member) }.buttonStyle(.plain).help(member.subtitle)
