@@ -12,7 +12,8 @@ struct CaptureToolsView: View {
     @State private var stroke: [CGPoint] = []
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 12) {
+            // On the workspace page the agent header already introduces Toni.
+            if compact { HStack(spacing: 12) {
                 CompanionTaskCharacter(events: model.events, avatar: .toni, size: compact ? 64 : 78,
                                        animates: !reduceMotion, working: model.isBusy && !model.isSelecting)
                 VStack(alignment: .leading, spacing: 5) {
@@ -21,7 +22,7 @@ struct CaptureToolsView: View {
                     Text("An area, a thought, a color.").font(.caption).foregroundStyle(CompanionStyle.muted)
                 }
                 Spacer(minLength: 0)
-            }
+            } }
             HStack(spacing: 10) {
                 Button("Select an area") { model.selectRegion() }.buttonStyle(CompanionButtonStyle(primary: true, compact: compact))
                     .disabled(model.accessState != .allowed || model.isBusy || model.isSamplingColor)

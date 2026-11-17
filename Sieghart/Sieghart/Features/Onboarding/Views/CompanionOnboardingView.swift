@@ -43,7 +43,7 @@ struct CompanionOnboardingView: View {
                 }
             }
             HStack {
-                if viewModel.step > 0 { Button("Back") { viewModel.step -= 1 }.buttonStyle(CompanionButtonStyle()) }
+                if viewModel.step > 0 { Button("Back") { viewModel.step -= 1 }.buttonStyle(CapsuleActionStyle(primary: false)) }
                 Spacer()
                 VStack(spacing: 6) {
                     HStack(spacing: 6) { ForEach(0..<4) { index in Capsule().fill(viewModel.step == index ? CompanionStyle.accent : CompanionStyle.edge.opacity(0.15)).frame(width: viewModel.step == index ? 20 : 6, height: 6) } }
@@ -56,7 +56,8 @@ struct CompanionOnboardingView: View {
                         viewModel.complete(preferences: preferences, usage: usage, codex: codex, clipboard: clipboard)
                         onFinish()
                     }
-                }.buttonStyle(CompanionButtonStyle(primary: true)).disabled(viewModel.preparingAccess)
+                }.buttonStyle(CapsuleActionStyle(primary: !((viewModel.step == 0 && !greeted) || (viewModel.step == 2 && !calledCompanion))))
+                    .disabled(viewModel.preparingAccess)
             }.frame(maxWidth: 860).padding(.horizontal, 40).padding(.bottom, 40)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(CompanionStyle.ink).background { WorkspaceBackdrop() }.preferredColorScheme(preferences.appearance.colorScheme)
@@ -154,7 +155,9 @@ struct CompanionOnboardingView: View {
     private var helloMission: some View {
         VStack(spacing: 18) {
             if greeted {
-                CompanionCharacter(size: 170, avatar: .sig, animates: moves, animation: .hello, replay: greetReplay)
+                FollowingPointer(enabled: moves) { pointer in
+                    CompanionCharacter(size: 170, avatar: .sig, animates: moves, gaze: pointer, animation: .hello, replay: greetReplay)
+                }
                     .frame(height: 200).transition(.scale(scale: 0.8).combined(with: .opacity))
                 heading(LocalizedStringKey(en ? "Nice to meet you, \(userName)!" : "Prazer, \(userName)!"),
                         "Type or speak to Chomp whenever you need. Next, meet the team that works with him.")
@@ -210,7 +213,9 @@ struct CompanionOnboardingView: View {
     /// Mission 3: bring Chomp up for real, at the top of the screen.
     private var anywhereMission: some View {
         VStack(spacing: 18) {
-            CompanionCharacter(size: 170, avatar: .sig, animates: moves, animation: calledCompanion ? .proud : .wink, replay: calledCompanion ? 1 : 0)
+            FollowingPointer(enabled: moves) { pointer in
+                CompanionCharacter(size: 170, avatar: .sig, animates: moves, gaze: pointer, animation: calledCompanion ? .proud : .wink, replay: calledCompanion ? 1 : 0)
+            }
                 .frame(width: 240, height: 220)
             heading("Call me from anywhere.", "Chomp lives at the top of your screen, in any app. Click him there, or use your shortcut and just talk.")
             HStack(spacing: 12) {

@@ -235,3 +235,125 @@ private struct LocalChatRooms: View {
         .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
+
+/// Conversas on the workspace page, in the iPhone app's language: a list of cards with
+/// the teammates' faces on the left and the open conversation on the right, so the
+/// page is used edge to edge instead of a small chat in a large empty area.
+struct WorkspaceConversations: View {
+    @ObservedObject var room: AgentRoomViewModel
+    @ObservedObject var chat: LocalChatViewModel
+    @State private var query = ""
+    @State private var hovered: String?
+    @State private var settings = false
+    @Environment(\.locale) private var locale
+    @Environment(\.islandPreview) private var preview
+    private var en: Bool { locale.language.languageCode?.identifier == "en" }
+    private var items: [LocalChatConversation] {
+        chat.matchingConversations(query, archived: false).sorted {
+            ($0.pinned == true ? 1 : 0, $0.updatedAt) > ($1.pinned == true ? 1 : 0, $1.updatedAt)
+        }
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            list.frame(width: 310)
+            conversation
+        }
+        .frame(minHeight: 600, alignment: .top)
+        .task { if !preview { await chat.prepare() } }
+        .sheet(isPresented: $settings) { AdaChatSettingsView(chat: chat) }
+    }
+
+    private var list: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(CompanionStyle.muted)
+                    TextField(en ? "Search conversations" : "Buscar conversas", text: $query).textFieldStyle(.plain)
+                }
+                .padding(.horizontal, 12).frame(height: 32)
+                .background(CompanionStyle.edge.opacity(0.05), in: Capsule())
+                Button { Task { _ = await chat.create(); room.page = .chat } } label: {
+                    Image(systemName: "square.and.pencil").font(.system(size: 13, weight: .semibold)).foregroundStyle(CompanionStyle.accent)
+                        .frame(width: 32, height: 32).background(CompanionStyle.edge.opacity(0.05), in: Circle())
+                }.buttonStyle(.plain).focusEffectDisabled().help(en ? "New conversation" : "Nova conversa")
+                Button { settings = true } label: {
+                    Image(systemName: "slider.horizontal.3").font(.system(size: 12, weight: .semibold)).foregroundStyle(CompanionStyle.muted)
+                        .frame(width: 32, height: 32).background(CompanionStyle.edge.opacity(0.05), in: Circle())
+                }.buttonStyle(.plain).focusEffectDisabled()
+                    .help(en ? "Conversation settings · model and GitHub" : "Configurações das conversas · modelo e GitHub")
+            }
+            ScrollView {
+                LazyVStack(spacing: 2) {
+                    ForEach(items) { row($0) }
+                    if items.isEmpty {
+                        OwnerSays(persona: .sig, text: LocalizedStringKey(query.isEmpty
+                            ? (en ? "No conversations yet. Say hi and we'll start one." : "Nenhuma conversa ainda. Diga oi e a gente começa.")
+                            : (en ? "Nothing matches that search." : "Nada combina com essa busca.")))
+                            .padding(.top, 8)
+                    }
+                }
+            }.scrollIndicators(.hidden)
+        }
+        .heyCard(padding: 10, radius: 20)
+        .frame(maxHeight: 640)
+    }
+
+    private func row(_ item: LocalChatConversation) -> some View {
+        let isOn = chat.selected?.id == item.id
+        return Button { chat.select(item.id); room.page = .chat } label: {
+            HStack(alignment: .top, spacing: 10) {
+                faces(item.persona).padding(.top, 2)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(item.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                        if item.pinned == true { Image(systemName: "pin.fill").font(.system(size: 9)).foregroundStyle(CompanionStyle.muted) }
+                        Spacer(minLength: 4)
+                        Text(item.updatedAt.formatted(.dateTime.hour().minute().locale(locale)))
+                            .font(.system(size: 10).monospacedDigit()).foregroundStyle(CompanionStyle.muted)
+                    }
+                    Text(AdaThoughtDisclosure.parse(item.messages.last?.text ?? (en ? "Start a conversation" : "Comece uma conversa")).visibleReply)
+                        .font(.system(size: 11)).foregroundStyle(CompanionStyle.muted).lineLimit(2)
+                }
+            }
+            .padding(.horizontal, 10).padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isOn ? CompanionStyle.accent.opacity(0.14) : hovered == item.id ? CompanionStyle.edge.opacity(0.05) : .clear,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).focusEffectDisabled()
+        .onHover { hovered = $0 ? item.id : nil }
+        .contextMenu {
+            Button(item.pinned == true ? (en ? "Unpin" : "Desafixar") : (en ? "Pin" : "Fixar")) { Task { await chat.setPinned(item.id, item.pinned != true) } }
+            Button(en ? "Archive" : "Arquivar") { Task { await chat.setArchived(item.id, true) } }.disabled(chat.generatingID == item.id)
+        }
+    }
+
+    /// Chomp always takes the request; a specialist who joined sits in front of him.
+    private func faces(_ persona: LocalChatPersona) -> some View {
+        ZStack(alignment: .bottomTrailing) {
+            AgentRingAvatar(persona: .sig, size: persona == .sig ? 34 : 26)
+                .offset(x: persona == .sig ? 0 : -8, y: persona == .sig ? 0 : -6)
+            if persona != .sig { AgentRingAvatar(persona: persona, size: 26) }
+        }.frame(width: 36, height: 34)
+    }
+
+    @ViewBuilder private var conversation: some View {
+        Group {
+            if let selected = chat.selected {
+                LocalChatPrompt(chat: chat, conversation: selected, compact: false, active: true)
+            } else {
+                VStack(spacing: 12) {
+                    AgentDisc(persona: .sig, size: 96)
+                    Text(en ? "A small next step, together." : "Um próximo passo, juntos.").font(.system(size: 17, weight: .semibold))
+                    Button { Task { _ = await chat.create(); room.page = .chat } } label: {
+                        Text(en ? "New conversation" : "Nova conversa").modifier(ChompPill(primary: true))
+                    }.buttonStyle(.plain)
+                }.frame(maxWidth: .infinity, minHeight: 560)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .top)
+        .heyCard(padding: 12, radius: 20)
+    }
+}

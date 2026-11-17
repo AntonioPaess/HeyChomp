@@ -177,7 +177,8 @@ struct CompanionScene: NSViewRepresentable {
         }
         func shouldPlay(_ value: CompanionRenderInput) -> Bool {
             inputLock.lock(); defer { inputLock.unlock() }
-            return value.animates && !value.preview && !(completed?.0 == value.animation && completed?.1 == value.replay)
+            // A finished one-shot stays paused unless the eyes are following the pointer.
+            return value.animates && !value.preview && (value.gaze != nil || !(completed?.0 == value.animation && completed?.1 == value.replay))
         }
         // Used only before attachment, in deterministic tests and offscreen exports.
         @MainActor func update(_ value: CompanionScene) { advance(value.input, at: value.time) }
@@ -187,13 +188,13 @@ struct CompanionScene: NSViewRepresentable {
             guard let input, input.animates, !input.preview else { return }
             let now = Date.timeIntervalSinceReferenceDate
             advance(input, at: now)
-            if !input.animation.continuous && now - started >= input.animation.duration + 0.22 && !pauseSent {
+            if !input.animation.continuous && input.gaze == nil && now - started >= input.animation.duration + 0.22 && !pauseSent {
                 pauseSent = true
                 inputLock.lock(); completed = (input.animation, input.replay); inputLock.unlock()
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     let current = self.readInput()
-                    guard current?.animation == input.animation, current?.replay == input.replay else { return }
+                    guard current?.animation == input.animation, current?.replay == input.replay, current?.gaze == nil else { return }
                     self.renderView?.animationEnabled = false
                 }
             }

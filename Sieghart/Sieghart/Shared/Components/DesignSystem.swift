@@ -48,7 +48,7 @@ enum CompanionStyle {
 
 enum WorkspaceMetrics {
     static let pageInset: CGFloat = 20
-    static let sectionGap: CGFloat = 20
+    static let sectionGap: CGFloat = 16
     static let contentWidth: CGFloat = 1080
     /// Readable column for Hoje, Equipe and Biblioteca.
     static let readableWidth: CGFloat = 720
@@ -97,8 +97,8 @@ struct WorkspacePageHeading: View {
     let title: String
     let subtitle: String
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(title).font(WorkspaceTypography.title)
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title).font(.system(size: 24, weight: .bold))
                 .foregroundStyle(CompanionStyle.ink)
             Text(subtitle).font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted)
                 .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
@@ -245,10 +245,11 @@ private struct CompanionCardModifier: ViewModifier {
         let sized = content.frame(maxWidth: .infinity, alignment: .topLeading)
             .frame(height: height.map { max(0, $0 - padding * 2) }, alignment: .topLeading).padding(padding)
         if workspace {
+            // Workspace pages use the iPhone app's cards: contained, rounded, quiet.
             content.frame(maxWidth: .infinity, alignment: .topLeading)
-                .frame(height: height, alignment: .topLeading)
-                .padding(.vertical, inset ?? 18)
-                .overlay(alignment: .bottom) { Divider().allowsHitTesting(false) }
+                .frame(height: height.map { max(0, $0 - (inset ?? 16) * 2) }, alignment: .topLeading)
+                .padding(inset ?? 16)
+                .background(HeyCardSurface(radius: 18))
         }
         else if glass { sized.modifier(IslandControlSurface()) }
         else { sized.background(CompanionStyle.surface, in: RoundedRectangle(cornerRadius: WorkspaceMetrics.cardRadius)) }
@@ -310,7 +311,12 @@ struct PeekingCharacter: View {
     var animates = false
     /// Roughly the width of the head, in points.
     var size: CGFloat = 48
-    @State private var popped = false
+    @State private var popped: Bool
+    init(persona: LocalChatPersona, animates: Bool = false, size: CGFloat = 48) {
+        self.persona = persona; self.animates = animates; self.size = size
+        // Without motion the peek is simply there; only an animated one pops in.
+        _popped = State(initialValue: !animates)
+    }
     static func width(_ size: CGFloat) -> CGFloat { size * 1.6 }
     static func height(_ size: CGFloat) -> CGFloat { width(size) * 340 / 480 }
     /// Distance from the view's top to the edge the hands hold on to.
@@ -387,3 +393,123 @@ struct ToolToggleRow: View {
     }
 }
 
+// MARK: - The iPhone app's language, on the Mac
+
+/// A rounded card like the iPhone app's: soft fill, hairline rim, a faint shadow only in light.
+struct HeyCardSurface: View {
+    var radius: CGFloat = 18
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .fill(CompanionStyle.surface)
+            .overlay { RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(CompanionStyle.edge.opacity(0.07), lineWidth: 0.5) }
+            .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.05), radius: 9, y: 4)
+    }
+}
+
+extension View {
+    func heyCard(padding: CGFloat = 16, radius: CGFloat = 18) -> some View {
+        self.padding(padding).frame(maxWidth: .infinity, alignment: .leading).background(HeyCardSurface(radius: radius))
+    }
+}
+
+/// A teammate's face in a soft disc of their own color (team cards and profile).
+struct AgentDisc: View {
+    let persona: LocalChatPersona
+    var size: CGFloat = 86
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        let tint = CompanionStyle.agent(persona)
+        Circle()
+            .fill(RadialGradient(colors: [tint.opacity(scheme == .dark ? 0.70 : 0.45), tint.opacity(scheme == .dark ? 0.22 : 0.14), tint.opacity(0.02)],
+                                 center: UnitPoint(x: 0.5, y: 0.62), startRadius: 0, endRadius: size * 0.55))
+            .overlay {
+                Image(nsImage: CompanionArtwork.portrait(for: persona.avatar)).resizable().interpolation(.high).scaledToFit()
+                    .padding(size * 0.11).offset(y: size * 0.1)
+            }
+            .clipShape(Circle())
+            .overlay { Circle().strokeBorder(tint.opacity(0.45), lineWidth: 1) }
+            .frame(width: size, height: size)
+            .accessibilityLabel(persona.title)
+    }
+}
+
+/// A round avatar with a ring in the teammate's color and a status dot.
+struct AgentRingAvatar: View {
+    let persona: LocalChatPersona
+    var size: CGFloat = 50
+    /// `nil` hides the status dot.
+    var working: Bool? = nil
+    var body: some View {
+        Circle().fill(CompanionStyle.background)
+            .overlay {
+                Image(nsImage: CompanionArtwork.portrait(for: persona.avatar)).resizable().interpolation(.high).scaledToFit()
+                    .scaleEffect(1.12).offset(y: size * 0.08)
+            }
+            .clipShape(Circle())
+            .padding(max(2, size * 0.06))
+            .overlay { Circle().strokeBorder(CompanionStyle.agent(persona), lineWidth: size > 36 ? 2 : 1.5) }
+            .frame(width: size, height: size)
+            .overlay(alignment: .bottomTrailing) {
+                if let working {
+                    Circle().fill(working ? CompanionStyle.accent : Color.gray)
+                        .frame(width: size * 0.26, height: size * 0.26)
+                        .overlay { Circle().stroke(CompanionStyle.background, lineWidth: 2.5) }
+                }
+            }
+            .accessibilityLabel(persona.title)
+    }
+}
+
+/// A small status capsule: mint while someone is on it, neutral when free.
+struct StatusPill: View {
+    let text: LocalizedStringKey
+    var on = false
+    var body: some View {
+        Text(text).font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(on ? CompanionStyle.accentOnFill : CompanionStyle.muted)
+            .padding(.horizontal, 8).frame(height: 18)
+            .background(on ? AnyShapeStyle(CompanionStyle.accent) : AnyShapeStyle(CompanionStyle.edge.opacity(0.08)), in: Capsule())
+    }
+}
+
+/// The "Ask Chomp" bar: a plus, the prompt and a mint microphone.
+struct AskChompBar: View {
+    let prompt: LocalizedStringKey
+    let type: () -> Void
+    let speak: () -> Void
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "plus").font(.system(size: 13, weight: .semibold)).foregroundStyle(CompanionStyle.muted)
+            Text(prompt).font(.system(size: 14)).foregroundStyle(CompanionStyle.muted)
+            Spacer(minLength: 8)
+            Button(action: speak) {
+                Image(systemName: "mic.fill").font(.system(size: 13, weight: .semibold)).foregroundStyle(CompanionStyle.accentOnFill)
+                    .frame(width: 30, height: 30).background(CompanionStyle.accent, in: Circle())
+            }.buttonStyle(.plain).focusEffectDisabled().help(Text("Talk to Chomp"))
+        }
+        .padding(.leading, 16).padding(.trailing, 6).frame(height: 44)
+        .background(Capsule().fill(CompanionStyle.surface))
+        .overlay { Capsule().strokeBorder(CompanionStyle.edge.opacity(0.08), lineWidth: 0.5) }
+        .contentShape(Capsule())
+        .onTapGesture(perform: type)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+/// The iPhone app's large capsule button: mint for the main step, neutral otherwise.
+struct CapsuleActionStyle: ButtonStyle {
+    var primary = true
+    @Environment(\.isEnabled) private var enabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(primary ? CompanionStyle.accentOnFill : CompanionStyle.ink)
+            .padding(.horizontal, 22).frame(minWidth: primary ? 150 : 0, minHeight: 38)
+            .background(primary ? AnyShapeStyle(CompanionStyle.accent) : AnyShapeStyle(CompanionStyle.edge.opacity(0.08)), in: Capsule())
+            .opacity(enabled ? (configuration.isPressed ? 0.8 : 1) : 0.45)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(InterfaceMotion.feedback, value: configuration.isPressed)
+            .contentShape(Capsule())
+    }
+}

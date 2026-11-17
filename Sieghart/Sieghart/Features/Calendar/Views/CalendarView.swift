@@ -18,7 +18,8 @@ struct CalendarView: View {
             if model.accessState != .fullAccess {
                 permissionCard
             } else {
-                ganttHeader
+                // On the workspace page the agent header already introduces Gantt.
+                if compact { ganttHeader }
                 if !island { periodControls }
                 if island || model.span == .month {
                     if compact && !island {

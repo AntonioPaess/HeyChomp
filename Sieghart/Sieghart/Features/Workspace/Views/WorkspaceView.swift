@@ -182,8 +182,7 @@ struct ContentView: View {
 
     private var page: some View {
         VStack(alignment: .leading, spacing: WorkspaceMetrics.sectionGap) {
-            if let owner = viewModel.section.owner, ![.calendar, .capture, .files].contains(viewModel.section) {
-                // Where the owner peeks over the page's main card, the heading skips the portrait (no duplicates).
+            if let owner = viewModel.section.owner {
                 ToolPageHeading(title: viewModel.section.title(english: en), subtitle: viewModel.section.subtitle(english: en), owner: owner,
                                 en: en, animates: preferences.characterMotion && !preferences.usesReducedMotion)
             } else if viewModel.section != .overview {
@@ -196,7 +195,8 @@ struct ContentView: View {
             case .overview:
                 CompanionWorkspaceHome(room: notch.agentRoom, chat: notch.agentRoom.localChat, coordinator: notch.spatialAssistant,
                     language: activation.voiceLanguage, animates: preferences.characterMotion && !preferences.usesReducedMotion,
-                    openChat: { viewModel.section = .agentRoom }, speak: { activation.toggleListening() }, settings: { viewModel.section = .settings })
+                    openChat: { viewModel.section = .agentRoom }, speak: { activation.toggleListening() }, settings: { viewModel.section = .settings },
+                    openCalendar: { viewModel.section = .calendar })
             case .calendar:
 
                 CalendarView(model: notch.calendar, events: notch.events).companionCard()
@@ -250,17 +250,19 @@ struct ContentView: View {
                     Text(LocalizedStringKey(activation.audioShortcutStatuses[.muteMicrophone] ?? "Shortcut off")).font(.caption).foregroundStyle(CompanionStyle.muted)
                 }.companionCard()
             case .team:
-                CompanionTeamPage(language: activation.voiceLanguage, animates: preferences.characterMotion && !preferences.usesReducedMotion, open: { person in
+                CompanionTeamPage(language: activation.voiceLanguage, animates: preferences.characterMotion && !preferences.usesReducedMotion, isWorking: { person in
+                    notch.agentRoom.localChat.generatingID.flatMap { id in notch.agentRoom.localChat.conversations.first { $0.id == id }?.persona } == person
+                }, open: { person in
                     Task { if await notch.agentRoom.localChat.openPersona(person) != nil { notch.agentRoom.page = .chat; viewModel.section = .agentRoom } }
                 })
             case .agentRoom:
-                AgentRoomView(model: notch.agentRoom)
+                WorkspaceConversations(room: notch.agentRoom, chat: notch.agentRoom.localChat)
             case .aiLimits:
 
                 AIUsageView(onOpenRoom: { viewModel.section = .agentRoom })
             }
         }
-        .frame(maxWidth: [.overview, .files].contains(viewModel.section) ? WorkspaceMetrics.readableWidth : WorkspaceMetrics.contentWidth, alignment: .leading)
+        .frame(maxWidth: WorkspaceMetrics.contentWidth, alignment: .leading)
         .modifier(WorkspacePageArrival())
         .padding(WorkspaceMetrics.pageInset)
         .frame(maxWidth: .infinity, alignment: .top)
@@ -498,6 +500,10 @@ struct ContentView: View {
             Divider()
             PreferenceRow("Launch greeting", detail: "Your companion drops in, waves hello and settles into the island.") {
                 Toggle("Launch greeting", isOn: $preferences.launchGreeting).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
+            }
+            Divider()
+            PreferenceRow("Sparkle beside the pointer", detail: "Chomp's mint sparkle follows your pointer in every app and glows while he works.") {
+                Toggle("Sparkle beside the pointer", isOn: $preferences.cursorCompanion).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
             }
             PreferenceRow("Introduction language", detail: "English by default. Choose Portuguese for the team's introduction.") {
                 Picker("Introduction language", selection: $preferences.introductionLanguage) {
@@ -825,24 +831,32 @@ private struct ToolPageHeading: View {
     let owner: LocalChatPersona
     let en: Bool
     let animates: Bool
+    /// The iPhone app's agent header: the owner's face in a disc of their colour,
+    /// a wash of that colour across the card, the title and who looks after it.
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 22, weight: .bold))
-            Text(subtitle).font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 6) {
-                Circle().fill(CompanionStyle.agent(owner)).frame(width: 7, height: 7)
-                Text(en ? "With \(owner.title)" : "Com \(owner.title == "Rita" || owner.title == "Ada" || owner.title == "Elinor" ? "a" : "o") \(owner.title)")
-                    .font(WorkspaceTypography.caption.weight(.semibold))
+        let tint = CompanionStyle.agent(owner)
+        HStack(spacing: 16) {
+            AgentDisc(persona: owner, size: 64)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.system(size: 24, weight: .bold))
+                Text(subtitle).font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 6) {
+                    Circle().fill(tint).frame(width: 7, height: 7)
+                    Text(en ? "With \(owner.title)" : "Com \(owner.title == "Rita" || owner.title == "Ada" || owner.title == "Elinor" ? "a" : "o") \(owner.title)")
+                        .font(WorkspaceTypography.caption.weight(.semibold))
+                }
+                .padding(.horizontal, 9).frame(height: 22)
+                .background(tint.opacity(0.14), in: Capsule())
+                .padding(.top, 2)
             }
-            .padding(.horizontal, 9).frame(height: 22)
-            .background(CompanionStyle.agent(owner).opacity(0.12), in: Capsule())
-            .padding(.top, 4)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 20).padding(.vertical, 18)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(CompanionStyle.edge.opacity(0.035), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(CompanionStyle.edge.opacity(0.08), lineWidth: 0.75) }
-        .perched(owner, animates: animates, size: 52)
-        .padding(.top, 34).padding(.bottom, 4)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(LinearGradient(colors: [tint.opacity(0.22), tint.opacity(0.03)], startPoint: .leading, endPoint: .trailing))
+                .background(HeyCardSurface(radius: 20))
+        }
     }
 }

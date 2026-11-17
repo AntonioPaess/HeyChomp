@@ -78,6 +78,8 @@ private struct ReviewChrome<Content: View>: View {
         precondition(ready, "Fixture conversations did not load")
         let room=AgentRoomViewModel(services:[:],defaults:defaults,localChat:chat)
         let notch=NotchWidgetViewModel(assistant:assistant,preferences:preferences,audio:audio,monitor:monitor,keepAwake:awake,displayPower:display,calendar:IsolatedCalendarFixture.make(defaults:defaults),agentRoom:room,managesWindows:false)
+        // The live preview also shows the small Chomp beside the pointer; snapshots never do.
+        if !CommandLine.arguments.contains(where:{ $0.hasPrefix("--render") }) { notch.cursorCompanion.start(animates:true) }
         let activation=ActivationController(assistant:assistant,notch:notch,defaults:defaults,registersShortcuts:false,voiceCapture:ReviewVoice());activation.voiceLanguage="pt-BR"
         let sensor=SensorViewModel(reader:CatalogSensor()),gestures=ImpactGestureCoordinator(assistant:assistant,notch:notch)
         let codex=CodexUsageViewModel(defaults:defaults,load:{throw CocoaError(.fileReadNoSuchFile)})
@@ -145,7 +147,11 @@ private struct ReviewChrome<Content: View>: View {
             room.page = .chat
             try shot(ContentView(initialSection:.agentRoom,scrollable:true),NSSize(width:1180,height:760),"chat")
             notch.ritaNudges.preview(minutes:52)
-            try shot(ContentView(initialSection:.overview,scrollable:true),NSSize(width:1180,height:1000),"today")
+            // Still frames: no pop-in animations, so peeks and cards are captured settled.
+            let motion=preferences.characterMotion; preferences.characterMotion=false
+            try shot(ContentView(initialSection:.overview,scrollable:false).environment(\.islandPreview,true),NSSize(width:1180,height:1100),"today")
+            try shot(ContentView(initialSection:.team,scrollable:false).environment(\.islandPreview,true),NSSize(width:1180,height:760),"team-still")
+            preferences.characterMotion=motion
             notch.show()
             try shot(NotchWidgetView(scrollable:false).environment(\.islandPreview,true),NSSize(width:notch.geometry.width+144,height:notch.geometry.height+64),"island-home")
             notch.showIsland()

@@ -308,11 +308,14 @@ struct NotchWidgetView: View {
         VStack(spacing: CompanionHomeLayout.rowSpacing) {
             HStack(spacing: 18) {
                 CompanionInteraction(action: reactToTouch) {
-                    CompanionCharacter(size: 96, avatar: preferences.avatar,
-                                       animates: animates,
-                                       listening: activation.isListening, voicePhase: companionPhase(), gaze: avatarPointer,
-                                       mood: activation.commandAcknowledged ? .understood : activation.isVoiceBusy ? .idle : reactions.mood)
-                        .frame(width: 124, height: 96)
+                    // His eyes follow the pointer anywhere on screen; hovering him is the closer, finer look.
+                    FollowingPointer(enabled: animates) { pointer in
+                        CompanionCharacter(size: 96, avatar: preferences.avatar,
+                                           animates: animates,
+                                           listening: activation.isListening, voicePhase: companionPhase(), gaze: avatarPointer == .zero ? pointer : avatarPointer,
+                                           mood: activation.commandAcknowledged ? .understood : activation.isVoiceBusy ? .idle : reactions.mood)
+                    }
+                    .frame(width: 124, height: 96)
                 }
                 .accessibilityLabel("Interact with Chomp")
                 .accessibilityValue(reactionDescription)

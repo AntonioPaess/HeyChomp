@@ -88,6 +88,8 @@ final class NotchWidgetViewModel: ObservableObject {
     private var pomodoroObservation: AnyCancellable?
     private var clockObservation: AnyCancellable?
     private var preferencesObservation: AnyCancellable?
+    let cursorCompanion = CursorCompanion()
+    private var cursorCompanionObservation: AnyCancellable?
     private var speechPreferencesObservation: AnyCancellable?
     private var screenChangeObserver: AnyCancellable?
     private var workspaceObservation: AnyCancellable?
@@ -497,7 +499,19 @@ final class NotchWidgetViewModel: ObservableObject {
                 if self.lastSurfacedNudge != nudge.since, self.managesWindows, !self.isVisible { self.showIsland() }
             }
         }
-        if managesWindows { ritaNudges.start() }
+        if managesWindows { ritaNudges.start(); followPointerPreference() }
+    }
+
+    /// Keeps Chomp's sparkle beside the pointer in step with its setting and with motion preferences.
+    func followPointerPreference() {
+        cursorCompanion.phase = { [weak self] in self?.activation?.companionVoicePhase ?? .inactive }
+        cursorCompanionObservation = preferences.objectWillChange.receive(on: RunLoop.main).prepend(())
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let animates = self.preferences.characterMotion && !self.preferences.usesReducedMotion
+                if self.preferences.cursorCompanion && self.preferences.onboardingComplete { self.cursorCompanion.start(animates: animates) }
+                else { self.cursorCompanion.stop() }
+            }
     }
 
     private func removeCameraMonitor() {
@@ -507,6 +521,7 @@ final class NotchWidgetViewModel: ObservableObject {
 
     func stopUtilities() {
         ritaNudges.stop(); ritaObservation?.cancel(); ritaObservation = nil
+        cursorCompanionObservation?.cancel(); cursorCompanionObservation = nil; cursorCompanion.stop()
         removeCameraMonitor()
         pointerPresenceTask?.cancel()
         pointerPresenceTask = nil
