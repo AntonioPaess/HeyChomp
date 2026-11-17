@@ -4,7 +4,7 @@ Atualizado em 17/11/2026 (lote mobile); antes, 03/11/2026, horário de Recife. L
 
 ## Lote — ícone final "Espiando" e escolha de avatar, 17/11/2026
 
-- **Commit autorizado pelo usuário (17/11/2026):** todo o trabalho mobile (conceitos, protótipo iOS, ícones e AppIcon compartilhado) foi commitado na branch `claude/heychomp-mobile-design-b7c10c`. Sem push.
+- **Commit autorizado pelo usuário (17/11/2026):** todo o trabalho mobile (conceitos, protótipo iOS, ícones e AppIcon compartilhado) foi commitado na branch `claude/heychomp-mobile-design-b7c10c` (`b40dbd9`). Push autorizado e feito no mesmo dia, em dois PRs empilhados: #12 (`design/heychomp-redesign-2026-11-11` → `main`, redesign do Mac) e #13 (esta branch → `design/heychomp-redesign-2026-11-11`, iPhone e ícone). O PR #13 deve ser mesclado depois do #12.
 - Ideia 2 escolhida. A arte final, em claro, escuro e tingido, sai de `Sieghart/Tools/app-icon/generate_app_icons.py`. O fundo claro foi trocado para a estrela menta do Chomp aparecer; no escuro há brilho na cor do agente atrás da cabeça.
 - **Mac:** o `AppIcon` não existia (o pbxproj já apontava para `AppIcon`). Agora há um `AppIcon.appiconset` em `Sieghart/Shared/Resources/ProviderAssets.xcassets`, com os tamanhos do macOS e o 1024 do iOS. É o mesmo ícone (Chomp) nas duas plataformas. Sem mudança no pbxproj do Mac.
 - **iOS:** ícones alternativos por agente (`AppIcon-<Agente>`) e miniaturas (`IconPreview-*`) em `iOS/HeyChompMobile/Resources/Assets.xcassets`; a lista está em `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES`. Nova tela Ajustes → Ícone do app (`AppIconPicker*`, `Services/AppIconService.swift`) que troca o ícone de verdade.
