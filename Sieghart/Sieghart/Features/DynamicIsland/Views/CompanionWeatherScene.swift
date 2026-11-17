@@ -52,6 +52,7 @@ struct CompanionWeatherScene: View {
     let animates: Bool
     var stop: (() -> Void)? = nil
     var previewTime: Double? = nil
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.islandPreview) private var preview
     @Environment(\.islandReduceMotion) private var islandReduceMotion
@@ -70,6 +71,7 @@ struct CompanionWeatherScene: View {
     }
     private var freezing: Bool { observation.temperature < 0 }
     private var chilly: Bool { freezing || observation.feelsLike < 16 }
+    private var thermal:CompanionWeatherIntensity { CompanionWeatherIntensity(mood:mood,temperature:observation.temperature,feelsLike:observation.feelsLike) }
     private var heat: Double { min(1, max(0, (observation.feelsLike - 16) / 22)) }
     private var cloudAmount: Double {
         switch observation.code ?? -1 {
@@ -85,17 +87,18 @@ struct CompanionWeatherScene: View {
     }
     var body: some View {
         // Forecast metadata is stable during display ticks. In particular, do
-        // not allocate a DateFormatter at the atmosphere's 24 Hz cadence.
+        // not allocate a DateFormatter at the atmosphere's 30 Hz cadence.
         let timestamp = updateTime
-        TimelineView(.animation(minimumInterval: 1 / 24, paused: !moves)) { timeline in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: !moves)) { timeline in
             let time = previewTime.map { $0.isFinite ? max(0, $0) : 0 } ?? clock.time(at: timeline.date)
             ZStack {
-                RoundedRectangle(cornerRadius: 26).fill(LinearGradient(colors: [mood.tint.opacity(0.23), Color.black.opacity(0.20)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                RoundedRectangle(cornerRadius:26).fill(colorScheme == .dark ? Color(red:0.075,green:0.09,blue:0.115) : Color(red:0.96,green:0.97,blue:0.98))
+                RoundedRectangle(cornerRadius: 26).fill(LinearGradient(colors: [mood.tint.opacity(0.23), colorScheme == .dark ? Color.black.opacity(0.20) : Color.white.opacity(0.85)], startPoint: .topLeading, endPoint: .bottomTrailing))
                 atmosphere(time: time, foreground: false).allowsHitTesting(false)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Label(en ? "Weather with Chomp" : "O tempo com o Chomp", systemImage: mood == .hail ? "cloud.hail.fill" : observation.symbol)
-                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(mood.tint)
+                            .font(.system(size: 11, weight: .semibold)).foregroundStyle(colorScheme == .dark ? mood.tint : Color.primary.opacity(0.72))
                         Spacer()
                         if let stop { Button(action: stop) { Image(systemName: "stop.circle") }.help(en ? "Stop speaking" : "Parar fala").padding(.trailing, 76) }
                         else { Color.clear.frame(width: 88, height: 24) }
@@ -104,7 +107,7 @@ struct CompanionWeatherScene: View {
                         character.frame(width: 154, height: 156)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(observation.location).font(.system(size: 13, weight: .medium)).lineLimit(2).padding(.trailing, 60)
-                            Text("\(Int(observation.temperature.rounded()))°").font(.system(size: 60, weight: .light, design: .rounded)).monospacedDigit()
+                            Text("\(Int(observation.temperature.rounded()))°").font(.system(size: 60, weight: .light)).monospacedDigit()
                             Text(condition).font(.callout)
                             Text(en ? "Feels like \(Int(observation.feelsLike.rounded()))°C" : "Sensação de \(Int(observation.feelsLike.rounded()))°C")
                                 .font(.caption).foregroundStyle(.secondary)
@@ -120,7 +123,7 @@ struct CompanionWeatherScene: View {
                     }.foregroundStyle(.secondary)
                 }.padding(20)
                 atmosphere(time: time, foreground: true).allowsHitTesting(false)
-            }.clipShape(RoundedRectangle(cornerRadius: 26)).foregroundStyle(.white).buttonStyle(.plain)
+            }.clipShape(RoundedRectangle(cornerRadius: 26)).foregroundStyle(.primary).buttonStyle(.plain)
         }.frame(height: Self.height)
             // Native visibility is absent from ImageRenderer exports; an unsupported
             // NSView in their background would draw a placeholder over the panel.
@@ -129,6 +132,7 @@ struct CompanionWeatherScene: View {
             }
             .onAppear { presented = true }
             .onDisappear { presented = false; clock.setPlaying(false) }
+            .onChange(of: mood) { _, _ in clock.restart(playing:moves) }
             .onChange(of: moves, initial: true) { _, playing in clock.setPlaying(playing) }
             .overlay(RoundedRectangle(cornerRadius: 26).stroke(mood.tint.opacity(0.25)))
     }
@@ -136,185 +140,258 @@ struct CompanionWeatherScene: View {
         ZStack(alignment: .bottom) {
             Ellipse().fill(mood.tint.opacity(wet ? 0.12 : 0.08))
                 .frame(width: 112, height: 7).blur(radius: 5).offset(y: -12)
-            CompanionWeatherCharacter(mood: mood, animates: moves, previewTime: previewTime, freezing: freezing)
+            CompanionWeatherCharacter(mood: mood, animates: moves, previewTime: previewTime, freezing: freezing, temperature:observation.temperature, feelsLike:observation.feelsLike, animationClock:clock)
         }.accessibilityLabel(mood.caption(english: en))
     }
     private var wet: Bool { mood == .rain || mood == .storm || mood == .hail }
     private var snowy: Bool { mood == .snow }
 
-    /// The complete panel owns the only clip. Low-contrast foreground layers
-    /// cross the data too; stronger clouds and cold light stay behind the text.
+    /// Painted atmosphere and deterministic depth layers share the character's clock.
+    /// Clear space behind the reading protects text without cutting weather at a box edge.
     private func atmosphere(time: Double, foreground: Bool) -> some View {
         Canvas { context, size in
             guard size.width > 0, size.height > 0 else { return }
+            let beat = WeatherChoreography.sample(time: time)
             let bounds = CGRect(origin: .zero, size: size)
             if !foreground {
-                let light = CGPoint(x: size.width * 0.25, y: size.height * 0.30)
-                context.fill(Path(bounds), with: .radialGradient(Gradient(colors: [mood.tint.opacity(0.20), .clear]), center: light, startRadius: 0, endRadius: max(size.width, size.height) * 0.85))
-                celestial(context: context, size: size, time: time)
-            }
-            if cloudAmount > 0 {
-                clouds(context: context, size: size, time: time, foreground: foreground)
-            }
-            if chilly {
-                coldAir(context: context, size: size, time: time, foreground: foreground)
-            }
-            if mood == .hot && !foreground {
-                heatWaves(context: context, size: size, time: time)
-            }
-            if mood == .hail {
-                hail(context: context, size: size, time: time, foreground: foreground)
-            }
-            if wet || snowy {
-                let count = wet ? (foreground ? 26 : 86) : (foreground ? 24 : 70)
-                for index in 0..<count {
-                    let seed = Double(index + (foreground ? 137 : 0))
-                    let depth = 0.35 + (seed * 0.37).truncatingRemainder(dividingBy: 0.65)
-                    let speed = wet ? 100 + 145 * depth : 13 + 24 * depth
-                    let y = (seed * 73 + time * speed).truncatingRemainder(dividingBy: size.height + 30) - 15
-                    let base = (seed * 0.61803398875).truncatingRemainder(dividingBy: 1) * (size.width + 40)
-                    let drift = snowy ? sin(time * 0.55 + seed) * 14 : -y * 0.14
-                    let x = (base + drift + size.width + 40).truncatingRemainder(dividingBy: size.width + 40) - 20
-                    let legibility = x > size.width * 0.40 ? 0.43 : 1.0
-                    if wet {
-                        var drop = Path(); drop.move(to: CGPoint(x: x, y: y)); drop.addLine(to: CGPoint(x: x - 3, y: y + 7 + 10 * depth))
-                        context.stroke(drop, with: .color(Color(red: 0.65, green: 0.83, blue: 1).opacity((foreground ? 0.34 : 0.16) * depth * legibility * (mood == .hail ? 0.55 : 1))), style: StrokeStyle(lineWidth: foreground ? 1.1 : 0.7, lineCap: .round))
-                    } else {
-                        let radius = (foreground ? 2.4 : 1.7) * depth
-                        context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: radius * 2, height: radius * 2)), with: .color(.white.opacity((foreground ? 0.72 : 0.36) * legibility)))
-                    }
+                let light = CGPoint(x: size.width * 0.85, y: -20)
+                let tint = wet ? Color(red: 0.37, green: 0.49, blue: 0.72) : mood.tint
+                context.fill(Path(bounds), with: .radialGradient(Gradient(colors: [tint.opacity(0.24), .clear]), center: light, startRadius: 0, endRadius: size.width * 0.95))
+                if !wet && !snowy { celestial(context: context, size: size, time: time) }
+                if cloudAmount > 0 { paintedClouds(context: context, size: size, time: time, foreground: false) }
+                if chilly { coldAir(context: context, size: size, time: time) }
+                if mood == .hot { heatWaves(context: context, size: size, time: time) }
+                if observation.isDay && !wet && !snowy { sunbeams(context: context, size: size, time: time) }
+                if wet {
+                    context.fill(Path(bounds), with: .linearGradient(Gradient(colors: [.clear, Color(red: 0.1, green: 0.2, blue: 0.32).opacity(colorScheme == .dark ? 0.25 : 0.08)]), startPoint: .zero, endPoint: CGPoint(x: 0, y: size.height)))
                 }
-                if wet && foreground {
-                    for index in 0..<12 {
-                        let cycle = (time * 1.3 + Double(index) * 0.29).truncatingRemainder(dividingBy: 1)
-                        let x = (Double(index) + 0.5) / 12 * size.width
-                        context.stroke(Path(ellipseIn: CGRect(x: x - cycle * 8, y: size.height - 11 + sin(Double(index)) * 4, width: cycle * 16, height: cycle * 3)), with: .color(.cyan.opacity((1 - cycle) * 0.15)), lineWidth: 0.6)
-                    }
-                }
+            }
+            if mood == .storm || mood == .hail {
+                lightning(context: context, size: size, time: time, flash: beat.flash, foreground: foreground)
+            }
+            if wet || snowy { precipitation(context: context, size: size, time: time, foreground: foreground) }
+            if mood == .hail { hail(context: context, size: size, time: time, foreground: foreground) }
+            if foreground {
+                if snowy { snowGround(context: context, size: size, time: time) }
+                if freezing { frostEdges(context: context, size: size, time: time) }
+                if wet { waterOnGlass(context: context, size: size, time: time) }
             }
         }.accessibilityHidden(true)
     }
 
+    private func sprite(_ name: String, context: GraphicsContext, rect: CGRect, opacity: Double = 1, angle: Double = 0) {
+        var layer = context
+        layer.opacity = opacity
+        layer.translateBy(x: rect.midX, y: rect.midY)
+        layer.rotate(by: .radians(angle))
+        layer.draw(Image("Weather-\(name)"), in: CGRect(x: -rect.width/2, y: -rect.height/2, width: rect.width, height: rect.height))
+    }
+
     private func celestial(context: GraphicsContext, size: CGSize, time: Double) {
-        let center = CGPoint(x: size.width - 44, y: 42)
-        let warm = Color(red: 1, green: 0.85 - heat * 0.29, blue: 0.56 - heat * 0.41)
-        let color = observation.isDay ? warm : Color(red: 0.73, green: 0.84, blue: 1)
-        let energy = (0.14 + heat * 0.25) * (1 - cloudAmount * 0.4)
-        let pulse = 1 + sin(time * (1.1 + heat)) * (0.015 + heat * 0.035)
-        let radius = observation.isDay ? (20 + heat * 5) * pulse : 20
-        let rect = CGRect(x: center.x-radius, y: center.y-radius, width: radius*2, height: radius*2)
-        context.fill(Path(CGRect(origin: .zero, size: size)), with: .radialGradient(Gradient(colors: [color.opacity(energy * pulse), .clear]), center: center, startRadius: 0, endRadius: size.width * 0.70))
-        let disc = GraphicsContext.Shading.radialGradient(Gradient(colors: [Color(red: 1, green: 0.96, blue: 0.79), color, color.opacity(0.8)]), center: CGPoint(x: center.x-radius*0.3, y: center.y-radius*0.35), startRadius: 0, endRadius: radius*1.9)
+        let center = CGPoint(x: size.width - 52, y: 42)
+        let energy = 1 + sin(time * 0.65) * 0.025
         if observation.isDay {
-            context.fill(Path(ellipseIn: rect), with: disc)
-            for index in 0..<12 {
-                let angle = Double(index) * .pi/6 + time*(0.055 + heat*0.10)
-                let length = 5 + heat*3 + sin(time*1.5 + Double(index))*heat
-                var ray = Path()
-                ray.move(to: CGPoint(x: center.x+cos(angle)*(radius+4), y: center.y+sin(angle)*(radius+4)))
-                ray.addLine(to: CGPoint(x: center.x+cos(angle)*(radius+4+length), y: center.y+sin(angle)*(radius+4+length)))
-                context.stroke(ray, with: .color(color.opacity(0.45+heat*0.25)), style: StrokeStyle(lineWidth: 1.5+heat*0.5, lineCap: .round))
+            let r = (mood == .hot ? 30.0 : 25.0) * energy
+            let halo = Color(red: 1, green: 0.73, blue: 0.32)
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .radialGradient(Gradient(colors: [halo.opacity(0.19 + thermal.hot*0.13), .clear]), center: center, startRadius: r, endRadius: 190))
+            sprite("sun", context: context, rect: CGRect(x: center.x-r, y: center.y-r, width: r*2, height: r*2), opacity: 0.96)
+            for i in 0..<12 {
+                let a = Double(i) * .pi/6 + time*0.025
+                let inner = r+6, outer = r+10+thermal.hot*3
+                var ray = Path(); ray.move(to: CGPoint(x: center.x+cos(a)*inner, y: center.y+sin(a)*inner))
+                ray.addLine(to: CGPoint(x: center.x+cos(a)*outer, y: center.y+sin(a)*outer))
+                context.stroke(ray, with: .color(halo.opacity(0.32)), style: StrokeStyle(lineWidth: 1.3, lineCap: .round))
             }
         } else {
-            var crescent = Path(ellipseIn: rect)
-            crescent.addEllipse(in: rect.offsetBy(dx: 11, dy: -4))
-            var moon = context; moon.clip(to: Path(ellipseIn: rect))
-            moon.fill(crescent, with: .radialGradient(Gradient(colors: [.white, color.opacity(0.7)]), center: center, startRadius: 0, endRadius: 34), style: FillStyle(eoFill: true))
-            for index in 0..<3 {
-                let x = center.x - 29 + Double(index)*24, y = center.y - 24 + Double(index % 2)*48
-                context.fill(Path(ellipseIn: CGRect(x: x, y: y, width: 1.6, height: 1.6)), with: .color(.white.opacity(0.45+sin(time*0.6+Double(index))*0.1)))
+            let r = 23.0
+            var moon = Path(ellipseIn: CGRect(x: center.x-r, y: center.y-r, width: r*2, height: r*2))
+            moon.addEllipse(in: CGRect(x: center.x-10, y: center.y-30, width: r*2, height: r*2))
+            var layer = context
+            layer.clip(to: Path(ellipseIn: CGRect(x: center.x-r, y: center.y-r, width: r*2, height: r*2)))
+            layer.fill(moon, with: .radialGradient(Gradient(colors: [.white, Color(red: 0.63, green: 0.75, blue: 0.92)]), center: CGPoint(x: center.x-12, y: center.y-15), startRadius: 0, endRadius: 48), style: FillStyle(eoFill: true))
+            for i in 0..<15 {
+                let seed = Double(i), x = 20 + fract(seed*0.618)*size.width
+                let y = 8 + fract(seed*0.397)*size.height
+                let a = (0.25 + pow(sin(time*0.4+seed),2)*0.4)*weatherVisibility(x:x,y:y,size:size)
+                context.fill(Path(ellipseIn: CGRect(x:x,y:y,width:1.5,height:1.5)), with:.color(.white.opacity(a)))
             }
         }
     }
 
-    private func clouds(context: GraphicsContext, size: CGSize, time: Double, foreground: Bool) {
-        let count = foreground ? 3 : 8
-        for index in 0..<count {
-            let seed = Double(index), width = size.width*(0.38 + Double(index % 3)*0.10)
-            let distance = size.width+width*1.5
-            let travel = (time*(foreground ? 5 : 8+seed*0.7)+seed*137).truncatingRemainder(dividingBy: distance)
-            let x = travel-width, y = size.height*(Double(index % 4)*0.27)-27 + sin(time*0.12+seed)*9
-            let height = 72+Double(index % 3)*17
-            let shape = WeatherPanelDrawing.cloud.applying(CGAffineTransform(a: width, b: 0, c: 0, d: height, tx: x, ty: y))
-            var cloud = context; cloud.addFilter(.blur(radius: foreground ? 12 : 7))
-            let opacity = cloudAmount * (foreground ? 0.022 : 0.16)
-            let top = wet ? Color(red: 0.48, green: 0.56, blue: 0.67) : Color(red: 0.86, green: 0.91, blue: 0.96)
-            cloud.fill(shape, with: .linearGradient(Gradient(colors: [top.opacity(opacity), Color(red: 0.24, green: 0.31, blue: 0.40).opacity(opacity*1.1)]), startPoint: CGPoint(x: x,y: y), endPoint: CGPoint(x: x,y: y+height)))
+    private func paintedClouds(context: GraphicsContext, size: CGSize, time: Double, foreground: Bool) {
+        let name = snowy ? "snow-cloud" : wet ? "storm" : "cloud"
+        let gust = WeatherChoreography.sample(time: time).gust
+        // Independent, slow paths have no visible wrap boundary.
+        for i in 0..<3 {
+            let seed = Double(i)
+            let width = [250.0, 205, 178][i]
+            let x = [size.width-165, size.width*0.40-80, -100][i] + sin(time*(0.13+seed*0.018)+seed*2.1)*(15+seed*4) - gust*5
+            let y = [-35.0, -66, -55][i] + sin(time*0.19+seed)*4
+            sprite(name, context: context, rect: CGRect(x:x,y:y,width:width,height:width*0.59), opacity: [0.82,0.30,0.22][i]*cloudAmount)
+        }
+        // Low distant veil moves behind the character and reading, never over the face.
+        var veil = context; veil.addFilter(.blur(radius: 12)); veil.opacity = 0.10*cloudAmount
+        sprite(name, context: veil, rect: CGRect(x:size.width*0.50+sin(time*0.12)*25,y:size.height-75,width:310,height:140))
+    }
+
+    private func sunbeams(context: GraphicsContext, size: CGSize, time: Double) {
+        let source = CGPoint(x:size.width-52,y:25)
+        for i in 0..<3 {
+            let seed=Double(i), spread=25+sin(time*0.17+seed)*12
+            let endX=size.width*(0.10+seed*0.29)+sin(time*0.12)*24
+            var p=Path();p.move(to:source)
+            p.addLine(to:CGPoint(x:endX-spread,y:size.height+40));p.addLine(to:CGPoint(x:endX+spread,y:size.height+40));p.closeSubpath()
+            var glow=context;glow.addFilter(.blur(radius:14))
+            glow.fill(p,with:.linearGradient(Gradient(colors:[Color(red:1,green:0.86,blue:0.55).opacity(mood == .hot ? 0.18 : 0.055),.clear]),startPoint:source,endPoint:CGPoint(x:endX,y:size.height)))
         }
     }
 
-    private func coldAir(context: GraphicsContext, size: CGSize, time: Double, foreground: Bool) {
-        if !foreground {
-            let tint = Color(red: 0.53, green: 0.78, blue: 0.91)
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .linearGradient(Gradient(colors: [tint.opacity(freezing ? 0.17 : 0.11), .clear, tint.opacity(0.11)]), startPoint: .zero, endPoint: CGPoint(x: size.width, y: size.height)))
-        }
-        for index in 0..<(foreground ? 3 : 7) {
-            let seed = Double(index), width = size.width*0.74
-            let x = (time*(17+seed*1.4)+seed*103).truncatingRemainder(dividingBy: size.width+width)-width
-            let y = size.height*(seed+0.5)/Double(foreground ? 3 : 7)
-            var mist = context; mist.addFilter(.blur(radius: 17))
-            mist.fill(Path(ellipseIn: CGRect(x: x, y: y, width: width, height: 27+seed*2)), with: .color(Color(red: 0.74, green: 0.87, blue: 0.94).opacity(foreground ? 0.025 : 0.075)))
-            if !foreground {
-                var wind = Path()
-                wind.move(to: CGPoint(x: x+width*0.12, y: y+8))
-                wind.addCurve(to: CGPoint(x: x+width*0.82, y: y), control1: CGPoint(x: x+width*0.35, y: y+20), control2: CGPoint(x: x+width*0.60, y: y-13))
-                context.stroke(wind, with: .color(.white.opacity(0.075)), style: StrokeStyle(lineWidth: 1.1, lineCap: .round))
+    private func weatherVisibility(x: Double, y: Double, size: CGSize) -> Double {
+        let reading = rigSmooth((x-165)/45) * (1-rigSmooth((x-(size.width-92))/52))
+        let rows = rigSmooth((y-58)/24) * (1-rigSmooth((y-194)/25))
+        let footer = rigSmooth((y-217)/15) * (1-rigSmooth((y-263)/18))
+        return (1-reading*rows*0.83)*(1-footer*0.75)
+    }
+
+    private func precipitation(context: GraphicsContext, size: CGSize, time: Double, foreground: Bool) {
+        let count = snowy ? (foreground ? 19 : 42) : (foreground ? 38 : 70)
+        let gust = WeatherChoreography.sample(time:time).gust
+        for i in 0..<count {
+            let seed=Double(i+(foreground ? 113 : 0)), depth=0.35+fract(seed*0.371)*0.65
+            let speed=snowy ? 16+depth*22 : 180+depth*150
+            let cycle=fract(time*speed/(size.height+60)+seed*0.719)
+            let y = -30+cycle*(size.height+60)
+            let base=fract(seed*0.61803398875)*(size.width+120)
+            let drift=snowy ? sin(time*0.8+seed)*12+gust*20 : -y*(0.13+gust*0.14)
+            let x=fract((base+drift+60)/(size.width+120))*(size.width+120)-60
+            let alpha=weatherVisibility(x:x,y:y,size:size)*(foreground ? 0.65 : 0.30)
+            if snowy {
+                let r=(foreground ? 2.6 : 1.5)*depth
+                var flake=context
+                if foreground && depth>0.8 { flake.addFilter(.blur(radius:0.55)) }
+                flake.fill(Path(ellipseIn:CGRect(x:x-r,y:y-r,width:r*2,height:r*2)),with:.radialGradient(Gradient(colors:[.white.opacity(alpha),Color(red:0.75,green:0.88,blue:1).opacity(alpha*0.2)]),center:CGPoint(x:x-r*0.25,y:y-r*0.25),startRadius:0,endRadius:r*1.5))
+                if foreground && i%5==0 {
+                    var crystal=Path()
+                    for j in 0..<3 {
+                        let angle=Double(j)*Double.pi/3+time*0.2+seed
+                        crystal.move(to:CGPoint(x:x-cos(angle)*r*1.6,y:y-sin(angle)*r*1.6));crystal.addLine(to:CGPoint(x:x+cos(angle)*r*1.6,y:y+sin(angle)*r*1.6))
+                    }
+                    flake.stroke(crystal,with:.color(.white.opacity(alpha*0.75)),lineWidth:0.7)
+                }
+            } else {
+                let len=10+depth*(foreground ? 18 : 12), dx=len*(0.13+gust*0.14)
+                var drop=Path();drop.move(to:CGPoint(x:x+dx,y:y-len));drop.addLine(to:CGPoint(x:x,y:y))
+                context.stroke(drop,with:.linearGradient(Gradient(colors:[.clear,Color(red:0.65,green:0.83,blue:1).opacity(alpha*0.72)]),startPoint:CGPoint(x:x+dx,y:y-len),endPoint:CGPoint(x:x,y:y)),style:StrokeStyle(lineWidth:foreground ? 0.9+depth*0.5 : 0.65,lineCap:.round))
             }
+        }
+        if wet && foreground {
+            for i in 0..<18 {
+                let seed=Double(i), p=fract(time*(1.15+fract(seed*0.31))+seed*0.319)
+                let x=12+fract(seed*0.618)*(size.width-24), y=size.height-8-fract(seed*0.37)*9
+                let r=2+p*10
+                var ripple=Path(ellipseIn:CGRect(x:x-r,y:y-r*0.15,width:r*2,height:r*0.3))
+                ripple.move(to:CGPoint(x:x,y:y));ripple.addQuadCurve(to:CGPoint(x:x+4*p,y:y),control:CGPoint(x:x+3*p,y:y-9*sin(p * .pi)))
+                context.stroke(ripple,with:.color(Color(red:0.67,green:0.84,blue:1).opacity(pow(1-p,2)*0.35)),lineWidth:0.75)
+            }
+        }
+    }
+
+    private func lightning(context: GraphicsContext, size: CGSize, time: Double, flash: Double, foreground: Bool) {
+        guard flash>0.001 else { return }
+        if foreground {
+            context.fill(Path(CGRect(origin:.zero,size:size)),with:.radialGradient(Gradient(colors:[Color(red:0.82,green:0.87,blue:1).opacity(flash*0.22),.clear]),center:CGPoint(x:size.width-80,y:0),startRadius:0,endRadius:size.width*0.9))
+            return
+        }
+        let x=size.width-75
+        var bolt=Path();bolt.move(to:CGPoint(x:x,y:45));bolt.addLine(to:CGPoint(x:x-17,y:82));bolt.addLine(to:CGPoint(x:x-3,y:78));bolt.addLine(to:CGPoint(x:x-30,y:126))
+        var glow=context;glow.addFilter(.blur(radius:5))
+        glow.stroke(bolt,with:.color(Color(red:0.62,green:0.72,blue:1).opacity(flash*0.7)),style:StrokeStyle(lineWidth:8,lineCap:.round,lineJoin:.round))
+        context.stroke(bolt,with:.color(Color(red:0.9,green:0.94,blue:1).opacity(flash)),style:StrokeStyle(lineWidth:1.5,lineCap:.round,lineJoin:.round))
+    }
+
+    private func coldAir(context: GraphicsContext, size: CGSize, time: Double) {
+        let gust=WeatherChoreography.sample(time:time).gust
+        for i in 0..<3 {
+            let seed=Double(i), y=110+seed*75
+            let x = -180+sin(time*0.19+seed*2)*70+gust*50
+            var mist=context;mist.addFilter(.blur(radius:18))
+            mist.fill(Path(ellipseIn:CGRect(x:x,y:y,width:size.width+140,height:28)),with:.color(Color(red:0.72,green:0.87,blue:0.96).opacity((0.035+thermal.cold*0.06)*(0.5+gust))))
+        }
+        if freezing {
+            context.fill(Path(CGRect(origin:.zero,size:size)),with:.radialGradient(Gradient(colors:[.clear,Color(red:0.45,green:0.76,blue:0.95).opacity(0.12+thermal.frost*0.12)]),center:CGPoint(x:size.width*0.48,y:size.height*0.48),startRadius:100,endRadius:size.width*0.6))
+        }
+    }
+
+    private func frostEdges(context: GraphicsContext, size: CGSize, time: Double) {
+        let growth=rigSmooth(time/7)*(0.45+thermal.frost*0.55)
+        // Crystalline silhouettes grow from the actual card boundary.
+        for side in 0..<2 {
+            for i in 0..<3 {
+                let progress=rigSmooth((time-Double(i)*1.2)/5.8)
+                let height=(31+Double(i%2)*12)*growth*progress
+                let y=35+Double(i)*92
+                var layer=context
+                layer.translateBy(x:side==0 ? -2 : size.width+2,y:y)
+                layer.rotate(by:.degrees(side==0 ? 90 : -90))
+                sprite("frost",context:layer,rect:CGRect(x:-46,y:-height,width:92,height:height),opacity:0.4+growth*0.48)
+            }
+        }
+        for i in 0..<4 {
+            let h=(i%2==0 ? 30.0 : 19.0)*growth
+            sprite("frost",context:context,rect:CGRect(x:Double(i)*size.width/3-42,y:size.height-h+5,width:125,height:h),opacity:0.65)
+        }
+    }
+
+    private func snowGround(context: GraphicsContext, size: CGSize, time: Double) {
+        let growth=rigSmooth(time/9)
+        for i in 0..<3 {
+            let w=size.width*0.5
+            sprite("snow-bank",context:context,rect:CGRect(x:Double(i)*size.width*0.4-45,y:size.height-8-growth*12,width:w,height:18+growth*18),opacity:0.8)
         }
     }
 
     private func heatWaves(context: GraphicsContext, size: CGSize, time: Double) {
-        for index in 0..<11 {
-            let seed = Double(index)
-            let travel = (time*(24+seed*0.7)+seed*43).truncatingRemainder(dividingBy: size.height+150)
-            let y = size.height+65-travel, x = (seed+0.5)/11*size.width
-            var wave = Path()
-            for step in 0...12 {
-                let v = Double(step)/12
-                let p = CGPoint(x: x+sin(v * .pi*2.6-time*1.9+seed)*(5+seed.truncatingRemainder(dividingBy: 3)), y: y-v*76)
-                if step == 0 { wave.move(to: p) } else { wave.addLine(to: p) }
-            }
-            var haze = context; haze.addFilter(.blur(radius: 0.65))
-            haze.stroke(wave, with: .linearGradient(Gradient(colors: [.clear, Color(red: 1, green: 0.77, blue: 0.39).opacity(x>size.width*0.40 ? 0.065 : 0.15), .clear]), startPoint: CGPoint(x: x,y: y), endPoint: CGPoint(x: x,y: y-76)), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+        for i in 0..<4 {
+            let seed=Double(i), travel=fract(time*(0.11+thermal.hot*0.06)+seed*0.251)
+            let x=35+seed*size.width/3+sin(time*0.6+seed)*12, y=size.height*(1.2-travel*1.4)
+            let w=55+sin(time*0.7+seed)*15
+            var heat=context;heat.addFilter(.blur(radius:15))
+            heat.fill(Path(ellipseIn:CGRect(x:x-w/2,y:y-60,width:w,height:120)),with:.linearGradient(Gradient(colors:[.clear,Color(red:1,green:0.65,blue:0.22).opacity(sin(travel * .pi)*(0.10+thermal.hot*0.18)),.clear]),startPoint:CGPoint(x:x,y:y-60),endPoint:CGPoint(x:x,y:y+60)))
+        }
+    }
+
+    private func waterOnGlass(context: GraphicsContext, size: CGSize, time: Double) {
+        for i in 0..<8 {
+            let seed=Double(i), cycle=fract(time*0.085+seed*0.197)
+            let x = i%2==0 ? 5+fract(seed*0.37)*12 : size.width-6-fract(seed*0.37)*13
+            let y = 30+cycle*(size.height-60), r=1.3+fract(seed*0.43)*1.6
+            let opacity=sin(cycle * .pi)*0.35
+            let p=Path(ellipseIn:CGRect(x:x-r,y:y-r*1.5,width:r*2,height:r*3))
+            context.fill(p,with:.linearGradient(Gradient(colors:[.white.opacity(opacity),Color(red:0.41,green:0.65,blue:0.85).opacity(opacity*0.35)]),startPoint:CGPoint(x:x-r,y:y-r),endPoint:CGPoint(x:x+r,y:y+r)))
         }
     }
 
     private func hail(context: GraphicsContext, size: CGSize, time: Double, foreground: Bool) {
-        for index in 0..<(foreground ? 18 : 38) {
-            let seed = Double(index+(foreground ? 79 : 0))
-            let depth = 0.5+(seed*0.37).truncatingRemainder(dividingBy: 0.5)
-            let period = 1.8+depth*0.6
-            let phase = (time+seed*0.113).truncatingRemainder(dividingBy: period)/period
-            let baseX = (seed*0.61803398875).truncatingRemainder(dividingBy: 1)*size.width
-            let falling = phase < 0.72
-            let flight = phase/0.72
-            let bounce = (phase-0.72)/0.28
-            let x = baseX + (falling ? flight*17 : 17+bounce*9)
-            let y = falling ? -12+flight*(size.height+1) : size.height-11-sin(bounce * .pi)*(12+depth*14)
-            let radius = (foreground ? 2.8 : 2.0)*depth
-            let rect = CGRect(x: x-radius, y: y-radius, width: radius*2, height: radius*2)
-            let contrast = (x>size.width*0.40 ? 0.43 : 1)*(falling ? 1 : 1-bounce)
-            context.fill(Path(ellipseIn: rect), with: .radialGradient(Gradient(colors: [.white.opacity(contrast), Color(red: 0.48, green: 0.70, blue: 0.86).opacity(contrast*0.85)]), center: CGPoint(x: x-radius*0.3,y: y-radius*0.3), startRadius: 0, endRadius: radius*2))
+        for i in 0..<(foreground ? 15 : 22) {
+            let seed=Double(i+(foreground ? 31 : 0)), depth=0.55+fract(seed*0.371)*0.45
+            let phase=fract(time/(1.1+depth*0.7)+seed*0.137)
+            let fall=min(1,phase/0.72), bounce=max(0,(phase-0.72)/0.28)
+            let baseX=fract(seed*0.618)*size.width
+            let x=baseX+fall*20+bounce*15
+            let y=phase<0.72 ? -14+fall*fall*(size.height+4) : size.height-10-sin(bounce * .pi)*(16+depth*14)
+            let r=(foreground ? 3.1 : 1.9)*depth
+            let a=weatherVisibility(x:x,y:y,size:size)*(1-bounce)*(foreground ? 0.9 : 0.4)
+            context.fill(Path(ellipseIn:CGRect(x:x-r,y:y-r,width:2*r,height:2*r)),with:.radialGradient(Gradient(colors:[.white.opacity(a),Color(red:0.51,green:0.73,blue:0.87).opacity(a)]),center:CGPoint(x:x-r*0.4,y:y-r*0.4),startRadius:0,endRadius:2*r))
         }
     }
+    private func fract(_ x: Double) -> Double { x-floor(x) }
 }
 
-private enum WeatherPanelDrawing {
-    static let cloud: Path = {
-        var p = Path(); p.move(to: CGPoint(x: 0.04,y: 0.80))
-        p.addCurve(to: CGPoint(x: 0.20,y: 0.39), control1: CGPoint(x: -0.04,y: 0.40), control2: CGPoint(x: 0.09,y: 0.34))
-        p.addCurve(to: CGPoint(x: 0.53,y: 0.22), control1: CGPoint(x: 0.18,y: -0.05), control2: CGPoint(x: 0.49,y: -0.02))
-        p.addCurve(to: CGPoint(x: 0.80,y: 0.37), control1: CGPoint(x: 0.67,y: 0.03), control2: CGPoint(x: 0.82,y: 0.13))
-        p.addCurve(to: CGPoint(x: 0.96,y: 0.80), control1: CGPoint(x: 0.99,y: 0.30), control2: CGPoint(x: 1.05,y: 0.68))
-        p.addCurve(to: CGPoint(x: 0.04,y: 0.80), control1: CGPoint(x: 0.78,y: 1.02), control2: CGPoint(x: 0.20,y: 0.98)); p.closeSubpath()
-        return p
-    }()
-}
-
-private struct WeatherPanelClock {
+struct WeatherPanelClock: Sendable {
     private var started: Date?
     private var elapsed = 0.0
     func time(at date: Date) -> Double { elapsed + (started.map { max(0,date.timeIntervalSince($0)) } ?? 0) }
+    mutating func restart(playing:Bool) { elapsed=0; started=playing ? Date() : nil }
     mutating func setPlaying(_ playing: Bool) {
         if playing, started == nil { started = Date() }
         else if !playing, let start = started { elapsed += max(0,Date().timeIntervalSince(start)); started = nil }

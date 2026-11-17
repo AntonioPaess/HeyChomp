@@ -71,6 +71,13 @@ struct HeyChompApp: App {
         }
         .defaultSize(width: 1000, height: 680)
         .windowToolbarStyle(.unifiedCompact)
+        .commands {
+            // Settings live inside the main window (Ferramentas > Ajustes); ⌘, opens that page.
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") { NotificationCenter.default.post(name: .openWorkspaceSettings, object: nil) }
+                    .keyboardShortcut(",")
+            }
+        }
 
         MenuBarExtra {
             MenuBarView()

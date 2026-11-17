@@ -1,6 +1,7 @@
 @preconcurrency import AppKit
 @preconcurrency import SceneKit
 import Metal
+import SwiftUI
 
 // Live greeting scene. No movie playback or flattened character frames.
 final class CompanionGreetingRig {
@@ -34,14 +35,27 @@ final class CompanionGreetingRig {
         scene.rootNode.addChildNode(halo)
         scene.rootNode.addChildNode(model.root)
         let hb=bounds.height
-        let pixel=hero == .ada
         let handColor=hero == .gantt || hero == .toni ? rigCream : hero.color
-        let leftPath=NSBezierPath(roundedRect:CGRect(x:-hb*0.15,y:-hb*0.15,width:hb*0.30,height:hb*0.30),xRadius:pixel ? 0.7 : hb*0.15,yRadius:pixel ? 0.7 : hb*0.15)
-        let rightPath=NSBezierPath(roundedRect:CGRect(x:-hb*0.20,y:-hb*0.11,width:hb*0.40,height:hb*0.22),xRadius:pixel ? 0.7 : hero == .toni ? hb*0.035 : hb*0.11,yRadius:pixel ? 0.7 : hero == .toni ? hb*0.035 : hb*0.11)
-        for (node,path) in [(handL,leftPath),(handR,rightPath)] {
+        let leftPath=NSBezierPath(roundedRect:CGRect(x:-hb*0.15,y:-hb*0.15,width:hb*0.30,height:hb*0.30),xRadius:hb*0.15,yRadius:hb*0.15)
+        let rightPath=NSBezierPath(roundedRect:CGRect(x:-hb*0.20,y:-hb*0.11,width:hb*0.40,height:hb*0.22),xRadius:hero == .toni ? hb*0.035 : hb*0.11,yRadius:hero == .toni ? hb*0.035 : hb*0.11)
+        for (index,pair) in [(handL,leftPath),(handR,rightPath)].enumerated() {
+            let (node,path)=pair
             let geometry=SCNShape(path:path,extrusionDepth:hero == .ada ? 5 : 8)
-            geometry.chamferRadius=pixel ? 0.4 : 2
+            geometry.chamferRadius=2
             geometry.materials=[rigMaterial(handColor)];node.geometry=geometry
+            if model.usesIllustration {
+                if hero == .sig, let image=NSImage(named: "Companion-sig-weather-hand-\(index == 0 ? "left" : "right")") {
+                    let plane=SCNPlane(width:hb*0.30,height:hb*0.15)
+                    let material=SCNMaterial();material.lightingModel = .constant
+                    material.diffuse.contents=image;material.isDoubleSided=true
+                    material.blendMode = .alpha;material.writesToDepthBuffer=false
+                    plane.materials=[material];node.geometry=plane
+                } else {
+                    node.geometry=model.paintedHand(index) ?? model.motionShape(
+                        SwiftUI.Path(ellipseIn:CGRect(x:39,y:43.5,width:18,height:9)),color:handColor).geometry
+                }
+                node.renderingOrder=4
+            }
             node.opacity=0;model.head.addChildNode(node)
         }
         for _ in rigGreetParticles.warps {
@@ -70,15 +84,17 @@ final class CompanionGreetingRig {
         img.unlockFocus();return img
     }
     func update(_ t:Double) {
+        // The opening owns the original fall, wave and light timeline. New
+        // artwork changes the material, not the choreography or its handoff.
         let p=rigGreetPose(t,compact:CompanionGreetingLayout())
         let hb=bounds.height,hh=hb/2,hw=bounds.width/2
         let naturalScale=p.hb/hb
-        // Square silhouettes retain their proportions; all source timing is unchanged.
+        // Rigid characters retain their proportions; all source timing is unchanged.
         var sx=p.sx,sy=p.sy
         if model.hero == .ada || model.hero == .gantt {let s=sqrt(sx*sy);sx=s;sy=s}
         model.head.scale=SCNVector3(naturalScale*sx,naturalScale*sy,naturalScale)
         model.head.position=SCNVector3(p.x-320-bounds.midX*naturalScale*sx,90-p.y-bounds.midY*naturalScale*sy,0)
-        model.head.eulerAngles=SCNVector3(0,-0.07,0)
+        model.head.eulerAngles=SCNVector3(0,model.usesIllustration ? 0 : -0.07,0)
         model.head.opacity=p.hb > 0 ? 1 : 0
         model.updateEyes(open:p.open,joy:p.eye == .happy ? 0.85 : p.eye == .content ? 0.6 : 0,
                          gaze:CGSize(width:p.lookX*hw*0.15,height:p.lookY*hh*0.17),wink:0,anger:0)
@@ -94,10 +110,12 @@ final class CompanionGreetingRig {
         handR.position=SCNVector3(bounds.midX+rigGLerp(hw*0.35,hw+hb*0.20,kr),bounds.midY-rigGLerp(hh*0.85,hh*0.20,kr),model.front+1)
         handR.scale=SCNVector3(kr,kr,kr);handR.opacity=kr>0.01 ? 1 : 0
         handR.eulerAngles.z=CGFloat(0.61-(p.wave>=0 ? sin(p.wave*2*Double.pi*2.5)*0.04 : 0))
-        if let paper=model.paper {
-            if model.hero == .gantt {paper.opacity=0}
+        if model.usesIllustration {
+            model.updateIllustratedGesture(fold: max(0, p.handL) * sin(max(0, p.wave) * .pi * 2) * 0.2)
+        } else if let paper=model.paper {
+            if model.hero == .gantt && !model.usesIllustration { paper.opacity = 0 }
             if model.hero == .toni {
-                // The actual lower-left paper fold waves OUTWARD; no inward yaw.
+                // The folder carries the original outward wave.
                 let k=rigGClamp(p.handL,0,1),w=max(0,p.wave)
                 paper.eulerAngles=SCNVector3(0.08+k*0.14,0,-0.10-k*(0.52+sin(w*2*Double.pi*3)*0.22))
                 handL.opacity=0;handR.opacity=0

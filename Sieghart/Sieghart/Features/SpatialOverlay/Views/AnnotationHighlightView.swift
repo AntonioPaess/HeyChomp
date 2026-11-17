@@ -71,12 +71,12 @@ struct AnnotationHighlightView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(accentYellow)
                 Text(highlight.elementTitle.isEmpty ? highlight.elementRole : highlight.elementTitle)
-                    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 if !highlight.recognizedText.isEmpty {
                     Text("· “\(highlight.recognizedText.prefix(48))”")
-                        .font(.system(size: 11, weight: .regular, design: .rounded))
+                        .font(.system(size: 11, weight: .regular))
                         .foregroundStyle(Color.white.opacity(0.85))
                         .lineLimit(1)
                 }

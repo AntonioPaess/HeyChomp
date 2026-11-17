@@ -92,7 +92,7 @@ struct ClipboardHistoryView: View {
         Button(LocalizedStringKey(title), action: action).font(.system(size: compact ? 10 : 11, weight: .medium)).buttonStyle(.plain)
             .padding(.horizontal, compact ? 7 : 10).padding(.vertical, 6)
             .foregroundStyle(selected ? CompanionStyle.accentInk : CompanionStyle.muted)
-            .background(selected ? CompanionStyle.accent.opacity(0.12) : CompanionStyle.edge.opacity(0.035), in: Capsule())
+            .background(CompanionStyle.edge.opacity(selected ? 0.10 : 0.035), in: Capsule())
             .accessibilityAddTraits(selected ? .isSelected : [])
     }
     private func row(_ item: ClipboardEntry) -> some View {
@@ -118,7 +118,7 @@ struct ClipboardHistoryView: View {
     }
     private func preview(_ item: ClipboardEntry) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack { Text("PREVIEW").tracking(1.2); Spacer(); Text(LocalizedStringKey(item.payload.kind.rawValue.capitalized)) }.font(.system(size: 9, weight: .semibold)).foregroundStyle(CompanionStyle.muted)
+            HStack { Text("Preview"); Spacer(); Text(LocalizedStringKey(item.payload.kind.rawValue.capitalized)) }.font(.system(size: 9, weight: .semibold)).foregroundStyle(CompanionStyle.muted)
             switch item.payload.kind {
             case .text:
                 if staticPreview { Text(item.payload.text).font(.callout).frame(maxWidth: .infinity, alignment: .leading) }

@@ -72,7 +72,7 @@ struct IslandBackdrop: View {
             ZStack {
                 if compact { Color.black }
                 else if !glassEnabled || opaque {
-                    (scheme == .dark ? Color.black : CompanionStyle.background)
+                    (scheme == .dark ? Color(red: 0.035, green: 0.05, blue: 0.045) : CompanionStyle.background) // Chomp ink: black with a breath of mint
                     VStack(spacing: 0) { Color.black.frame(height: stripHeight); Spacer(minLength: 0) }
                 }
                 else {

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CompanionOnboardingView: View {
     @State private var tutorial = false
+    @State private var arrivalStarted = Date()
     @StateObject private var viewModel: OnboardingViewModel
     @EnvironmentObject private var preferences: CompanionPreferences
     @EnvironmentObject private var codex: CodexUsageViewModel
@@ -12,82 +13,95 @@ struct CompanionOnboardingView: View {
     var prepareVoice: (() async -> String)?
     var onFinish: () -> Void
     var arrivalPreviewTime: Double?
-    init(scrollable: Bool = true, clipboard: ClipboardViewModel? = nil, initialStep: Int = 0, arrivalPreviewTime: Double? = nil, onFinish: @escaping () -> Void = {}, prepareVoice: (() async -> String)? = nil) {
-        self.scrollable = scrollable; self.clipboard = clipboard; self.arrivalPreviewTime = arrivalPreviewTime; self.onFinish = onFinish; self.prepareVoice = prepareVoice
+    var showCompanion: (() -> Void)?
+    @State private var hello = ""
+    @State private var greeted = false
+    @State private var greetReplay = 0
+    @State private var calledCompanion = false
+    /// What Chomp calls you. Asked in the first mission and used by the island greeting.
+    @AppStorage("companion.userName") private var userName = ""
+    @State private var arrived = false
+    private var en: Bool { preferences.introductionLanguage == .english }
+    init(scrollable: Bool = true, clipboard: ClipboardViewModel? = nil, initialStep: Int = 0, arrivalPreviewTime: Double? = nil, onFinish: @escaping () -> Void = {}, prepareVoice: (() async -> String)? = nil, showCompanion: (() -> Void)? = nil) {
+        self.scrollable = scrollable; self.clipboard = clipboard; self.arrivalPreviewTime = arrivalPreviewTime; self.onFinish = onFinish; self.prepareVoice = prepareVoice; self.showCompanion = showCompanion
         _viewModel = StateObject(wrappedValue: OnboardingViewModel(initialStep: initialStep))
     }
     private var chosen: CompanionAvatar { .sig }
     private var moves: Bool { preferences.characterMotion && !preferences.usesReducedMotion && !reducedMotion }
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            HStack(spacing: 16) {
-                if viewModel.step > 0 { CompanionCharacter(size: 48, avatar: chosen, animates: moves) }
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(viewModel.step == 0 ? "A little companion. A quieter day." : viewModel.step == 1 ? "Meet your team." : "Bring your tools along.").font(.largeTitle.weight(.semibold))
-                    Text(viewModel.step == 0 ? "Meet Chomp. A familiar face for your time and your tools." : viewModel.step == 1 ? "Chomp leads. Five specialists bring their own personality." : "Choose what stays nearby. You can change this anytime.")
-                        .foregroundStyle(CompanionStyle.muted)
+        VStack(spacing: 22) {
+            // HeyClicky-style: you learn by doing. Four short missions, checked off as you go.
+            // One idea per screen, centred, with the character on stage.
+            missionStrip.frame(maxWidth: 860).padding(.horizontal, 40).padding(.top, 40)
+            GeometryReader { proxy in
+                Group {
+                    if scrollable {
+                        // Full window width so glows and characters are never clipped by the column.
+                        ScrollView { page.frame(maxWidth: 860).padding(.horizontal, 40).padding(.vertical, 24).frame(maxWidth: .infinity, minHeight: proxy.size.height) }
+                            .scrollIndicators(.hidden)
+                    } else { page.frame(maxWidth: 860).padding(.horizontal, 40).frame(maxWidth: .infinity, maxHeight: .infinity) }
                 }
             }
-            Group {
-                if scrollable { ScrollView { page }.scrollIndicators(.hidden) }
-                else { page; Spacer(minLength: 0) }
-            }
             HStack {
-                if viewModel.step > 0 { Button("Back") { viewModel.step -= 1 }.buttonStyle(CompanionButtonStyle()) }
+                if viewModel.step > 0 { Button("Back") { viewModel.step -= 1 }.buttonStyle(CapsuleActionStyle(primary: false)) }
                 Spacer()
-                HStack(spacing: 6) { ForEach(0..<3) { index in Capsule().fill(viewModel.step == index ? CompanionStyle.accent : CompanionStyle.edge.opacity(0.15)).frame(width: viewModel.step == index ? 20 : 6, height: 6) } }
-                    .accessibilityLabel("Step \(viewModel.step + 1) of 3")
+                VStack(spacing: 6) {
+                    HStack(spacing: 6) { ForEach(0..<4) { index in Capsule().fill(viewModel.step == index ? CompanionStyle.accent : CompanionStyle.edge.opacity(0.15)).frame(width: viewModel.step == index ? 20 : 6, height: 6) } }
+                    Text("\(viewModel.step + 1) of 4").font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted)
+                }.accessibilityElement(children: .ignore).accessibilityLabel("Step \(viewModel.step + 1) of 4")
                 Spacer()
-                Button(viewModel.step == 0 ? "Meet the companions" : viewModel.step == 1 ? "Continue with Chomp" : "Make yourself at home") {
-                    if viewModel.step < 2 { viewModel.step += 1 }
+                Button(LocalizedStringKey(viewModel.step == 3 ? "Start using Chomp" : (viewModel.step == 0 && !greeted) || (viewModel.step == 2 && !calledCompanion) ? "Skip" : "Continue")) {
+                    if viewModel.step < 3 { viewModel.step += 1 }
                     else {
                         viewModel.complete(preferences: preferences, usage: usage, codex: codex, clipboard: clipboard)
                         onFinish()
                     }
-                }.buttonStyle(CompanionButtonStyle(primary: true)).disabled(viewModel.preparingAccess)
-            }
-        }.padding(32).frame(maxWidth: 860, maxHeight: .infinity, alignment: .topLeading)
+                }.buttonStyle(CapsuleActionStyle(primary: !((viewModel.step == 0 && !greeted) || (viewModel.step == 2 && !calledCompanion))))
+                    .disabled(viewModel.preparingAccess)
+            }.frame(maxWidth: 860).padding(.horizontal, 40).padding(.bottom, 40)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity)
             .foregroundStyle(CompanionStyle.ink).background { WorkspaceBackdrop() }.preferredColorScheme(preferences.appearance.colorScheme)
             .environment(\.workspaceGlass, true).environment(\.surfaceGlassEnabled, preferences.windowGlass)
             .environment(\.islandReduceMotion, preferences.usesReducedMotion)
             .animation(moves ? .spring(response: 0.55, dampingFraction: 0.86) : nil, value: viewModel.step)
             .sheet(isPresented: $tutorial) { CompanionVoiceTutorial(language: preferences.introductionLanguage == .english ? "en" : "pt") }
             .onAppear { viewModel.loadTools(usage: usage, clipboard: clipboard) }
+            .onChange(of: viewModel.step) { _, step in if step == 0 { arrivalStarted = Date() } }
+            .onChange(of: moves) { _, enabled in if enabled { arrivalStarted = Date() } }
     }
     private var page: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            if viewModel.step == 0 {
-                VStack(spacing: 12) {
-                    CompanionTeamArrival(animates: moves, previewTime: arrivalPreviewTime).frame(height: 300)
-                    Text("Ready when you are.").font(.title2.weight(.semibold))
-                    Text("Keep a timer nearby, find something you copied, or speak a command. Your companion stays with you — without taking over your day.")
-                        .font(.callout).foregroundStyle(CompanionStyle.muted).multilineTextAlignment(.center).frame(maxWidth: 470)
-                    Text("Chomp is your main companion. Meet Rita, Ada, Gantt, Elinor and Toni.").font(.caption).foregroundStyle(CompanionStyle.muted)
-                }.frame(maxWidth: .infinity).padding(.vertical, 22).modifier(WorkspaceSurface(radius: 24))
-            } else if viewModel.step == 1 {
-                Button(preferences.introductionLanguage == .english ? "Rehearse voice and selection" : "Ensaiar voz e seleção") { tutorial = true }.buttonStyle(CompanionButtonStyle(primary: true))
-                CompanionTeamGallery(animates: moves)
-                Text(chosen.detail).font(.callout).foregroundStyle(CompanionStyle.muted)
-                Text("Tap any companion to explore their movements. Chomp stays with you in the island, voice and focus sessions.")
-                    .font(.caption).foregroundStyle(CompanionStyle.muted)
-            } else {
-                VStack(alignment: .leading, spacing: 14) {
-                    ForEach(AIProvider.allCases) { provider in
-                        HStack(spacing: 12) {
-                            ProviderMark(provider: provider, size: 30)
-                            Text(provider.title).font(.headline)
-                            Spacer()
-                            Text(viewModel.detected.contains(provider) ? "Detected on this Mac" : "Available when installed").font(.caption).foregroundStyle(CompanionStyle.muted)
+        VStack(alignment: .center, spacing: 18) {
+            if viewModel.step == 0 { helloMission }
+            else if viewModel.step == 1 { teamMission }
+            else if viewModel.step == 2 { anywhereMission }
+            else {
+                HStack(alignment: .center, spacing: 36) {
+                    // Larger and lower, so the team sits level with the copy instead of above it.
+                    OnboardingTeamCluster(animates: moves).scaleEffect(1.12).offset(y: 44).frame(width: 340, height: 440)
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Bring your tools along").font(.system(size: 30, weight: .bold))
+                            Text("Give Chomp optional access to this Mac for a more complete, useful experience.")
+                                .font(.system(size: 15)).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
                         }
-                    }
-                    HStack { Text("Automatically follow local AI usage"); Spacer(); Toggle("Automatically follow local AI usage", isOn: $viewModel.allowUsage).labelsHidden().toggleStyle(WorkspaceSwitchStyle()) }
-                    Text("Read local token counts, model/project names and work status using existing sign-in. Conversation text is not saved. No extra API key.")
-                        .font(.caption).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
-                    Divider()
-                    HStack { Text("Keep clipboard history on this Mac"); Spacer(); Toggle("Keep clipboard history on this Mac", isOn: $viewModel.allowClipboard).labelsHidden().toggleStyle(WorkspaceSwitchStyle()) }
-                    Text("Save new copies of text, images and file references locally. Search, pin and reuse them. Marked secret copies and password-manager apps are skipped. Pause or clear history anytime.")
-                        .font(.caption).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
-                }.companionCard()
+                        HStack(spacing: 10) {
+                            ForEach(AIProvider.allCases) { provider in
+                                HStack(spacing: 6) {
+                                    ProviderMark(provider: provider, size: 18)
+                                    Text(provider.title).font(WorkspaceTypography.caption.weight(.medium))
+                                    if viewModel.detected.contains(provider) { Image(systemName: "checkmark").font(.caption2.weight(.bold)).foregroundStyle(.secondary) }
+                                }
+                                .help(viewModel.detected.contains(provider) ? "Detected on this Mac" : "Available when installed")
+                            }
+                        }
+                        optionCard(symbol: "cpu", title: "Follow local AI usage",
+                                   detail: "Lets Chomp read, on this Mac, token counts and work status of your AI tools. Conversation text is not saved.",
+                                   isOn: $viewModel.allowUsage)
+                        optionCard(symbol: "doc.on.clipboard", title: "Save clipboard history",
+                                   detail: "Lets Chomp keep, on this Mac, a history of what you copy so you can find, pin and reuse it. Password managers are skipped.",
+                                   isOn: $viewModel.allowClipboard)
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }
                 HStack(spacing: 10) {
                     if let prepareVoice {
                         Button(viewModel.preparingAccess ? "Preparing voice…" : "Set up voice access") {
@@ -101,5 +115,162 @@ struct CompanionOnboardingView: View {
                     .font(.caption).foregroundStyle(CompanionStyle.muted)
             }
         }.id(viewModel.step).transition(.opacity.combined(with: .offset(x: moves ? 14 : 0)))
+    }
+
+    private var missionStrip: some View {
+        let titles: [LocalizedStringKey] = ["Say hi", "Meet the team", "Call me anywhere", "Your tools"]
+        let done = [greeted, viewModel.step > 1, calledCompanion, false]
+        return HStack(spacing: 8) {
+            ForEach(0..<4) { index in
+                let current = viewModel.step == index
+                HStack(spacing: 7) {
+                    ZStack {
+                        Circle().fill(done[index] ? CompanionStyle.accent : current ? CompanionStyle.edge.opacity(0.12) : CompanionStyle.edge.opacity(0.05))
+                        if done[index] { Image(systemName: "checkmark").font(.system(size: 10, weight: .bold)).foregroundStyle(CompanionStyle.accentOnFill) }
+                        else { Text("\(index + 1)").font(.system(size: 11, weight: .semibold)).foregroundStyle(current ? CompanionStyle.ink : CompanionStyle.muted) }
+                    }.frame(width: 22, height: 22)
+                    Text(titles[index]).font(.system(size: 13, weight: current ? .semibold : .regular))
+                        .foregroundStyle(current ? CompanionStyle.ink : CompanionStyle.muted).lineLimit(1)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 7)
+                .background(current ? CompanionStyle.edge.opacity(0.06) : .clear, in: Capsule())
+                if index < 3 { Rectangle().fill(CompanionStyle.edge.opacity(0.12)).frame(height: 1).frame(maxWidth: 28) }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(moves ? .spring(duration: 0.3, bounce: 0.2) : nil, value: done)
+    }
+
+    private func heading(_ title: LocalizedStringKey, _ subtitle: LocalizedStringKey? = nil) -> some View {
+        VStack(spacing: 8) {
+            Text(title).font(.system(size: 30, weight: .bold)).multilineTextAlignment(.center)
+            if let subtitle {
+                Text(subtitle).font(.system(size: 15)).foregroundStyle(CompanionStyle.muted)
+                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true).frame(maxWidth: 520)
+            }
+        }
+    }
+
+    /// Mission 1: watch the team arrive; then Chomp asks your name and waves when you answer.
+    private var helloMission: some View {
+        VStack(spacing: 18) {
+            if greeted {
+                FollowingPointer(enabled: moves) { pointer in
+                    CompanionCharacter(size: 170, avatar: .sig, animates: moves, gaze: pointer, animation: .hello, replay: greetReplay)
+                }
+                    .frame(height: 200).transition(.scale(scale: 0.8).combined(with: .opacity))
+                heading(LocalizedStringKey(en ? "Nice to meet you, \(userName)!" : "Prazer, \(userName)!"),
+                        "Type or speak to Chomp whenever you need. Next, meet the team that works with him.")
+            } else {
+                CompanionTeamArrival(animates: moves, previewTime: arrivalPreviewTime, started: arrivalStarted,
+                                     language: preferences.introductionLanguage)
+                    .id(arrivalStarted).frame(width: 600, height: 320)
+                    // The 3D stage draws its spotlight inside a rectangle; fade every edge so it never shows.
+                    .mask { Rectangle().padding(36).blur(radius: 28) }
+                if arrived || !moves || arrivalPreviewTime != nil {
+                    VStack(spacing: 16) {
+                        heading("What should I call you?")
+                        HStack(spacing: 8) {
+                            TextField(en ? "Your name…" : "Seu nome…", text: $hello)
+                                .textFieldStyle(.plain).font(.system(size: 15)).onSubmit(greet)
+                            Button { greet() } label: { Image(systemName: "arrow.up").font(.system(size: 13, weight: .bold)) }
+                                .buttonStyle(AgentChatSendStyle()).disabled(hello.trimmingCharacters(in: .whitespaces).isEmpty)
+                                .accessibilityLabel(en ? "Send" : "Enviar")
+                        }
+                        .padding(.leading, 16).padding(.trailing, 6).padding(.vertical, 6)
+                        .background(CompanionStyle.edge.opacity(0.05), in: Capsule())
+                        .overlay { Capsule().strokeBorder(CompanionStyle.edge.opacity(0.12), lineWidth: 0.75) }
+                        .frame(maxWidth: 420)
+                    }.transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .task(id: arrivalStarted) {
+            // The question appears once the team has finished arriving.
+            arrived = false
+            guard moves, arrivalPreviewTime == nil else { arrived = true; return }
+            try? await Task.sleep(for: .seconds(6))
+            withAnimation(.spring(duration: 0.5, bounce: 0.25)) { arrived = true }
+        }
+    }
+    private func greet() {
+        let name = hello.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        userName = String(name.prefix(32))
+        withAnimation(moves ? .spring(duration: 0.45, bounce: 0.3) : nil) { greeted = true }
+        greetReplay += 1
+    }
+
+    /// Mission 2: the character select, so each specialist introduces themself.
+    private var teamMission: some View {
+        VStack(spacing: 22) {
+            heading("Meet your team.", "Hover over each one. They'll tell you what they do.")
+            CompanionTeamPage(language: en ? "en" : "pt", animates: moves, showsChat: false)
+        }
+    }
+
+    /// Mission 3: bring Chomp up for real, at the top of the screen.
+    private var anywhereMission: some View {
+        VStack(spacing: 18) {
+            FollowingPointer(enabled: moves) { pointer in
+                CompanionCharacter(size: 170, avatar: .sig, animates: moves, gaze: pointer, animation: calledCompanion ? .proud : .wink, replay: calledCompanion ? 1 : 0)
+            }
+                .frame(width: 240, height: 220)
+            heading("Call me from anywhere.", "Chomp lives at the top of your screen, in any app. Click him there, or use your shortcut and just talk.")
+            HStack(spacing: 12) {
+                Button { showCompanion?(); withAnimation { calledCompanion = true } } label: { Label("Show Chomp now", systemImage: "arrow.up.to.line") }
+                    .buttonStyle(CompanionButtonStyle(primary: !calledCompanion))
+                Button(en ? "Rehearse voice and selection" : "Ensaiar voz e seleção") { tutorial = true }.buttonStyle(CompanionButtonStyle())
+            }
+            if calledCompanion {
+                Label("There he is, at the top of the screen.", systemImage: "checkmark.circle.fill")
+                    .font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.ink)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }.frame(maxWidth: .infinity)
+    }
+
+    private func featureRow(_ symbol: String, _ text: LocalizedStringKey) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol).font(.system(size: 15)).frame(width: 34, height: 34)
+                .background(CompanionStyle.edge.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            Text(text).font(.system(size: 14, weight: .medium))
+        }
+    }
+
+    private func optionCard(symbol: String, title: LocalizedStringKey, detail: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: symbol).font(.system(size: 18)).foregroundStyle(CompanionStyle.ink)
+                .frame(width: 40, height: 40)
+                .background(CompanionStyle.edge.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.system(size: 14, weight: .semibold)).fixedSize(horizontal: false, vertical: true)
+                Text(detail).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Toggle(title, isOn: isOn).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
+        }
+        .padding(16)
+        .background(CompanionStyle.edge.opacity(0.03), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(CompanionStyle.edge.opacity(0.08), lineWidth: 0.5) }
+    }
+}
+
+/// The whole team gathered around Chomp's sparkle, for the last onboarding step.
+private struct OnboardingTeamCluster: View {
+    let animates: Bool
+    var body: some View {
+        ZStack {
+            Ellipse().fill(CompanionStyle.edge.opacity(0.06)).frame(width: 280, height: 60).blur(radius: 10).offset(y: 140)
+            Image(systemName: "sparkle").font(.system(size: 26, weight: .semibold)).foregroundStyle(Color(red: 0.16, green: 0.82, blue: 0.56)).offset(x: 6, y: -4)
+            CompanionCharacter(size: 112, avatar: .gantt, animates: animates).offset(x: -70, y: -96)
+            CompanionCharacter(size: 108, avatar: .toni, animates: animates).offset(x: 62, y: -100)
+            CompanionCharacter(size: 118, avatar: .rita, animates: animates).offset(x: -96, y: 8)
+            CompanionCharacter(size: 108, avatar: .elinor, animates: animates).offset(x: 92, y: 0)
+            CompanionCharacter(size: 132, avatar: .sig, animates: animates).offset(x: -24, y: 92)
+            CompanionCharacter(size: 112, avatar: .ada, animates: animates).offset(x: 92, y: 100)
+        }
+        .accessibilityHidden(true)
     }
 }

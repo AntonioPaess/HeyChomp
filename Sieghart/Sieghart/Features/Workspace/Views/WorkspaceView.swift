@@ -5,6 +5,9 @@ struct ContentView: View {
     @StateObject private var viewModel: WorkspaceViewModel
     @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
     @FocusState private var focusedSection: AppSection?
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @AppStorage("workspace.toolsExpanded") private var toolsExpanded = false
+    @State private var typeToChatMonitor: Any?
     @Environment(\.islandPreview) private var preview
     @EnvironmentObject private var sensor: SensorViewModel
     @EnvironmentObject private var assistant: AssistantViewModel
@@ -22,7 +25,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if preferences.onboardingComplete { workspace }
-            else { CompanionOnboardingView(clipboard: notch.clipboard, onFinish: { notch.showWelcome() }, prepareVoice: { await activation.prepareVoiceAccess() }) }
+            else { CompanionOnboardingView(clipboard: notch.clipboard, onFinish: { notch.showWelcome() }, prepareVoice: { await activation.prepareVoiceAccess() }, showCompanion: { notch.show() }) }
         }
         .frame(minWidth: 840, minHeight: 660)
         .preferredColorScheme(preferences.appearance.colorScheme)
@@ -35,31 +38,156 @@ struct ContentView: View {
     }
 
     private var workspace: some View {
-        HStack(spacing: 0) {
-            sidebar
-            Group {
-                if scrollable { ScrollView { page }.scrollIndicators(.hidden) }
-                else { page }
+        Group {
+            // ImageRenderer has no native split-view host. The catalog keeps an
+            // explicit pane map; the live window uses the system source list.
+            if preview {
+                HStack(spacing: 0) { sidebar; pageContent }
+            } else {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
+                    nativeSidebar
+                        .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 280)
+                } detail: {
+                    pageContent
+                        .navigationTitle(viewModel.section.title(english: en))
+                        .toolbar {
+                            ToolbarItemGroup(placement: .primaryAction) {
+                                Button { notch.show() } label: {
+                                    Label(en ? "Show companion" : "Mostrar companheiro", systemImage: "rectangle.topthird.inset.filled")
+                                }.help(en ? "Show the floating companion" : "Mostrar o companheiro flutuante")
+                                Button {
+                                    Task {
+                                        if await notch.agentRoom.localChat.create(.sig) != nil {
+                                            notch.agentRoom.page = .chat; viewModel.section = .agentRoom
+                                        }
+                                    }
+                                } label: {
+                                    Label(en ? "New conversation" : "Nova conversa", systemImage: "square.and.pencil")
+                                }.help(en ? "New conversation" : "Nova conversa")
+                            }
+                        }
+                }.navigationSplitViewStyle(.balanced)
             }
-            .id(viewModel.section) // Each destination starts at its own top, not the previous page’s offset.
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(minWidth: 840, minHeight: 580)
-        .tint(CompanionStyle.accent)
+        .tint(CompanionStyle.accentInk)
         .font(WorkspaceTypography.body)
-        .buttonStyle(CompanionButtonStyle())
-        .focusEffectDisabled()
+        .buttonStyle(.bordered)
+        .onAppear { installTypeToChat() }
+        .onDisappear { if let typeToChatMonitor { NSEvent.removeMonitor(typeToChatMonitor) }; typeToChatMonitor = nil }
+        .onReceive(NotificationCenter.default.publisher(for: .openWorkspaceSettings)) { _ in
+            toolsExpanded = true; viewModel.section = .settings
+        }
         .onChange(of: preferences.impactsEnabled) { _, enabled in
             if enabled { sensor.startIfNeeded() }
             else { sensor.stop(); gestures.cancelPendingImpacts() }
         }
     }
 
+    private var pageContent: some View {
+        Group {
+            if scrollable { ScrollView { page } }
+            else { page }
+        }
+        .id(viewModel.section)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(CompanionStyle.background)
+    }
+
+    private var nativeSidebar: some View {
+        // Rows are plain buttons, not a selection-bound List, so macOS never paints a
+        // second (system accent) selection next to our mint controls.
+        List {
+            HStack(spacing: 10) {
+                CompanionCharacter(size: 34, avatar: preferences.avatar, animates: preferences.characterMotion && !preferences.usesReducedMotion)
+                    .frame(width: 40, height: 38)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("HeyChomp").font(WorkspaceTypography.section).foregroundStyle(CompanionStyle.ink)
+                    Text(en ? "Your quiet companion" : "Seu companheiro de todos os dias")
+                        .font(WorkspaceTypography.footnote).foregroundStyle(CompanionStyle.muted).lineLimit(2)
+                }
+            }
+            .padding(.vertical, 6)
+            .listRowBackground(Color.clear)
+            .accessibilityElement(children: .combine)
+            Section {
+                ForEach(Array(AppSection.places.enumerated()), id: \.element) { index, item in
+                    sidebarRow(item)
+                        .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
+                }
+            }
+            Section {
+                DisclosureGroup(isExpanded: $toolsExpanded) {
+                    ForEach(AppSection.tools) { item in sidebarRow(item) }
+                } label: {
+                    Label(en ? "Tools" : "Ferramentas", systemImage: "wrench.and.screwdriver")
+                        .font(.system(size: 13)).foregroundStyle(CompanionStyle.muted)
+                }
+            }
+        }
+        .listStyle(.sidebar)
+        .navigationTitle("HeyChomp")
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Button(en ? "Review introduction" : "Rever apresentação") { preferences.onboardingComplete = false }
+                .buttonStyle(.borderless).font(WorkspaceTypography.caption)
+                .frame(maxWidth: .infinity, alignment: .leading).padding(16)
+        }
+    }
+
+    /// Type-to-chat: with no text field focused, a printable key in the main window starts a
+    /// conversation with Chomp and carries the typed text into the composer.
+    private func installTypeToChat() {
+        guard !preview, typeToChatMonitor == nil else { return }
+        let model = viewModel, room = notch.agentRoom
+        typeToChatMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard let window = event.window, window.isKeyWindow, !(window is NSPanel), window.attachedSheet == nil,
+                  !(window.firstResponder is NSText), model.section != .agentRoom,
+                  event.modifierFlags.intersection([.command, .control, .option, .function]).isEmpty,
+                  let typed = event.characters, !typed.isEmpty,
+                  typed.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.contains($0) && $0.value < 0xF700 }),
+                  !typed.trimmingCharacters(in: .whitespaces).isEmpty
+            else { return event }
+            Task { @MainActor in
+                if await room.localChat.openPersona(.sig) != nil {
+                    room.localChat.draft += typed
+                    room.page = .chat
+                    model.section = .agentRoom
+                }
+            }
+            return nil
+        }
+    }
+
+    private func sidebarRow(_ item: AppSection) -> some View {
+        let selected = viewModel.section == item
+        return Button { viewModel.section = item } label: {
+            Label(item.title(english: en), systemImage: item.symbol)
+                .symbolVariant(selected ? .fill : .none)
+                .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                .foregroundStyle(selected ? CompanionStyle.ink : CompanionStyle.muted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(selected ? CompanionStyle.edge.opacity(0.10) : Color.clear)
+                .padding(.horizontal, 6)
+        )
+        .accessibilityLabel(item.title(english: en))
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+    }
+
     private var en: Bool { activation.voiceLanguage.hasPrefix("en") }
 
     private var page: some View {
         VStack(alignment: .leading, spacing: WorkspaceMetrics.sectionGap) {
-            WorkspacePageHeading(title: viewModel.section.title(english: en), subtitle: viewModel.section.subtitle(english: en))
+            if let owner = viewModel.section.owner {
+                ToolPageHeading(title: viewModel.section.title(english: en), subtitle: viewModel.section.subtitle(english: en), owner: owner,
+                                en: en, animates: preferences.characterMotion && !preferences.usesReducedMotion)
+            } else if viewModel.section != .overview {
+                WorkspacePageHeading(title: viewModel.section.title(english: en), subtitle: viewModel.section.subtitle(english: en))
+            }
             switch viewModel.section {
             case .desktop:
 
@@ -67,21 +195,35 @@ struct ContentView: View {
             case .overview:
                 CompanionWorkspaceHome(room: notch.agentRoom, chat: notch.agentRoom.localChat, coordinator: notch.spatialAssistant,
                     language: activation.voiceLanguage, animates: preferences.characterMotion && !preferences.usesReducedMotion,
-                    openChat: { viewModel.section = .agentRoom }, speak: { activation.toggleListening() }, settings: { viewModel.section = .activation })
+                    openChat: { viewModel.section = .agentRoom }, speak: { activation.toggleListening() }, settings: { viewModel.section = .settings },
+                    openCalendar: { viewModel.section = .calendar })
             case .calendar:
 
                 CalendarView(model: notch.calendar, events: notch.events).companionCard()
             case .files:
-
-                CompanionArtifactShelf(library: notch.spatialAssistant.artifacts, language: activation.voiceLanguage, openSource: { item in
+                LibraryPage(files: notch.files, artifacts: notch.spatialAssistant.artifacts, language: activation.voiceLanguage) { item in
                     if notch.agentRoom.localChat.revealSource(of: item) { notch.agentRoom.page = .chat; viewModel.section = .agentRoom; return true }
                     return false
-                })
-                FilesView(model: notch.files).companionCard()
+                }
             case .capture:
 
                 CaptureToolsView(model: notch.capture).companionCard()
             case .focus: focusSettings
+            case .settings:
+                RitaNudgeSettings(nudges: notch.ritaNudges)
+                PreferenceRow("Open on the screen with the pointer", detail: "On external displays the companion opens at the top of the screen you are using, even without a notch.") {
+                    Toggle("Open on the screen with the pointer", isOn: Binding(get: { notch.followsPointerScreen }, set: { notch.followsPointerScreen = $0 }))
+                        .labelsHidden().toggleStyle(WorkspaceSwitchStyle())
+                }.padding(.top, 8)
+                Text(en ? "Activation" : "Ativação").font(WorkspaceTypography.section).padding(.top, 12)
+                activationSettings
+                Text(en ? "Appearance" : "Aparência").font(WorkspaceTypography.section).padding(.top, 12)
+                appearanceSettings
+                Text(en ? "File notifications" : "Notificações de arquivos").font(WorkspaceTypography.section).padding(.top, 12)
+                TaskNotificationPreferences(events: notch.files.events, module: .files)
+                TaskNotificationPreferences(events: notch.files.events, module: .downloads)
+                Text(en ? "Widget" : "Widget").font(WorkspaceTypography.section).padding(.top, 12)
+                IslandLayoutEditor(preferences: preferences, onPreview: { notch.show() })
             case .activation: activationSettings
             case .appearance: appearanceSettings
             case .dynamicIsland:
@@ -107,8 +249,14 @@ struct ContentView: View {
                     PreferenceRow("Microphone mute shortcut", detail: "Toggle hardware mute on your selected microphone when supported.") { ShortcutRecorder(action: .muteMicrophone) }
                     Text(LocalizedStringKey(activation.audioShortcutStatuses[.muteMicrophone] ?? "Shortcut off")).font(.caption).foregroundStyle(CompanionStyle.muted)
                 }.companionCard()
+            case .team:
+                CompanionTeamPage(language: activation.voiceLanguage, animates: preferences.characterMotion && !preferences.usesReducedMotion, isWorking: { person in
+                    notch.agentRoom.localChat.generatingID.flatMap { id in notch.agentRoom.localChat.conversations.first { $0.id == id }?.persona } == person
+                }, open: { person in
+                    Task { if await notch.agentRoom.localChat.openPersona(person) != nil { notch.agentRoom.page = .chat; viewModel.section = .agentRoom } }
+                })
             case .agentRoom:
-                AgentRoomView(model: notch.agentRoom)
+                WorkspaceConversations(room: notch.agentRoom, chat: notch.agentRoom.localChat)
             case .aiLimits:
 
                 AIUsageView(onOpenRoom: { viewModel.section = .agentRoom })
@@ -126,10 +274,10 @@ struct ContentView: View {
                 CompanionCharacter(size: 36, avatar: preferences.avatar, animates: preferences.characterMotion && !preferences.usesReducedMotion)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("HeyChomp").font(.headline)
-                    Text(activation.voiceLanguage.hasPrefix("en") ? "Your quiet companion" : "Seu companheiro de todos os dias").font(.system(size: 10)).foregroundStyle(CompanionStyle.muted)
+                    Text(activation.voiceLanguage.hasPrefix("en") ? "Your quiet companion" : "Seu companheiro de todos os dias").font(WorkspaceTypography.footnote).foregroundStyle(CompanionStyle.muted)
                 }
             }.padding(.horizontal, 8).padding(.top, 12).padding(.bottom, 18)
-            Text(activation.voiceLanguage.hasPrefix("en") ? "YOUR SPACE" : "SEU ESPAÇO").font(.system(size: 9, weight: .semibold)).tracking(1.6)
+            Text(en ? "Your space" : "Seu espaço").font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(CompanionStyle.muted.opacity(0.7)).padding(.horizontal, 12).padding(.bottom, 4)
             Group {
                 if preview { sidebarNavigation }
@@ -148,12 +296,12 @@ struct ContentView: View {
 
     private var sidebarNavigation: some View {
         VStack(alignment: .leading, spacing: 3) {
-            ForEach(AppSection.workspaceSections) { item in
+            ForEach(AppSection.places) { item in
                 sidebarButton(item.title(english: en), section: item, symbol: item.symbol, selected: viewModel.section == item) { viewModel.section = item }
             }
-            Text(en ? "PREFERENCES" : "PREFERÊNCIAS").font(.system(size: 9, weight: .semibold)).tracking(1.2)
+            Text(en ? "Tools" : "Ferramentas").font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(CompanionStyle.muted.opacity(0.7)).padding(.horizontal, 12).padding(.top, 22).padding(.bottom, 8)
-            ForEach(AppSection.preferenceSections) { item in
+            ForEach(AppSection.tools) { item in
                 sidebarButton(item.title(english: en), section: item, symbol: item.symbol, selected: viewModel.section == item) { viewModel.section = item }
             }
         }
@@ -166,13 +314,13 @@ struct ContentView: View {
                     .foregroundStyle(selected ? CompanionStyle.accentInk : CompanionStyle.muted)
                 Text(title)
                 Spacer()
-                if selected { Circle().fill(CompanionStyle.accent).frame(width: 4, height: 4) }
+
             }
                 .font(.system(size: 12, weight: selected ? .medium : .regular))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 11).padding(.vertical, 9)
                 .foregroundStyle(selected ? CompanionStyle.ink : CompanionStyle.muted)
-                .background(selected ? CompanionStyle.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 10))
+                .background(selected ? CompanionStyle.edge.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .animation(systemReducedMotion || preferences.usesReducedMotion ? nil : InterfaceMotion.feedback, value: selected)
         }
         .buttonStyle(WorkspaceNavigationStyle())
@@ -185,51 +333,6 @@ struct ContentView: View {
         .accessibilityLabel(title)
         .accessibilityValue(selected ? (en ? "Selected" : "Selecionado") : "")
         .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    @ViewBuilder private var overview: some View {
-
-        HStack(spacing: 22) {
-            CompanionCharacter(size: 100, avatar: preferences.avatar, animates: preferences.characterMotion && !preferences.usesReducedMotion, focusing: assistant.hasTimerActivity)
-                .frame(width: 120, height: 130)
-            VStack(alignment: .leading, spacing: 14) {
-                Label(assistant.hasTimerActivity ? assistant.activeTimerMode.title.uppercased() : "READY WHEN YOU ARE", systemImage: assistant.hasTimerActivity ? assistant.activeTimerMode.symbol : "sparkle")
-                    .font(.system(size: 10, weight: .semibold)).tracking(1.2).foregroundStyle(CompanionStyle.accentInk)
-                if assistant.hasTimerActivity {
-                    Text(assistant.compactTimeLabel).font(.system(size: 52, weight: .medium, design: .rounded)).monospacedDigit()
-                } else {
-                    Text("Make room for one thing.").font(.title2.weight(.semibold))
-                }
-                Text(assistant.hasTimerActivity ? "Your clock is nearby. Open Timers to control it." : "Choose a timer, settle into focus, or just say hello.")
-                    .font(.callout).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: 8) {
-                    Button("Open timers") { viewModel.section = .focus }.buttonStyle(CompanionButtonStyle(primary: true))
-                    Button("Show companion") { notch.show() }.buttonStyle(CompanionButtonStyle())
-                }
-            }.frame(maxWidth: .infinity, alignment: .leading)
-        }.companionCard()
-        HStack(alignment: .top, spacing: 16) {
-            quickCard("Activation", symbol: "keyboard", value: activation.companionShortcut?.label ?? "Shortcut off", detail: "Your companion, one shortcut away.") { viewModel.section = .activation }
-            quickCard("Appearance", symbol: "face.smiling", value: preferences.avatar.name, detail: "Choose a personality and its rhythm.") { viewModel.section = .appearance }
-        }
-        AIUsageSummary(onOpen: { viewModel.section = .aiLimits })
-        CompanionTaskShelf(journal: notch.spatialAssistant.taskJournal, language: notch.spatialAssistant.responseLanguage,
-            resume: { notch.spatialAssistant.resumeTask($0) }, pause: { notch.spatialAssistant.pauseTask($0) }).companionCard()
-        if let review = notch.spatialAssistant.screenControls.pendingReview {
-            VStack(alignment: .leading, spacing: 12) {
-                Label("Review screen action", systemImage: "cursorarrow.click").font(.headline)
-                Text(review.summary).textSelection(.enabled)
-                HStack {
-                    Button("Confirm action") { notch.spatialAssistant.confirmScreenReview() }.buttonStyle(CompanionButtonStyle(primary: true))
-                    Button("Cancel") { notch.spatialAssistant.screenControls.cancelReview() }
-                }
-            }.companionCard()
-        }
-        HStack {
-            Label("A little progress adds up", systemImage: "leaf")
-            Spacer()
-            Text("\(assistant.completedSessions) focus sessions completed")
-        }.font(.caption).foregroundStyle(CompanionStyle.muted)
     }
 
     @ViewBuilder private var focusSettings: some View {
@@ -352,7 +455,7 @@ struct ContentView: View {
                                 .overlay { RoundedRectangle(cornerRadius: 11).strokeBorder(preferences.appearance == choice ? CompanionStyle.accent : CompanionStyle.edge.opacity(0.1), lineWidth: preferences.appearance == choice ? 2 : 0.7) }
                             Text(LocalizedStringKey(choice.rawValue)).font(.callout.weight(.medium)).foregroundStyle(CompanionStyle.ink)
                         }.padding(10).frame(maxWidth: .infinity)
-                            .background(preferences.appearance == choice ? CompanionStyle.accent.opacity(0.10) : .clear, in: RoundedRectangle(cornerRadius: 15))
+                            .background(preferences.appearance == choice ? CompanionStyle.edge.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }.buttonStyle(.plain).focusEffectDisabled().accessibilityLabel(Text(LocalizedStringKey(choice.rawValue)))
                         .accessibilityAddTraits(preferences.appearance == choice ? .isSelected : [])
                 }
@@ -375,7 +478,7 @@ struct ContentView: View {
                 Text("Arrange buttons around a visual preview and choose your widget size.").font(.caption).foregroundStyle(CompanionStyle.muted)
             }
             Spacer()
-            Button("Edit layout") { viewModel.section = .dynamicIsland }.buttonStyle(CompanionButtonStyle(compact: true))
+            Button("Edit layout") { viewModel.section = .settings }.buttonStyle(CompanionButtonStyle(compact: true))
         }.companionCard()
         HStack(spacing: 18) {
             CompanionCharacter(size: 86, avatar: preferences.avatar, animates: preferences.characterMotion && !preferences.usesReducedMotion)
@@ -398,6 +501,10 @@ struct ContentView: View {
             PreferenceRow("Launch greeting", detail: "Your companion drops in, waves hello and settles into the island.") {
                 Toggle("Launch greeting", isOn: $preferences.launchGreeting).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
             }
+            Divider()
+            PreferenceRow("Sparkle beside the pointer", detail: "Chomp's mint sparkle follows your pointer in every app and glows while he works.") {
+                Toggle("Sparkle beside the pointer", isOn: $preferences.cursorCompanion).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
+            }
             PreferenceRow("Introduction language", detail: "English by default. Choose Portuguese for the team's introduction.") {
                 Picker("Introduction language", selection: $preferences.introductionLanguage) {
                     ForEach(CompanionIntroductionLanguage.allCases) { language in Text(language.name).tag(language) }
@@ -411,15 +518,6 @@ struct ContentView: View {
                 Toggle("Reduce Motion", isOn: $preferences.reduceMotion).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
             }
         }.companionCard()
-    }
-
-    private func quickCard(_ title: String, symbol: String, value: String, detail: String, action: @escaping () -> Void) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label(title, systemImage: symbol).font(.callout.weight(.semibold))
-            Text(value).font(.callout.weight(.medium)).foregroundStyle(CompanionStyle.accentInk)
-            Text(LocalizedStringKey(detail)).font(.caption).foregroundStyle(CompanionStyle.muted)
-            Button("Customize", action: action).buttonStyle(CompanionButtonStyle())
-        }.frame(maxWidth: .infinity, alignment: .leading).companionCard()
     }
 }
 
@@ -649,5 +747,116 @@ private struct WorkspaceNavigationStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.70 : 1)
             .animation(InterfaceMotion.feedback, value: hovered)
             .onHover { hovered = $0 }
+    }
+}
+
+private struct RitaNudgeSettings: View {
+    @ObservedObject var nudges: RitaStandNudges
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                AvatarView(persona: .rita, size: 24).padding(-6)
+                Text("Stand-up reminders").font(WorkspaceTypography.section)
+                Spacer()
+                Toggle("Stand-up reminders", isOn: $nudges.enabled).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
+            }
+            Stepper(value: $nudges.thresholdMinutes, in: 20...120, step: 5) {
+                Text("Remind me after \(nudges.thresholdMinutes) min of continuous use")
+            }.disabled(!nudges.enabled)
+            Text("Rita reads only how long it has been since your last keyboard or mouse input on this Mac. A 5-minute pause counts as a break.")
+                .font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted)
+        }
+    }
+}
+
+/// Biblioteca: one native tab bar (results, shelf, downloads, file helpers) over a calm,
+/// Finder-like content area. Toni's character appears only in the empty state.
+private struct LibraryPage: View {
+    enum Tab: Hashable { case results, shelf, downloads, helpers }
+    @ObservedObject var files: FilesViewModel
+    @ObservedObject var artifacts: CompanionArtifactLibrary
+    let language: String
+    let openSource: (CompanionArtifact) -> Bool
+    @AppStorage("library.tab") private var tabName = "results"
+    @Environment(\.islandPreview) private var preview
+    private var en: Bool { language.hasPrefix("en") }
+    private var tab: Tab {
+        switch tabName { case "shelf": .shelf; case "downloads": .downloads; case "helpers": .helpers; default: .results }
+    }
+    private func title(_ tab: Tab) -> String {
+        switch tab {
+        case .results: en ? "Results" : "Resultados"
+        case .shelf: en ? "Shelf" : "Prateleira"
+        case .downloads: en ? "Downloads" : "Downloads"
+        case .helpers: en ? "Utilities" : "Utilitários"
+        }
+    }
+    private func name(_ tab: Tab) -> String {
+        switch tab { case .results: "results"; case .shelf: "shelf"; case .downloads: "downloads"; case .helpers: "helpers" }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Picker(en ? "Library section" : "Seção da biblioteca", selection: Binding(get: { tab }, set: { select($0) })) {
+                ForEach([Tab.results, .shelf, .downloads, .helpers], id: \.self) { Text(title($0)).tag($0) }
+            }
+            .pickerStyle(.segmented).labelsHidden().fixedSize()
+            .frame(maxWidth: .infinity, alignment: .center)
+            switch tab {
+            case .results:
+                CompanionArtifactShelf(library: artifacts, language: language, openSource: openSource, showsHeader: false)
+            default:
+                FilesView(model: files, showsChrome: false)
+            }
+        }
+        .onAppear { select(tab) }
+    }
+
+    private func select(_ new: Tab) {
+        tabName = name(new)
+        switch new {
+        case .shelf: files.page = .shelf
+        case .downloads: files.page = .downloads
+        case .helpers: files.page = .helpers
+        case .results: break
+        }
+    }
+}
+
+/// Tool page header: a quiet card with the page's title, and the teammate who looks after
+/// the tool peeking over its edge (the same signature as the island and the Today page).
+private struct ToolPageHeading: View {
+    let title: String
+    let subtitle: String
+    let owner: LocalChatPersona
+    let en: Bool
+    let animates: Bool
+    /// The iPhone app's agent header: the owner's face in a disc of their colour,
+    /// a wash of that colour across the card, the title and who looks after it.
+    var body: some View {
+        let tint = CompanionStyle.agent(owner)
+        HStack(spacing: 16) {
+            AgentDisc(persona: owner, size: 64)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.system(size: 24, weight: .bold))
+                Text(subtitle).font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 6) {
+                    Circle().fill(tint).frame(width: 7, height: 7)
+                    Text(en ? "With \(owner.title)" : "Com \(owner.title == "Rita" || owner.title == "Ada" || owner.title == "Elinor" ? "a" : "o") \(owner.title)")
+                        .font(WorkspaceTypography.caption.weight(.semibold))
+                }
+                .padding(.horizontal, 9).frame(height: 22)
+                .background(tint.opacity(0.14), in: Capsule())
+                .padding(.top, 2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(LinearGradient(colors: [tint.opacity(0.22), tint.opacity(0.03)], startPoint: .leading, endPoint: .trailing))
+                .background(HeyCardSurface(radius: 20))
+        }
     }
 }

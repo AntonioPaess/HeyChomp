@@ -11,7 +11,7 @@ struct AdaGitHubConnectionView: View {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "chevron.left.forwardslash.chevron.right")
                     .font(.system(size: 21, weight: .medium))
-                    .foregroundStyle(CompanionStyle.accent)
+                    .foregroundStyle(CompanionStyle.accentInk)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Ada + GitHub").font(.system(size: 18, weight: .semibold))
                     Text("Your code, with a little context.")
@@ -66,7 +66,7 @@ struct AdaGitHubConnectionView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     HStack {
                         if preview {
-                            Text("Create a token on GitHub").font(.system(size: 11)).foregroundStyle(CompanionStyle.accent)
+                            Text("Create a token on GitHub").font(.system(size: 11)).foregroundStyle(CompanionStyle.accentInk)
                         } else {
                             Link("Create a token on GitHub", destination: URL(string: "https://github.com/settings/tokens")!)
                                 .font(.system(size: 11))

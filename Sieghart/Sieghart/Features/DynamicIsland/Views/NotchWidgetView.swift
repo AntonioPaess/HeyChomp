@@ -10,6 +10,8 @@ struct NotchWidgetView: View {
     @EnvironmentObject private var aiActivity: AIUsageViewModel
     @StateObject private var reactions = CompanionReactions()
     @State private var avatarPointer = CGSize.zero
+    @FocusState private var compactEntryFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var systemReducedMotion
     private var scrollable: Bool
 
     init(reactions: CompanionReactions = CompanionReactions(), scrollable: Bool = true) {
@@ -85,6 +87,11 @@ struct NotchWidgetView: View {
         .background {
             if !nativeCanvas { IslandBackdrop(compact: compact, stripHeight: notch.geometry.cutoutHeight, glassEnabled: preferences.islandGlass) }
         }
+        .overlay(alignment: .bottom) {
+            // HeyChomp's signature: Chomp's mint sparkle lights the island from its lower lip,
+            // and breathes while Chomp listens or an agent works.
+            if !compact { IslandSignatureGlow(active: chompActive, animates: animates && !systemReducedMotion, home: notch.presentation == .home) }
+        }
         .clipShape(NotchPanelShape())
         .contentShape(NotchPanelShape())
         .animation(preferences.usesReducedMotion ? nil : .easeOut(duration: 0.15), value: notch.isPointerHovering)
@@ -97,7 +104,11 @@ struct NotchWidgetView: View {
 
     private var pageHeader: some View {
         HStack {
-            Text(pageTitle).font(.system(size: 20, weight: .semibold))
+            if notch.presentation == .home {
+                // Chomp is already on stage; the header just says what day it is.
+                Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide))
+                    .font(.system(size: 13, weight: .medium)).foregroundStyle(CompanionStyle.muted)
+            } else { Text(pageTitle).font(.system(size: 20, weight: .semibold)) }
             Spacer()
             if notch.welcomeStartedAt != nil {
                 Button(activation.voiceLanguage.hasPrefix("en") ? "Skip introduction" : "Pular apresentação") { notch.finishWelcome() }
@@ -158,19 +169,25 @@ struct NotchWidgetView: View {
     private var quickAccess: some View {
         let width = notch.geometry.width + 144
         return ZStack(alignment: .topLeading) {
-            ForEach(0..<6) { slot in
-                let action = preferences.railActions[slot]
+            // Quick actions float beside the island as Chomp-shaped pebbles, each lit by the
+            // teammate who looks after that tool.
+            ForEach(Array(preferences.railActions.prefix(6).enumerated()), id: \.offset) { slot, action in
                 if action != .none {
-                    floatingButton(action.symbol, label: action.rawValue) { activateRail(action) }
+                    floatingButton(action.symbol, label: NSLocalizedString(action.rawValue, comment: ""), owner: action.owner) { activateRail(action) }
                         .position(x: slot < 3 ? 28 : width - 28, y: notch.geometry.contentTop + 52 + CGFloat(slot % 3) * 54)
                 }
             }
-            Button { notch.show() } label: {
-                CompanionCharacter(size: 32, avatar: preferences.avatar, animates: animates, voicePhase: companionPhase(), mood: notch.utilityMood)
-                    .frame(width: 44, height: 44).background(.black.opacity(0.6), in: Circle())
-                    .overlay { Circle().strokeBorder(.white.opacity(0.14), lineWidth: 0.75) }
-            }.buttonStyle(IslandButtonStyle()).focusEffectDisabled().accessibilityLabel("Your companion")
-                .position(x: width / 2, y: notch.geometry.height + 32)
+            // Chomp's chin: the island is his body, so his eyes peek out under its lower lip.
+            // Away from the companion page, tapping him brings you back.
+            Button { if notch.presentation != .home { notch.show() } } label: {
+                CompactChompMark(highlighted: notch.isPointerHovering, animates: animates)
+                    .offset(y: -2)
+                    .frame(width: 76, height: 28)
+                    .background { UnevenRoundedRectangle(bottomLeadingRadius: 15, bottomTrailingRadius: 13, style: .continuous).fill(Color.black) }
+            }
+            .buttonStyle(IslandButtonStyle()).focusEffectDisabled()
+            .accessibilityLabel("Your companion")
+            .position(x: width / 2, y: notch.geometry.height + 14)
         }.frame(width: width, height: notch.geometry.height + 64)
     }
 
@@ -196,15 +213,63 @@ struct NotchWidgetView: View {
         }
     }
 
-    private func floatingButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 18, weight: .medium)).foregroundStyle(.white)
-                .frame(width: 44, height: 44).background(.black.opacity(0.95), in: Circle())
-                .overlay { Circle().strokeBorder(.white.opacity(0.2), lineWidth: 0.75) }
+    private func floatingButton(_ symbol: String, label: String, owner: LocalChatPersona, action: @escaping () -> Void) -> some View {
+        let tint = CompanionStyle.agent(owner)
+        return Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 17, weight: .medium)).foregroundStyle(.white.opacity(0.92))
+                .offset(y: 2)
+                .frame(width: 48, height: 42)
+                .background {
+                    ZStack {
+                        ChompPebble().fill(.linearGradient(colors: [Color(white: 0.20), Color(white: 0.05)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        // The owner's colour glows up from the pebble's belly.
+                        ChompPebble().fill(EllipticalGradient(colors: [tint.opacity(0.42), tint.opacity(0.08), .clear], center: .bottom, startRadiusFraction: 0, endRadiusFraction: 0.75))
+                    }
+                }
+                .overlay { ChompPebble().stroke(.linearGradient(colors: [.white.opacity(0.14), tint.opacity(0.35)], startPoint: .top, endPoint: .bottom), lineWidth: 0.75) }
+                .shadow(color: .black.opacity(0.35), radius: 6, y: 3)
         }.buttonStyle(IslandButtonStyle()).focusEffectDisabled().accessibilityLabel(label).help(label)
     }
 
     private var animates: Bool { preferences.characterMotion && !preferences.usesReducedMotion && notch.isVisible }
+
+    private var chompActive: Bool { activation.isListening || activation.isVoiceBusy || !workingAgents.isEmpty }
+
+    /// Agents producing output right now: the chat that is generating plus the current step of running tasks.
+    private var workingAgents: [LocalChatPersona] {
+        let chat = notch.agentRoom.localChat
+        var people: [LocalChatPersona] = []
+        if let id = chat.generatingID, let persona = chat.conversations.first(where: { $0.id == id })?.persona { people.append(persona) }
+        for task in notch.spatialAssistant.taskJournal.tasks where task.state == .running {
+            if let step = task.workflow?.first(where: { $0.result == nil }) {
+                let persona = step.kind == .research ? LocalChatPersona.sig : step.persona
+                if !people.contains(persona) { people.append(persona) }
+            }
+        }
+        return people
+    }
+
+    /// Compact island: up to three working agents as tiny characters, each with its speaking ring.
+    private var workingAgentChips: some View {
+        HStack(spacing: -8) {
+            ForEach(Array(workingAgents.prefix(3)), id: \.self) { person in
+                AvatarView(persona: person, size: 16, speaking: true)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(workingAgents.map(\.title).joined(separator: ", ") + (activation.voiceLanguage.hasPrefix("en") ? " working" : " trabalhando"))
+    }
+
+    /// Expanded companion: "Ada, Toni trabalhando" next to the eyebrow.
+    private var workingAgentsLine: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(workingAgents.prefix(3)), id: \.self) { person in
+                Circle().fill(CompanionStyle.agent(person)).frame(width: 6, height: 6)
+            }
+            Text(workingAgents.map(\.title).joined(separator: ", ") + (activation.voiceLanguage.hasPrefix("en") ? " working" : " trabalhando"))
+                .font(.system(size: 11)).foregroundStyle(CompanionStyle.muted).lineLimit(1)
+        }
+    }
     private func companionPhase() -> CompanionVoicePhase {
         // External agents and telemetry reads belong to their own dashboard.
         // The Companion reflects only an action it is handling for the user.
@@ -243,11 +308,14 @@ struct NotchWidgetView: View {
         VStack(spacing: CompanionHomeLayout.rowSpacing) {
             HStack(spacing: 18) {
                 CompanionInteraction(action: reactToTouch) {
-                    CompanionCharacter(size: 96, avatar: preferences.avatar,
-                                       animates: animates,
-                                       listening: activation.isListening, voicePhase: companionPhase(), gaze: avatarPointer,
-                                       mood: activation.commandAcknowledged ? .understood : activation.isVoiceBusy ? .idle : reactions.mood)
-                        .frame(width: 124, height: 96)
+                    // His eyes follow the pointer anywhere on screen; hovering him is the closer, finer look.
+                    FollowingPointer(enabled: animates) { pointer in
+                        CompanionCharacter(size: 96, avatar: preferences.avatar,
+                                           animates: animates,
+                                           listening: activation.isListening, voicePhase: companionPhase(), gaze: avatarPointer == .zero ? pointer : avatarPointer,
+                                           mood: activation.commandAcknowledged ? .understood : activation.isVoiceBusy ? .idle : reactions.mood)
+                    }
+                    .frame(width: 124, height: 96)
                 }
                 .accessibilityLabel("Interact with Chomp")
                 .accessibilityValue(reactionDescription)
@@ -259,22 +327,34 @@ struct NotchWidgetView: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(activation.voicePresented ? (activation.voiceLanguage.hasPrefix("en") ? "YOUR COMPANION · VOICE" : "SEU COMPANHEIRO · VOZ") : assistant.hasActiveSession ? assistant.activityTitle.uppercased() : (activation.voiceLanguage.hasPrefix("en") ? "YOUR COMPANION" : "SEU COMPANHEIRO"))
-                        .font(.system(size: 10, weight: .semibold)).tracking(1).foregroundStyle(CompanionStyle.muted)
-                    Text(homeHeadline).font(.system(size: 18, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.85)
-                    homeMessageText.font(.callout).foregroundStyle(CompanionStyle.muted).lineLimit(2)
-                    HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    // Chomp talks: his line sits in a speech bubble pointing back at him.
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(homeHeadline).font(.system(size: 16, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.85)
+                        homeMessageText.font(.system(size: 12)).foregroundStyle(CompanionStyle.muted).lineLimit(1)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background { ChompSpeechBubble().fill(CompanionStyle.edge.opacity(0.07)) }
+                    .overlay { ChompSpeechBubble().stroke(CompanionStyle.edge.opacity(0.10), lineWidth: 0.75) }
+                    HStack(spacing: 8) {
                         Button { if activation.voicePresented { activation.cancelVoiceCommand(keepCompanionVisible: true) } else { activation.toggleListening() } } label: {
                             Label(activation.isVoiceBusy ? (activation.voiceLanguage.hasPrefix("en") ? "Cancel" : "Cancelar") : activation.voicePresented ? (activation.voiceLanguage.hasPrefix("en") ? "Back" : "Voltar") : (activation.voiceLanguage.hasPrefix("en") ? "Speak" : "Falar"), systemImage: activation.isListening ? "waveform" : "mic")
+                                .modifier(ChompPill(primary: true))
                         }.buttonStyle(.plain).focusEffectDisabled().accessibilityLabel(activation.voicePresented ? "Cancel voice and return to companion" : "Speak to your companion")
                         if activation.isConversing {
                             Button(activation.voiceLanguage.hasPrefix("en") ? "Stop conversation" : "Encerrar conversa") { activation.cancelVoiceCommand(keepCompanionVisible: true) }
-                                .buttonStyle(.plain).foregroundStyle(.green)
+                                .buttonStyle(.plain).foregroundStyle(.primary)
                         }
                         else if activation.isListening { Text(activation.voiceLanguage.hasPrefix("en") ? "Speak or select an area." : "Fale ou marque uma região.") }
                         else if activation.voicePresented && !activation.transcript.isEmpty { Text(LocalizedStringKey(activation.voiceStatus)).lineLimit(1) }
-                        else { Label(assistant.hasActiveSession ? assistant.pomodoroTimeLabel : "\(assistant.focusMinutes) min " + (activation.voiceLanguage.hasPrefix("en") ? "focus" : "de foco"), systemImage: "timer").monospacedDigit() }
+                        else {
+                            Button { notch.showTimer() } label: {
+                                Label(assistant.hasActiveSession ? assistant.pomodoroTimeLabel : "\(assistant.focusMinutes) min " + (activation.voiceLanguage.hasPrefix("en") ? "focus" : "de foco"), systemImage: "timer").monospacedDigit()
+                                    .modifier(ChompPill())
+                            }.buttonStyle(.plain).focusEffectDisabled()
+                        }
+                        if !workingAgents.isEmpty { workingAgentsLine }
                         if let document = notch.spatialAssistant.overlay.generatedCanvas, document.isCode {
                             Button {
                                 NSPasteboard.general.clearContents()
@@ -317,7 +397,9 @@ struct NotchWidgetView: View {
                     confirmReview: { notch.spatialAssistant.confirmScreenReview() },
                     cancelReview: { notch.spatialAssistant.screenControls.cancelReview() })
             }
-            CompanionTeamDock(animates: animates, events: notch.events, onAda: { notch.showAgentRoom() }, onSelect: { member in
+            if notch.ritaNudges.nudge != nil { RitaNudgeRow(nudges: notch.ritaNudges, compact: true, bubble: true) }
+            CompanionTeamDock(animates: animates, events: notch.events, away: notch.ritaNudges.nudge != nil ? LocalChatPersona.rita.avatar : nil,
+                              caption: { AnyView(TeamStatusCaption(member: $0, calendar: notch.calendar, monitor: notch.monitor, files: notch.files)) }, onAda: { notch.showAgentRoom() }, onSelect: { member in
                 Task { if await notch.agentRoom.localChat.openPersona(LocalChatPersona(rawValue: member.rawValue) ?? .sig) != nil {
                     notch.showAgentRoom(); notch.agentRoom.page = .chat
                 } }
@@ -473,7 +555,7 @@ struct NotchWidgetView: View {
                             }.frame(maxWidth: .infinity)
                             Color.clear.frame(width: notch.geometry.cutoutWidth + (notch.geometry.cutoutWidth > 0 ? 8 : 24))
                             VStack(spacing: 1) {
-                                Text(assistant.hasTimerActivity ? assistant.compactTimeLabel : work.elapsed(at: context.date)).font(.system(size: 11, weight: .semibold, design: .rounded)).monospacedDigit()
+                                Text(assistant.hasTimerActivity ? assistant.compactTimeLabel : work.elapsed(at: context.date)).font(.system(size: 11, weight: .semibold)).monospacedDigit()
                                 Text(assistant.hasTimerActivity ? work.provider.title : "Working").font(.system(size: 8)).foregroundStyle(CompanionStyle.accentInk)
                             }.frame(maxWidth: .infinity)
                         }.padding(.horizontal, 8).frame(height: notch.geometry.bodyHeight).contentShape(Rectangle())
@@ -483,11 +565,35 @@ struct NotchWidgetView: View {
             else {
                 Button { notch.clickIsland() } label: {
                     HStack(spacing: 0) {
-                        CompanionCharacter(size: 24, avatar: preferences.avatar, animates: animates, mood: notch.isPointerHovering ? .happy : .idle).frame(maxWidth: .infinity)
+                        Group {
+                            if preferences.avatar == .sig {
+                                CompactChompMark(highlighted: notch.isPointerHovering || compactEntryFocused,
+                                                 animates: animates && !systemReducedMotion && !staticPreview)
+                            } else {
+                                CompanionCharacter(size: 24, avatar: preferences.avatar, animates: animates,
+                                                   mood: notch.isPointerHovering ? .happy : .idle)
+                            }
+                        }.frame(maxWidth: .infinity)
                         Color.clear.frame(width: notch.geometry.cutoutWidth + (notch.geometry.cutoutWidth > 0 ? 8 : 24))
-                        Text("Open").font(.system(size: 11, weight: .medium)).foregroundStyle(CompanionStyle.accentInk).frame(maxWidth: .infinity)
+                        Group {
+                            if let nudge = notch.ritaNudges.nudge {
+                                HStack(spacing: 2) {
+                                    AvatarView(persona: .rita, size: 16, speaking: true)
+                                    Text("\(nudge.minutes) min").font(.system(size: 11, weight: .semibold)).monospacedDigit()
+                                }.accessibilityLabel(Text("Rita: you've been sitting for \(nudge.minutes) min"))
+                            }
+                            else if workingAgents.isEmpty { IdleSparkle(animates: animates && !systemReducedMotion && !staticPreview, highlighted: notch.isPointerHovering) }
+                            else { workingAgentChips }
+                        }
+                            .padding(.horizontal, 5).padding(.vertical, 3)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 5)
+                                    .strokeBorder(compactEntryFocused ? Color.white : .clear, lineWidth: 1.5)
+                                    .allowsHitTesting(false)
+                            }
+                            .frame(maxWidth: .infinity)
                     }.padding(.horizontal, 8).frame(height: notch.geometry.bodyHeight).contentShape(Rectangle())
-                }.buttonStyle(.plain).accessibilityLabel("Open HeyChomp")
+                }.buttonStyle(.plain).focused($compactEntryFocused).accessibilityLabel("Open HeyChomp")
             }
         }
     }
@@ -502,7 +608,7 @@ struct NotchWidgetView: View {
                 CompanionCharacter(size: 24, avatar: preferences.avatar, animates: animates, mood: notch.isPointerHovering ? .happy : .idle).frame(maxWidth: .infinity)
                 Color.clear.frame(width: notch.geometry.cutoutWidth + (notch.geometry.cutoutWidth > 0 ? 8 : 24))
                 VStack(spacing: 1) {
-                    Text(assistant.utilityClock.timeLabel).font(.system(size: 11, weight: .semibold, design: .rounded)).monospacedDigit()
+                    Text(assistant.utilityClock.timeLabel).font(.system(size: 11, weight: .semibold)).monospacedDigit()
                     Text(assistant.utilityClock.isRunning ? assistant.utilityClock.mode.title : "Paused").font(.system(size: 8)).foregroundStyle(CompanionStyle.accentInk)
                 }.frame(maxWidth: .infinity)
             }.padding(.horizontal, 8).frame(height: notch.geometry.bodyHeight).contentShape(Rectangle())
@@ -516,7 +622,7 @@ struct NotchWidgetView: View {
                     Group {
                         if finishing {
                             VStack(spacing: 3) {
-                                Text("Almost!").font(.system(size: 10, weight: .medium, design: .rounded))
+                                Text("Almost!").font(.system(size: 10, weight: .medium))
                                 islandProgress
                             }.foregroundStyle(CompanionStyle.accentInk)
                         } else {
@@ -532,7 +638,7 @@ struct NotchWidgetView: View {
                         }
                         VStack(spacing: 3) {
                             Text(assistant.pomodoroTimeLabel)
-                                .font(.system(size: finishing ? 10 : 12, weight: .semibold, design: .rounded)).monospacedDigit()
+                                .font(.system(size: finishing ? 10 : 12, weight: .semibold)).monospacedDigit()
                                 .foregroundStyle(finishing ? CompanionStyle.accent : CompanionStyle.ink)
                                 .contentTransition(.numericText(countsDown: true))
                                 .animation(animates ? .easeOut(duration: 0.2) : nil, value: assistant.pomodoroTimeLabel)
@@ -618,3 +724,168 @@ struct NotchWidgetView: View {
 
 
 }
+
+/// The compact island *is* Chomp: the black notch is his body, so only his eyes and his
+/// mint sparkle are drawn. The eyes blink, glance toward the pointer and squint happily
+/// on hover.
+private struct CompactChompMark: View {
+    let highlighted: Bool
+    let animates: Bool
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 24, paused: !animates)) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            let blink = animates && t.truncatingRemainder(dividingBy: 4.3) < 0.13
+            let gaze = animates ? Self.gaze() : 0
+            let eyeHeight: CGFloat = blink ? 1.5 : highlighted ? 5 : 10
+            ZStack {
+                HStack(spacing: 6) {
+                    Capsule().frame(width: 6, height: eyeHeight)
+                    Capsule().frame(width: 6, height: eyeHeight)
+                }
+                .foregroundStyle(Color(red: 1, green: 0.95, blue: 0.84))
+                .offset(x: gaze * 1.5, y: highlighted ? 1 : 0)
+                Image(systemName: "sparkle")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.38, green: 0.98, blue: 0.73))
+                    .shadow(color: Color(red: 0.24, green: 0.86, blue: 0.6).opacity(highlighted ? 0.9 : 0.4), radius: highlighted ? 4 : 2)
+                    .scaleEffect(animates && highlighted ? 1.2 : 1)
+                    .offset(x: 16, y: -8)
+            }
+            .animation(.spring(duration: 0.18, bounce: 0.2), value: highlighted)
+        }
+        .frame(width: 40, height: 26)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// Chomp glances toward the pointer: up to 2 pt left or right.
+    @MainActor private static func gaze() -> CGFloat {
+        let pointer = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(pointer) }) else { return 0 }
+        return max(-2, min(2, (pointer.x - screen.frame.midX) / 300))
+    }
+}
+
+/// Chomp's silhouette: a soft, slightly lopsided pebble (used for island controls).
+struct ChompPebble: Shape {
+    func path(in rect: CGRect) -> Path {
+        UnevenRoundedRectangle(topLeadingRadius: rect.height * 0.62, bottomLeadingRadius: rect.height * 0.36,
+                               bottomTrailingRadius: rect.height * 0.36, topTrailingRadius: rect.height * 0.56, style: .continuous)
+            .path(in: rect)
+    }
+}
+
+/// Mint light rising from the island's lower lip. One continuous elliptical falloff over the
+/// whole panel (no clipped layers, so no visible bands). Full strength on the companion page,
+/// a faint lip elsewhere so tool pages keep a calm, even background.
+private struct IslandSignatureGlow: View {
+    let active: Bool
+    let animates: Bool
+    var home = true
+    @State private var breathe = false
+    private var strength: Double { (home ? 1 : 0.35) * (active ? 1.3 : 1) }
+    var body: some View {
+        let mint = CompanionStyle.agent(.sig)
+        ZStack(alignment: .bottom) {
+            // Clay sheen, like light on Chomp's body, from the upper left.
+            EllipticalGradient(stops: [.init(color: .white.opacity(0.06), location: 0), .init(color: .white.opacity(0.02), location: 0.45), .init(color: .clear, location: 1)],
+                               center: UnitPoint(x: 0.15, y: 0.05), startRadiusFraction: 0, endRadiusFraction: 0.9)
+            EllipticalGradient(stops: [.init(color: mint.opacity(0.26 * strength), location: 0),
+                                       .init(color: mint.opacity(0.14 * strength), location: 0.25),
+                                       .init(color: mint.opacity(0.05 * strength), location: 0.55),
+                                       .init(color: mint.opacity(0.012 * strength), location: 0.8),
+                                       .init(color: .clear, location: 1)],
+                               center: .bottom, startRadiusFraction: 0, endRadiusFraction: 0.85)
+            LinearGradient(colors: [.clear, mint.opacity(min(1, 0.75 * strength + 0.25)), .clear], startPoint: .leading, endPoint: .trailing)
+                .frame(height: 1.5).padding(.horizontal, 120).padding(.bottom, 1)
+                .blur(radius: 0.4)
+        }
+        .opacity(active && animates ? (breathe ? 1 : 0.7) : 1)
+        .allowsHitTesting(false).accessibilityHidden(true)
+        .onAppear { if animates { withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { breathe = true } } }
+    }
+}
+
+/// Idle compact island: Chomp's sparkle, quietly breathing, instead of a word.
+private struct IdleSparkle: View {
+    let animates: Bool
+    let highlighted: Bool
+    @State private var on = false
+    var body: some View {
+        Image(systemName: "sparkle").font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(Color(red: 0.24, green: 0.86, blue: 0.60))
+            .scaleEffect(highlighted ? 1.2 : (on ? 1.08 : 0.92))
+            .opacity(on || highlighted ? 1 : 0.6)
+            .onAppear { if animates { withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) { on = true } } }
+            .animation(.spring(duration: 0.25, bounce: 0.3), value: highlighted)
+            .accessibilityHidden(true)
+    }
+}
+
+private extension IslandRailAction {
+    /// The teammate who looks after this quick action (same owners as the workspace tools).
+    var owner: LocalChatPersona {
+        switch self {
+        case .timer: .rita
+        case .clipboard, .audio, .files, .downloads, .capture: .toni
+        case .ai: .ada
+        case .calendar: .gantt
+        case .tools, .preferences, .avatars, .voice, .companion, .system, .keepAwake, .displayPower, .none: .sig
+        }
+    }
+}
+
+/// A speech bubble whose tail points left, back at whoever is talking.
+struct ChompSpeechBubble: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = RoundedRectangle(cornerRadius: 14, style: .continuous).path(in: rect)
+        let y = min(rect.midY, rect.minY + 24)
+        path.move(to: CGPoint(x: rect.minX + 0.5, y: y - 6))
+        path.addQuadCurve(to: CGPoint(x: rect.minX - 7, y: y + 3), control: CGPoint(x: rect.minX - 1, y: y))
+        path.addQuadCurve(to: CGPoint(x: rect.minX + 0.5, y: y + 5), control: CGPoint(x: rect.minX - 2, y: y + 5))
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// Capsule action used inside the companion's stage.
+struct ChompPill: ViewModifier {
+    var primary = false
+    func body(content: Content) -> some View {
+        content.font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(primary ? CompanionStyle.accentOnFill : CompanionStyle.ink)
+            .padding(.horizontal, 10).frame(height: 24)
+            .background(primary ? AnyShapeStyle(CompanionStyle.accent) : AnyShapeStyle(CompanionStyle.edge.opacity(0.08)), in: Capsule())
+            .contentShape(Capsule())
+    }
+}
+
+/// What each teammate is doing right now, in a few words (shown under their name in the island).
+private struct TeamStatusCaption: View {
+    let member: CompanionAvatar
+    @ObservedObject var calendar: CalendarViewModel
+    @ObservedObject var monitor: SystemMonitorViewModel
+    @ObservedObject var files: FilesViewModel
+    @EnvironmentObject private var assistant: AssistantViewModel
+    @EnvironmentObject private var aiActivity: AIUsageViewModel
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            switch member {
+            case .rita: assistant.hasActiveSession ? Text(verbatim: assistant.pomodoroTimeLabel).monospacedDigit() : Text("Ready to focus")
+            case .ada:
+                if let work = aiActivity.analytics.work.first(where: { $0.isCurrent(at: context.date) }) {
+                    Text(verbatim: "\(work.provider.title) · \(work.elapsed(at: context.date))").monospacedDigit().foregroundStyle(CompanionStyle.accentInk)
+                } else { Text("Free") }
+            case .gantt:
+                if let event = calendar.nextEvent {
+                    Text(verbatim: "\(event.startDate.formatted(date: .omitted, time: .shortened)) \(event.title)")
+                } else { Text("No meetings") }
+            case .elinor: Text("No spending recorded")
+            case .toni: files.shelf.isEmpty ? Text("Shelf empty") : Text("\(files.shelf.count) on the shelf")
+            default: Text(verbatim: "")
+            }
+        }
+    }
+}
+

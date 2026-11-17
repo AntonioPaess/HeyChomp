@@ -55,6 +55,8 @@ final class AgentChatEditor: NSTextField, NSTextFieldDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self, let window = self.window, window.isKeyWindow else { return }
             window.makeFirstResponder(self)
+            // Keep the caret after any text already typed (type-to-chat), instead of selecting it.
+            if let editor = self.currentEditor() { editor.selectedRange = NSRange(location: (editor.string as NSString).length, length: 0) }
         }
     }
     private var currentDraft: String { currentEditor()?.string ?? stringValue }

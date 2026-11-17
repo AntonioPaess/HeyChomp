@@ -45,6 +45,7 @@ final class CompanionPreferences: ObservableObject {
     @Published var impactsEnabled: Bool { didSet { save(impactsEnabled, "impacts") } }
     @Published var compactTimer: Bool { didSet { save(compactTimer, "compactTimer") } }
     @Published var launchGreeting: Bool { didSet { save(launchGreeting, "launchGreeting") } }
+    @Published var cursorCompanion: Bool { didSet { save(cursorCompanion, "cursorCompanion") } }
     @Published var introductionLanguage: CompanionIntroductionLanguage { didSet { defaults.set(introductionLanguage.rawValue, forKey: "appearance.introductionLanguage") } }
     @Published var characterMotion: Bool { didSet { save(characterMotion, "characterMotion") } }
     @Published var reduceMotion: Bool { didSet { save(reduceMotion, "reduceMotion") } }
@@ -89,6 +90,7 @@ final class CompanionPreferences: ObservableObject {
         impactsEnabled = defaults.object(forKey: "appearance.impacts") as? Bool ?? false
         compactTimer = defaults.object(forKey: "appearance.compactTimer") as? Bool ?? true
         launchGreeting = defaults.object(forKey: "appearance.launchGreeting") as? Bool ?? true
+        cursorCompanion = defaults.object(forKey: "appearance.cursorCompanion") as? Bool ?? true
         introductionLanguage = defaults.string(forKey: "appearance.introductionLanguage").flatMap(CompanionIntroductionLanguage.init(rawValue:)) ?? .english
         characterMotion = defaults.object(forKey: "appearance.characterMotion") as? Bool ?? true
         reduceMotion = defaults.object(forKey: "appearance.reduceMotion") as? Bool ?? false

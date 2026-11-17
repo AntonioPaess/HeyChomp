@@ -3,10 +3,6 @@
 import Metal
 import SwiftUI
 
-func rigCenteredShape(_ path:Path,_ color:NSColor,_ depth:Double=1)->SCNNode {
-    // rigShape() maps the design's 96×96 coordinates to a centered SceneKit node.
-    rigShape(path,color:color,depth:depth,bevel:0.3)
-}
 func rigSmallText(_ value:String,color:NSColor,size:Double)->SCNNode {
     let geometry=SCNText(string:value,extrusionDepth:0.35)
     geometry.font=NSFont.systemFont(ofSize:size,weight:.semibold);geometry.flatness=0.1
@@ -40,22 +36,29 @@ final class CompanionRigActor {
         halo.geometry=SCNPlane(width:haloDiameter,height:haloDiameter);halo.geometry?.materials=[hm];halo.position=SCNVector3(bounds.midX,bounds.midY,-32);model.root.addChildNode(halo)
         halo.renderingOrder = -100
         for (i,h) in hands.enumerated() {
-            let path:Path=hero == .ada ? Path(roundedRect:CGRect(x:43,y:43,width:10,height:10),cornerRadius:0.6) : hero == .gantt ? Path(roundedRect:CGRect(x:42,y:43,width:12,height:9),cornerRadius:2) : Path(ellipseIn:CGRect(x:42,y:44,width:12,height:8))
-            h.geometry=rigCenteredShape(path,hero == .toni || hero == .gantt ? rigCream : hero.color,4).geometry
+            let path = Path(ellipseIn: CGRect(x: 42, y: 44, width: 12, height: 8))
+            let color = hero == .toni || hero == .gantt ? rigCream : hero.color
+            h.geometry = model.paintedHand(i) ?? model.motionShape(path, color: color, depth: 4).geometry
             h.position=SCNVector3((i==0 ? -1 : 1)*(bounds.width/2+7),-8,model.front+3);h.opacity=0;model.head.addChildNode(h)
         }
         let mouthWidth = min(30, bounds.width * 0.46)
-        slot.geometry=rigCenteredShape(Path(roundedRect:CGRect(x:48-mouthWidth/2,y:43,width:mouthWidth,height:10),cornerRadius:5),rigInk,0.8).geometry
+        slot.geometry=model.motionShape(Path(roundedRect:CGRect(x:48-mouthWidth/2,y:43,width:mouthWidth,height:10),cornerRadius:5),color:rigInk,depth:0.8).geometry
         slot.position=SCNVector3(0,bounds.maxY-6,model.front+1.5);slot.opacity=0;model.head.addChildNode(slot)
-        file.geometry=rigCenteredShape(Path(roundedRect:CGRect(x:41,y:39,width:14,height:18),cornerRadius:2),rigCream,1.5).geometry
-        let corner=rigCenteredShape(rigPolygon([(49,39),(55,39),(55,45)]),rigLilac,0.7);corner.position.z=2;file.addChildNode(corner)
-        for y in [-1.0,-5.0] { let line = SCNBox(width:8,height:0.7,length:0.4,chamferRadius:0.3);line.materials=[rigMaterial(rigLilac)];let node=SCNNode(geometry:line);node.position=SCNVector3(0,y,2.2);file.addChildNode(node) }
+        file.geometry=model.motionShape(Path(roundedRect:CGRect(x:41,y:39,width:14,height:18),cornerRadius:2),color:rigCream,depth:1.5).geometry
+        let corner=model.motionShape(rigPolygon([(49,39),(55,39),(55,45)]),color:rigLilac,depth:0.7)
+        corner.position.z=2;file.addChildNode(corner)
+        for y in [49.0,53.0] {
+            let line=model.motionShape(Path(roundedRect:CGRect(x:44,y:y-0.35,width:8,height:0.7),cornerRadius:0.3),color:rigLilac,depth:0.4)
+            line.position.z=2.2;file.addChildNode(line)
+        }
         file.opacity=0;model.head.addChildNode(file)
         for (node,color) in [(bar,rigRgb(0.20,0.23,0.25)),(fill,rigMint)] {
-            let box=SCNBox(width:76,height:2.5,length:0.5,chamferRadius:1.2);box.materials=[rigMaterial(color)];node.geometry=box;node.position=SCNVector3(0,-48,model.front);model.root.addChildNode(node);node.opacity=0
+            let track=Path(roundedRect:CGRect(x:10,y:46.75,width:76,height:2.5),cornerRadius:1.2)
+            node.geometry=model.motionShape(track,color:color,depth:0.5).geometry
+            node.position=SCNVector3(0,-46,model.front);model.root.addChildNode(node);node.opacity=0
         }
         let pointer=rigPolygon([(48,42),(48,54),(51,50),(55,51)],radius:0.3)
-        cursor.geometry=rigCenteredShape(pointer,rigCream,1).geometry;cursor.position.z=CGFloat(model.front+18);cursor.opacity=0;model.root.addChildNode(cursor)
+        cursor.geometry=model.motionShape(pointer,color:rigCream,depth:1).geometry;cursor.position.z=CGFloat(model.front+18);cursor.opacity=0;model.root.addChildNode(cursor)
         question=rigSmallText("?",color:rigGold,size:13);exclamation=rigSmallText("!",color:rigCoral,size:13);check=rigSmallText("✓",color:rigMint,size:12)
         for n in [question,exclamation,check] {n.position=SCNVector3(-bounds.width/2-3,bounds.height/2+3,model.front+8);n.opacity=0;model.head.addChildNode(n)}
         for kind in [CompanionParticle.heart,.star,.spark,.sweat,.z] {
@@ -63,17 +66,17 @@ final class CompanionRigActor {
             for _ in 0..<5 {
                 let n:SCNNode
                 switch kind {
-                case .heart:n=rigCenteredShape(rigHeartPath(),rigCoral,1.2)
-                case .star:n=rigCenteredShape(rigStarPath(),rigGold,1)
-                case .spark:n=rigCenteredShape(rigPolygon([(48,43),(51,48),(48,53),(45,48)]),rigMint,1)
-                case .sweat:n=rigCenteredShape(rigPolygon([(48,42),(44,49),(45,53),(51,53),(52,49)],radius:2),rigRgb(0.5,0.7,0.9),1)
+                case .heart:n=model.motionShape(rigHeartPath(),color:rigCoral,depth:1.2)
+                case .star:n=model.motionShape(rigStarPath(),color:rigGold,depth:1)
+                case .spark:n=model.motionShape(rigPolygon([(48,43),(51,48),(48,53),(45,48)]),color:rigMint,depth:1)
+                case .sweat:n=model.motionShape(rigPolygon([(48,42),(44,49),(45,53),(51,53),(52,49)],radius:2),color:rigRgb(0.5,0.7,0.9),depth:1)
                 case .z:n=rigSmallText("z",color:rigLilac,size:9)
                 }
                 n.opacity=0;model.root.addChildNode(n);nodes.append(n)
             };particles[kind]=nodes
         }
         for x in [-20.0,20.0] {
-            let n=rigCenteredShape(Path(ellipseIn:CGRect(x:44,y:46,width:8,height:4)),rigCoral,0.4)
+            let n=model.motionShape(Path(ellipseIn:CGRect(x:44,y:46,width:8,height:4)),color:rigCoral,depth:0.4)
             n.position=SCNVector3(x,-8,model.front+1);n.opacity=0;model.head.addChildNode(n);cheeks.append(n)
         }
     }
@@ -82,7 +85,7 @@ final class CompanionRigActor {
         for (i,n) in particles[kind]!.enumerated() {
             let age=local-Double(i)*0.14,life=1.55+Double(i%2)*0.2,k=rigGSeg(age,0,life)
             n.opacity=i<amount && age>=0 && age<life ? sin(k*Double.pi)*strength : 0
-            n.position=SCNVector3(kind == .z ? 25+k*12 : (Double(i)-2)*11+sin(k*3+Double(i))*4,bounds.maxY+4+k*23,model.front+3)
+            n.position=SCNVector3(kind == .z ? 25+k*12 : (Double(i)-2)*11+sin(k*3+Double(i))*4,bounds.maxY+3+k*16,model.front+3)
             n.scale=SCNVector3(0.45+k*0.20,0.45+k*0.20,0.65)
             n.eulerAngles.z=CGFloat(kind == .z ? 0 : sin(k*3+Double(i))*0.20)
         }
@@ -90,26 +93,103 @@ final class CompanionRigActor {
     func resetExtras() {
         hands.forEach{$0.opacity=0};[slot,file,bar,fill,cursor,question,exclamation,check].forEach{$0.opacity=0}
         particles.values.flatMap{$0}.forEach{$0.opacity=0};cheeks.forEach{$0.opacity=0}
-        model.accessory.opacity=1;model.accessory.scale=SCNVector3(1,1,1);model.accessory.eulerAngles.z=0
-        if model.hero == .elinor { model.accessory.childNodes.first?.eulerAngles.z = 0 }
+        model.accessory.opacity=1;model.accessory.scale=SCNVector3(1,1,1);model.accessory.eulerAngles=SCNVector3Zero
+        model.identityAccent?.eulerAngles.z = 0
+        model.setNotebookTilt(0)
         model.paperRight?.eulerAngles.z=0
         file.scale=SCNVector3(1,1,1);question.scale=SCNVector3(1,1,1)
         file.eulerAngles = SCNVector3Zero; slot.scale = SCNVector3(1,1,1)
-        if model.hero == .sig {model.accessory.childNodes.first?.geometry?.firstMaterial?.diffuse.contents=rigMint}
+        model.setChompAccent(alternate: false)
+        model.setNotebookProgress(0)
     }
     func handWave(_ t:Double,_ presence:Double) {
         let k=max(0,presence)
-        if model.hero == .toni {
+        if model.hero == .toni && !model.usesIntegratedIllustration {
             model.paper?.eulerAngles=SCNVector3(0.08+k*0.18,0,-0.1-k*(0.5+sin(t*Double.pi*6)*0.22))
             model.paperRight?.eulerAngles.z=CGFloat(k*sin(t*3)*0.045)
         } else {
             for (i,h) in hands.enumerated() {
                 h.opacity=k;h.scale=SCNVector3(k,k,k)
-                h.position.y=CGFloat(-8+(i==0 ? sin(t*Double.pi*10)*6*k : 12*k))
+                h.position = SCNVector3((i == 0 ? -1 : 1) * (bounds.width / 2 + 7),
+                                        -8 + (i == 0 ? sin(t * .pi * 10) * 6 * k : 12 * k), model.front + 3)
                 h.eulerAngles.z=CGFloat((i==0 ? -1 : 1)*(0.45+sin(t*Double.pi*5)*0.12)*k)
             }
         }
     }
+    private func animateNotebook(time t: Double, pose: CompanionRigPose) {
+        // Counter the body turn so the notebook stays put as Ada reaches.
+        model.accessory.eulerAngles = SCNVector3(-pose.pitch, -pose.yaw - 0.09, -pose.roll)
+        let revealed = rigSmooth((t - 0.23) / 0.29) * (1 - rigSmooth((t - 1.94) / 0.42))
+        model.setNotebookProgress(revealed)
+        let reach = rigSmooth((t - 0.50) / 0.27) * (1 - rigSmooth((t - 1.58) / 0.33))
+        let lidNudge = sin(rigGSeg(t, 0.30, 0.82) * .pi)
+        model.setNotebookTilt(0.12 * lidNudge)
+        for (index, hand) in hands.enumerated() {
+            let firstTap = 0.79 + Double(index) * 0.12
+            let tap = sin(rigGSeg(t, firstTap, firstTap + 0.26) * .pi)
+                + sin(rigGSeg(t, firstTap + 0.32, firstTap + 0.58) * .pi)
+            let target = model.notebookKeyPosition(index, tap: tap)
+            hand.position = SCNVector3(target.x - (1 - reach) * 6, target.y + (1 - reach) * 3, target.z)
+            hand.scale = SCNVector3(0.48, 0.48, 0.48)
+            hand.eulerAngles.z = CGFloat(-0.13 * reach)
+            hand.opacity = reach
+        }
+    }
+
+    private func updatePaintedExtras(id: Int, time t: Double, pose: CompanionRigPose) {
+        // Every visible overlay is recomputed, so an interrupted gesture cannot
+        // leave a receipt, badge or hand behind in the next scene.
+        hands.forEach { $0.opacity=0 }
+        [slot,file,bar,fill,cursor,question,exclamation,check].forEach { $0.opacity=0 }
+        particles.values.forEach { $0.forEach { $0.opacity=0 } }
+        let window=CompanionPaintedMotion.window(t,0.15,1.9)
+        question.position=SCNVector3(-38,24,model.front+8)
+        exclamation.position=question.position; check.position=SCNVector3(-36,22,model.front+8)
+        switch id {
+        case 1,43:
+            if model.hero == .sig { particle(.spark,t-0.55,amount:2,strength:0.5) }
+        case 12,13: question.opacity=rigSmooth(t/0.5)*0.75
+        case 14,16: exclamation.opacity=window*0.65
+        case 15:
+            particle(.spark,t-1.85,amount:3,strength:0.6)
+            check.opacity=CompanionPaintedMotion.window(t,1.85,2.45,ramp:0.25)
+        case 17: particle(.z,t-0.5,repeatEvery:4.8,amount:2,strength:0.5)
+        case 18: particle(.heart,t-0.5,amount:3,strength:0.65)
+        case 20: particle(.star,t-0.65,amount:2,strength:0.6)
+        case 22: particle(.z,t-0.9,amount:1,strength:0.4)
+        case 30,31:
+            // An intake indicator sits beside the avatar; never cut a mouth
+            // through the book, helmet or headphones of a painted character.
+            slot.opacity=rigSmooth(t/0.4)*0.55
+            slot.position=SCNVector3(-34,-29,model.front+8)
+            slot.scale=SCNVector3(0.45,0.18,1)
+        case 32,44:
+            let flight=rigSmooth((t-0.08)/0.5)
+            file.opacity=rigSmooth(t/0.12)*(1-rigSmooth((t-0.5)/0.2))
+            file.position=SCNVector3(-38+flight*5,26-flight*48,model.front+9)
+            let size=0.65-flight*0.3; file.scale=SCNVector3(size,size,1)
+            file.eulerAngles.z=CGFloat((1-flight)*0.12)
+            check.opacity=CompanionPaintedMotion.window(t,0.66,1.0,ramp:0.15)*0.75
+        case 34:
+            let progress=rigSmooth(t/3.3), appear=rigSmooth(t/0.35)
+            bar.opacity=appear*0.55; fill.opacity=appear*0.85
+            fill.scale.x=CGFloat(max(0.001,progress)); fill.position.x=CGFloat(-38+38*progress)
+        case 35:
+            check.opacity=window; particle(.spark,t-0.7,amount:3,strength:0.6)
+        case 36: check.opacity=CompanionPaintedMotion.window(t,1.7,2.3,ramp:0.25)*0.75
+        case 38:
+            model.setChompAccent(alternate:t>1.1)
+            particle(.spark,t-1.1,amount:2,strength:0.45)
+        case 40: exclamation.opacity=CompanionPaintedMotion.window(t,0.65,2.2)*0.75
+        case 42: question.opacity=rigSmooth((t-0.7)/0.45)*0.75
+        default: break
+        }
+        if model.hero == .sig {
+            let accent=1+pose.joy*0.045
+            model.accessory.scale=SCNVector3(accent,accent,1)
+        }
+    }
+
     private(set) var lastPose = CompanionRigPose()
     private var previousID: Int?
     private var spiralEyes: [SCNNode] = []
@@ -119,8 +199,8 @@ final class CompanionRigActor {
         if previousID != id { resetExtras(); previousID = id }
         let hero=model.hero,offset=Double(index)*0.11
         // Activities retain the previously approved task-specific geometry.
-        if id == 9 && animates { model.updateActivity(time: t.truncatingRemainder(dividingBy: 3.4)) }
-        model.activity.opacity=id==9 ? rigSmooth(t/0.25) : 0
+        if id == 9 && animates && !model.usesIllustration { model.updateActivity(time: t.truncatingRemainder(dividingBy: 3.4)) }
+        model.activity.opacity=id==9 && !model.usesIllustration ? rigSmooth(t/0.25) : 0
         var p=rigPose(hero,.idle,t,global+Double(index)*0.17)
         var color=rigRgb(0.50,0.55,0.55),haloStrength=0.0,blush=0.0
         var customScale=1.0,rollEyes=false,showHand=0.0
@@ -134,6 +214,12 @@ final class CompanionRigActor {
             if hero != .ada && hero != .gantt {p.sy*=sy;p.sx*=sx}
             p.y+=sin(rigGSeg(u,0,0.6)*Double.pi)*3
         }
+        if model.usesIllustration {
+            p = CompanionPaintedMotion.sample(hero, id: id, time: t, global: global)
+            updatePaintedExtras(id: id, time: t, pose: p)
+            color = hero == .ada || hero == .sig ? rigJade : rigLilac
+            haloStrength = [9,10,11,26,33].contains(id) ? 0.13 : 0.05
+        } else {
         switch id {
         case 1:
             let g=rigGreetPose(t,compact:CompanionGreetingLayout())
@@ -178,7 +264,23 @@ final class CompanionRigActor {
         case 14:
             let u=t-0.5;p.x=u>=0 && u<0.28 ? sin(u*Double.pi*4/0.28)*4*(1-u/0.28) : 0;p.open=0.55;p.anger=3;exclamation.opacity=rigSmooth(t/0.15);color=rigCoral;haloStrength=0.45
         case 15:
-            let u=t-0.30;p.roll=u>=0 && u<0.95 ? CompanionEase.inOut(u/0.95)*Double.pi*2 : 0;p.joy=0.8;particle(.spark,t-0.8);check.opacity=rigSmooth((t-1.2)/0.2);color=rigMint;haloStrength=0.55
+            if hero == .ada {
+                let turn = rigSmooth((t - 0.10) / 0.61) * (1 - rigSmooth((t - 1.68) / 0.74))
+                let glance = rigSmooth(t / 0.26) * (1 - rigSmooth((t - 1.98) / 0.47))
+                p.yaw += 0.66 * turn
+                p.pitch += 0.14 * turn
+                p.roll -= 0.055 * turn
+                p.x += 2.8 * turn
+                p.gaze = CGSize(width: 3.6 * glance, height: 4.8 * glance)
+                p.open *= 1 - 0.17 * turn
+                p.joy = 0.34 * sin(rigGSeg(t, 1.84, 2.64) * .pi)
+                particle(.spark, t - 1.90, amount: 3)
+                check.opacity = rigSmooth((t - 1.90) / 0.22)
+            } else {
+                let u=t-0.30;p.roll=u>=0 && u<0.95 ? CompanionEase.inOut(u/0.95)*Double.pi*2 : 0;p.joy=0.8
+                particle(.spark,t-0.8);check.opacity=rigSmooth((t-1.2)/0.2)
+            }
+            color=rigMint;haloStrength=0.55
         case 16:
             p.open=0.62;p.gaze.height=1.6;p.roll = -0.05;particle(.sweat,t-0.3,amount:1);exclamation.opacity=0.8;color=rigGold;haloStrength=0.36
         case 17:
@@ -235,20 +337,20 @@ final class CompanionRigActor {
             let chew=sin(t*Double.pi*2/0.28)*0.045*rigSmooth(t/0.15)*(1-rigSmooth((t-2.3)/0.5))
             if hero != .ada && hero != .gantt {p.sy+=chew;p.sx-=chew*0.6};p.joy=0.5;p.fold=0.1+abs(chew)*2;p.loading=0.65;color=rigLilac;haloStrength=0.28
         case 34:
-            let u=CompanionEase.inOut(rigGSeg(t,0.6,3.3)),shrink=CompanionEase.inOut(rigGSeg(t,0.1,0.6));customScale=rigGLerp(1,0.25,shrink);p.x=rigGLerp(0,-38+u*76,shrink);p.y=rigGLerp(0,-43,shrink);p.gaze.width=3;p.loading=0
+            let u=CompanionEase.inOut(rigGSeg(t,0.6,3.3)),shrink=CompanionEase.inOut(rigGSeg(t,0.1,0.6));customScale=rigGLerp(1,0.25,shrink);p.x=rigGLerp(0,-38+u*76,shrink);p.y=rigGLerp(0,-40,shrink);p.gaze.width=3;p.loading=0
             bar.opacity=shrink;fill.opacity=shrink;fill.scale.x=CGFloat(max(0.001,u));fill.position.x=CGFloat(-38+38*u);color=rigMint;haloStrength=0.23
         case 35:
             p.y+=burst(0.2,0.4)*6;p.joy=0.85;check.opacity=CompanionEase.back(rigGSeg(t,0.2,0.45));particle(.spark,t-0.4,amount:3);color=rigMint;haloStrength=0.55
         case 36:
-            let grow=CompanionEase.back(rigGSeg(t,0.2,0.7));customScale=rigGLerp(0.25,1,grow);p.x=38*(1-CompanionEase.inOut(rigGSeg(t,0.2,0.7)));p.y = -43*(1-CompanionEase.inOut(rigGSeg(t,0.2,0.7)));p.joy=0.5;check.opacity=rigSmooth((t-0.7)/0.2);color=rigMint;haloStrength=0.25
+            let grow=CompanionEase.back(rigGSeg(t,0.2,0.7));customScale=rigGLerp(0.25,1,grow);p.x=38*(1-CompanionEase.inOut(rigGSeg(t,0.2,0.7)));p.y = -40*(1-CompanionEase.inOut(rigGSeg(t,0.2,0.7)));p.joy=0.5;check.opacity=rigSmooth((t-0.7)/0.2);color=rigMint;haloStrength=0.25
         case 37:
             let f=sin(t*3)*0.13;p.roll=f;p.yaw=sin(t*3)*0.20;model.accessory.eulerAngles.z=CGFloat(sin(t*3-0.75)*0.12-f);p.fold=0.4+sin(t*3-0.4)*0.2
         case 38:
             let down=1-CompanionEase.inOut(rigGSeg(t,0.5,0.68)),up=CompanionEase.back(rigGSeg(t,0.7,1.05)),k=t<0.7 ? down : up
             model.accessory.opacity=max(0,min(1,k));model.accessory.scale=SCNVector3(max(0.01,k),max(0.01,k),1);squash(1.05);p.joy=burst(1.05,1)*0.5
+            if model.usesIntegratedIllustration { p.fold = max(0, 1-k) }
             // A personalization of the existing identifying accessory, not a role swap.
-            let accent=t>=0.7 ? rigLilac : rigMint
-            if hero == .sig {model.accessory.childNodes.first?.geometry?.firstMaterial?.diffuse.contents=accent}
+            model.setChompAccent(alternate: t >= 0.7)
         case 39:
             let out=CompanionEase.inOut(rigGSeg(t,0.4,0.85)),back=CompanionEase.inOut(rigGSeg(t,2.5,2.95)),k=out-back;p.x=k*28;p.y = -k*24;p.roll=sin(t*2)*k*0.07;p.gaze.width = -k*2
         case 40:
@@ -262,6 +364,9 @@ final class CompanionRigActor {
         case 43:
             p = rigIdentityHelloPose(hero, t)
             model.updateIdentityHello(time: t, strength: animates ? 1 : 0)
+            if model.usesIntegratedIllustration {
+                p.fold = sin(t * 3) * rigSmooth(t / 0.18) * (1-rigSmooth((t-1.55)/0.5)) * 0.7
+            }
             if hero == .sig { handWave(max(0, t - 0.45), rigSmooth(t / 0.2) * (1 - rigSmooth((t - 1.55) / 0.5))) }
         case 44:
             let k=rigSmooth((t-0.4)/0.1)*(1-rigSmooth((t-0.86)/0.12));slot.opacity=k;slot.scale.y=CGFloat(max(0.01,k*0.7));file.opacity=1-rigSmooth((t-0.76)/0.10);file.position=SCNVector3(0,bounds.maxY+rigGLerp(30,-9,rigGSeg(t,0.4,0.86)),model.front+rigGLerp(12,-5,rigGSeg(t,0.4,0.86)))
@@ -273,12 +378,20 @@ final class CompanionRigActor {
         case 49:p=rigPose(hero,.understood,t,global);p.loading=0
         default:break
         }
+        }
         // Complete each clip with an actual neutral state and no stale activity marker.
         let leave=continuous || id==1 || id==31 ? 0 : rigSmooth((t-duration+0.26)/0.26)
-        p=p.mix(rigPose(hero,.idle,t,global),leave)
+        p=p.mix(model.usesIllustration ? CompanionPaintedMotion.idle(hero,global) : rigPose(hero,.idle,t,global),leave)
         if hero == .ada || hero == .gantt {let equal=sqrt(max(0.01,p.sx*p.sy));p.sx=equal;p.sy=equal}
-        if let gaze { p.gaze = gaze; p.yaw += Double(gaze.width) * 0.045; p.pitch -= Double(gaze.height) * 0.025 }
+        if let gaze {
+            p.gaze = gaze
+            if model.usesIllustration { p.roll -= Double(gaze.width)*0.004 }
+            else { p.yaw += Double(gaze.width)*0.045; p.pitch -= Double(gaze.height)*0.025 }
+        }
         if !animates {
+            model.setNotebookTilt(0)
+            model.setNotebookProgress(0)
+            model.accessory.eulerAngles = SCNVector3Zero
             p = CompanionRigPose(); p.open = id == 17 ? 0.045 : 1
             p.loading = [9,10,11,26,33].contains(id) ? 1 : 0
             customScale = 1; haloStrength = 0.08; blush = 0; rollEyes = false
@@ -291,14 +404,19 @@ final class CompanionRigActor {
         lastPose = p
         model.head.scale=SCNVector3(p.sx,p.sy,p.sz)
         model.head.position=SCNVector3(p.x,p.y,0);model.head.opacity=p.opacity
-        model.head.eulerAngles=SCNVector3(p.pitch,p.yaw,p.roll)
-        model.updateEyes(open:p.open,joy:p.joy,gaze:p.gaze,wink:p.wink,anger:p.anger)
+        let turn = model.usesIntegratedIllustration ? 0.35 : 1.0
+        model.head.eulerAngles=SCNVector3(p.pitch * turn,p.yaw * turn,p.roll)
+        if id == CompanionAnimation.completed.rawValue, model.notebook != nil, animates {
+            animateNotebook(time: t, pose: p)
+        }
+        model.updateEyes(open:rollEyes && model.usesIntegratedIllustration ? 0.08 : p.open,joy:p.joy,gaze:p.gaze,wink:p.wink,anger:p.anger)
+        model.updateIllustratedGesture(fold: p.fold)
         if rollEyes && spiralEyes.isEmpty {
             let path=Path {v in
                 for n in 0...40 {let a=Double(n)*Double.pi*4/40,r=Double(n)/40*4,point=CGPoint(x:48+cos(a)*r,y:48+sin(a)*r);if n==0 {v.move(to:point)}else{v.addLine(to:point)}}
             }
             for eye in model.eyes {
-                let spiral=rigStroke(path,color:hero == .sig ? rigCream : rigInk,width:hero == .ada ? 1.8 : 1.2,depth:0.7)
+                let spiral = model.motionShape(path.strokedPath(StrokeStyle(lineWidth: 1.2, lineCap: .round)), color: rigCream, depth: 0.7)
                 spiral.position.z=1; eye.addChildNode(spiral); spiralEyes.append(spiral)
             }
         }
@@ -312,10 +430,13 @@ final class CompanionRigActor {
         model.marker?.opacity=p.loading
         model.marker?.eulerAngles.z = 0
         if p.loading > 0 { model.loadingProgress?.setValue(Float((animates ? t : 0).truncatingRemainder(dividingBy: 2) / 2), forKey: "phase") }
-        if id != 1 && id != 24 && id != 27 && id != 28 && id != 41 && id != 43 {
-            if hero == .toni {model.paper?.eulerAngles=SCNVector3(0.08+p.fold*0.12,0,-0.1-p.fold*0.38+sin(t*3)*p.fold*0.10)}
+        if !model.usesIllustration && id != 1 && id != 24 && id != 27 && id != 28 && id != 41 && id != 43 {
+            if hero == .toni {model.paper?.eulerAngles=SCNVector3(0.08+p.fold*0.12,0,(model.usesIllustration ? 0 : -0.1)-p.fold*0.38+sin(t*3)*p.fold*0.10)}
         }
-        if hero == .gantt && id != 43 {model.paper?.opacity=p.fold;model.paper?.eulerAngles.y=CGFloat(p.fold*0.7)}
+        if !model.usesIllustration && hero == .gantt && id != 43 {
+            if !model.usesIllustration { model.paper?.opacity = p.fold }
+            model.paper?.eulerAngles.y = CGFloat(p.fold * 0.7)
+        }
         cheeks.forEach{$0.opacity=blush*(1-leave)}
         halo.geometry?.firstMaterial?.multiply.contents=color;halo.opacity=haloStrength*(1-leave)+0.05*leave
         if leave>0 {hands.forEach{$0.opacity*=1-leave};[question,exclamation,check,slot,file,bar,fill].forEach{$0.opacity*=1-leave}}

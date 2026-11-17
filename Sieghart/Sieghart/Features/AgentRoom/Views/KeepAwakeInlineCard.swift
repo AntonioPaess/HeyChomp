@@ -21,7 +21,7 @@ struct KeepAwakeInlineCard: View {
                 Text(current ? (model.holding ? (en ? "Active" : "Ativo") : model.error != nil ? (en ? "Needs attention" : "Precisa de atenção") : (en ? "Paused" : "Em pausa")) : (en ? "Ended" : "Encerrado")).font(.caption)
             }
             HStack(alignment: .firstTextBaseline) {
-                Text(remaining).font(.system(size: 28, weight: .medium, design: .rounded)).monospacedDigit().contentTransition(.numericText())
+                Text(remaining).font(.system(size: 28, weight: .medium)).monospacedDigit().contentTransition(.numericText())
                 Spacer()
                 if current { Button(en ? "Stop" : "Encerrar") { model.stop() }.buttonStyle(.bordered) }
             }

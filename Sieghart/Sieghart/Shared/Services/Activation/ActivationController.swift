@@ -46,6 +46,8 @@ final class ActivationController: ObservableObject {
     }
     @Published private(set) var commandAcknowledged = false
     @Published private(set) var voicePresented = false
+    /// Design previews and QA only: show the listening state without opening the microphone.
+    func previewListening(_ on: Bool) { voicePresented = on; isListening = on }
     @Published var voiceLanguage: String {
         didSet { defaults.set(voiceLanguage, forKey: "activation.voiceLanguage"); cancelVoiceCommand(); notch.spatialAssistant.responseLanguage = voiceLanguage.replacingOccurrences(of: "_", with: "-") }
     }

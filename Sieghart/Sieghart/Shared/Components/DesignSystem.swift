@@ -1,39 +1,68 @@
 import AppKit
 import SwiftUI
 
-// Shared palette from the approved local prototype.
+// HeyChomp visual system v5 ("quiet window, loud characters"); see
+// Design/Workflow/handoff-design-2026-11-11/visual-system-v5-arena-2026-11-13.md.
+// One accent per appearance, taken from Chomp's mint sparkle. Agent colors are
+// marks only (rings and markers), never text or fills.
 enum CompanionStyle {
     static let notchBlack = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1)
-    static let background = adaptive(dark: (18, 20, 26), light: (246, 247, 250))
-    static let surface = adaptive(dark: (28, 31, 39), light: (255, 255, 255))
-    static let separator = adaptive(dark: (51, 56, 69), light: (224, 228, 236))
-    static let accent = Color(red: 183 / 255, green: 173 / 255, blue: 239 / 255)
-    static let accentInk = adaptive(dark: (194, 185, 244), light: (103, 80, 169))
-    static let muted = adaptive(dark: (154, 161, 178), light: (101, 109, 126))
-    static let sidebar = adaptive(dark: (22, 25, 32), light: (240, 242, 246))
+    static let background = adaptive(dark: (30, 30, 30), light: (255, 255, 255))
+    static let surface = adaptive(dark: (37, 37, 37), light: (247, 247, 247))
+    static let separator = adaptive(dark: (52, 52, 52), light: (230, 230, 230))
+    /// Chomp's mint: #00945F light, #3EDC9A dark. Fills, switches, progress and rings only.
+    static let accent = adaptive(dark: (62, 220, 154), light: (0, 148, 95), contrastDark: (111, 240, 184), contrastLight: (0, 88, 58))
+    /// Label on an accent fill (4.85:1 light, 10.5:1 dark).
+    static let accentOnFill = adaptive(dark: (4, 23, 15), light: (0, 21, 12), contrastDark: (4, 23, 15), contrastLight: (255, 255, 255))
+    /// Text and glyphs that used to be tinted lavender are now plain primary content.
+    static let accentInk = adaptive(dark: (221, 221, 221), light: (38, 38, 38))
+    /// Small metadata: 7.0:1 on white and 6.4:1 on #1E1E1E.
+    static let muted = adaptive(dark: (160, 160, 160), light: (89, 89, 89), contrastDark: (200, 200, 200), contrastLight: (60, 60, 60))
+    static let sidebar = adaptive(dark: (40, 40, 40), light: (246, 246, 246))
     static let ink = Color.primary
     static let edge = adaptive(dark: (255, 255, 255), light: (0, 0, 0))
-    private static func adaptive(dark: (Double, Double, Double), light: (Double, Double, Double)) -> Color {
+    /// Off-state outline and knob of switches (3:1 non-text on every floor).
+    static let controlStroke = adaptive(dark: (138, 138, 138), light: (122, 122, 122), contrastDark: (170, 170, 170), contrastLight: (89, 89, 89))
+    /// Light/dark pair, with optional Increase Contrast variants (spec §2.3 and §7).
+    private static func adaptive(dark: (Double, Double, Double), light: (Double, Double, Double),
+                                 contrastDark: (Double, Double, Double)? = nil, contrastLight: (Double, Double, Double)? = nil) -> Color {
         Color(nsColor: NSColor(name: nil) { appearance in
-            let rgb = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? dark : light
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua, .accessibilityHighContrastAqua, .accessibilityHighContrastDarkAqua]).map { $0 == .darkAqua || $0 == .accessibilityHighContrastDarkAqua } ?? false
+            let increased = NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+            let rgb = isDark ? (increased ? contrastDark ?? dark : dark) : (increased ? contrastLight ?? light : light)
             return NSColor(srgbRed: rgb.0 / 255, green: rgb.1 / 255, blue: rgb.2 / 255, alpha: 1)
         })
+    }
+    /// Agent mark colors (§3.2 of the spec). Never use for text.
+    static func agent(_ persona: LocalChatPersona) -> Color {
+        switch persona {
+        case .sig: accent
+        case .rita: adaptive(dark: (219, 156, 246), light: (97, 33, 109))
+        case .ada: adaptive(dark: (20, 151, 165), light: (11, 106, 135))
+        case .gantt: adaptive(dark: (243, 227, 52), light: (119, 81, 19))
+        case .elinor: adaptive(dark: (207, 123, 3), light: (204, 95, 1))
+        case .toni: adaptive(dark: (169, 110, 252), light: (40, 6, 191))
+        }
     }
 }
 
 enum WorkspaceMetrics {
-    static let pageInset: CGFloat = 30
-    static let sectionGap: CGFloat = 24
+    static let pageInset: CGFloat = 20
+    static let sectionGap: CGFloat = 16
     static let contentWidth: CGFloat = 1080
-    static let cardInset: CGFloat = 20
-    static let cardRadius: CGFloat = 18
+    /// Readable column for Hoje, Equipe and Biblioteca.
+    static let readableWidth: CGFloat = 720
+    static let cardInset: CGFloat = 12
+    static let cardRadius: CGFloat = 8
 }
 
 enum WorkspaceTypography {
-    static let title = Font.system(size: 27, weight: .semibold, design: .rounded)
-    static let section = Font.system(size: 14, weight: .semibold)
+    static let title = Font.system(size: 17, weight: .bold)
+    static let hero = Font.system(size: 17, weight: .bold)
+    static let section = Font.system(size: 13, weight: .semibold)
     static let body = Font.system(size: 13)
     static let caption = Font.system(size: 11)
+    static let footnote = Font.system(size: 10)
 }
 
 // One restrained cadence for navigation, control feedback and first appearance.
@@ -68,8 +97,8 @@ struct WorkspacePageHeading: View {
     let title: String
     let subtitle: String
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(title).font(WorkspaceTypography.title).tracking(-0.45)
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title).font(.system(size: 24, weight: .bold))
                 .foregroundStyle(CompanionStyle.ink)
             Text(subtitle).font(WorkspaceTypography.body).foregroundStyle(CompanionStyle.muted)
                 .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
@@ -84,12 +113,12 @@ struct WorkspaceEmptyState: View {
     var body: some View {
         VStack(spacing: 10) {
             Image(systemName: symbol).font(.system(size: 21, weight: .light))
-                .foregroundStyle(CompanionStyle.accentInk).frame(width: 48, height: 48)
-                .background(CompanionStyle.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                .foregroundStyle(.secondary).frame(width: 48, height: 48)
+                .background(CompanionStyle.edge.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             Text(title).font(WorkspaceTypography.section)
             Text(detail).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted)
                 .multilineTextAlignment(.center).frame(maxWidth: 340)
-        }.padding(26).frame(maxWidth: .infinity).modifier(WorkspaceSurface())
+        }.padding(.vertical, 28).frame(maxWidth: .infinity)
     }
 }
 
@@ -101,39 +130,23 @@ extension EnvironmentValues {
 }
 
 struct WorkspaceBackdrop: View {
-    @Environment(\.accessibilityReduceTransparency) private var opaque
-    @Environment(\.islandPreview) private var preview
-    @Environment(\.surfaceGlassEnabled) private var glass
-    @Environment(\.colorScheme) private var scheme
     var body: some View {
-        ZStack {
-            if !glass || opaque || preview { CompanionStyle.background }
-            else { Rectangle().fill(.regularMaterial) }
-            if glass && !opaque {
-                LinearGradient(colors: [CompanionStyle.background.opacity(0.65), CompanionStyle.background.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                RadialGradient(colors: [CompanionStyle.accent.opacity(scheme == .dark ? 0.09 : 0.04), .clear], center: .topTrailing, startRadius: 20, endRadius: 650)
-            }
-        }.allowsHitTesting(false).accessibilityHidden(true)
+        CompanionStyle.background.allowsHitTesting(false).accessibilityHidden(true)
     }
 }
 
 struct WorkspaceSurface: ViewModifier {
     var selected = false
     var radius: CGFloat = WorkspaceMetrics.cardRadius
-    @Environment(\.accessibilityReduceTransparency) private var opaque
     @Environment(\.colorSchemeContrast) private var contrast
-    @Environment(\.islandPreview) private var preview
-    @Environment(\.surfaceGlassEnabled) private var glass
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        content.background {
-            if !glass || opaque || preview { shape.fill(CompanionStyle.surface) }
-            else if #available(macOS 26, *) { Color.clear.glassEffect(.regular.tint(CompanionStyle.surface.opacity(0.35)), in: shape) }
-            else { shape.fill(.ultraThinMaterial) }
-        }
-        .background(selected ? CompanionStyle.accent.opacity(0.07) : .clear, in: shape)
-        .overlay { shape.strokeBorder(selected ? CompanionStyle.accent.opacity(0.40) : CompanionStyle.edge.opacity(contrast == .increased ? 0.48 : 0.075), lineWidth: selected ? 1 : 0.7).allowsHitTesting(false) }
-        .shadow(color: .black.opacity(!glass || opaque ? 0 : 0.09), radius: 14, y: 6)
+        // Object cards stay opaque. Native navigation and toolbars own material.
+        content.background(CompanionStyle.surface, in: shape)
+            .overlay {
+                shape.strokeBorder(selected ? CompanionStyle.accentInk.opacity(0.65) : CompanionStyle.edge.opacity(contrast == .increased ? 0.48 : 0.075), lineWidth: selected ? 1.5 : 0.7)
+                    .allowsHitTesting(false)
+            }
     }
 }
 
@@ -152,18 +165,21 @@ private struct CompanionButtonBody<Label: View>: View {
     @Environment(\.isEnabled) private var enabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.islandReduceMotion) private var preferenceReduceMotion
+    @Environment(\.colorSchemeContrast) private var contrast
     @State private var hovered = false
     var body: some View {
-        label.font(.system(size: compact ? 11.5 : 12.5, weight: .medium))
-            .padding(.horizontal, compact ? 11 : 15).padding(.vertical, compact ? 6 : 9)
-            .frame(minHeight: compact ? 28 : 34)
-            .foregroundStyle(primary ? Color(red: 0.12, green: 0.10, blue: 0.20) : CompanionStyle.ink)
-            .background(primary ? CompanionStyle.accent : CompanionStyle.edge.opacity(hovered ? 0.085 : 0.045), in: RoundedRectangle(cornerRadius: 10))
-            .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(CompanionStyle.edge.opacity(primary ? 0.12 : hovered ? 0.16 : 0.09), lineWidth: 0.7).allowsHitTesting(false) }
-            .opacity(enabled ? (pressed ? 0.72 : 1) : 0.42)
-            .scaleEffect(pressed && !reduceMotion && !preferenceReduceMotion ? 0.985 : 1)
-            .animation(InterfaceMotion.feedback, value: hovered)
-            .animation(reduceMotion || preferenceReduceMotion ? nil : InterfaceMotion.feedback, value: pressed)
+        let still = reduceMotion || preferenceReduceMotion
+        let shape = RoundedRectangle(cornerRadius: 6, style: .continuous)
+        label.font(.system(size: compact ? 12 : 13, weight: .medium))
+            .padding(.horizontal, compact ? 10 : 14).padding(.vertical, compact ? 4 : 6)
+            .frame(minHeight: compact ? 24 : 28)
+            .foregroundStyle(primary ? CompanionStyle.accentOnFill : CompanionStyle.ink)
+            .background(primary ? CompanionStyle.accent : CompanionStyle.edge.opacity(hovered ? 0.10 : 0.06), in: shape)
+            .overlay { if contrast == .increased { shape.strokeBorder(CompanionStyle.edge.opacity(0.6), lineWidth: 1).allowsHitTesting(false) } }
+            .opacity(enabled ? (pressed ? 0.85 : 1) : 0.42)
+            .scaleEffect(pressed && !still ? 0.97 : 1)
+            .animation(still ? .easeInOut(duration: 0.15) : .easeOut(duration: 0.12), value: hovered)
+            .animation(still ? nil : .spring(duration: 0.18, bounce: 0), value: pressed)
             .onHover { hovered = $0 }
     }
 }
@@ -172,13 +188,15 @@ struct WorkspaceSwitchStyle: ToggleStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         Button { configuration.isOn.toggle() } label: {
-            Capsule().fill(configuration.isOn ? CompanionStyle.accent : CompanionStyle.edge.opacity(0.16))
+            Capsule().fill(configuration.isOn ? CompanionStyle.accent : CompanionStyle.edge.opacity(0.06))
+                .overlay { Capsule().stroke(configuration.isOn ? Color.clear : CompanionStyle.controlStroke, lineWidth: 1.5).padding(0.75) }
                 .frame(width: 36, height: 22)
-                .overlay(alignment: configuration.isOn ? .trailing : .leading) {
-                    Circle().fill(configuration.isOn ? Color.black.opacity(0.85) : .white).frame(width: 16, height: 16).padding(3)
-                }
+            .overlay(alignment: configuration.isOn ? .trailing : .leading) {
+                Circle().fill(configuration.isOn ? CompanionStyle.accentOnFill : CompanionStyle.controlStroke)
+                    .frame(width: 14, height: 14).padding(4)
+            }
         }.buttonStyle(.plain).focusEffectDisabled()
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: configuration.isOn)
+            .animation(reduceMotion ? nil : .spring(duration: 0.2, bounce: 0), value: configuration.isOn)
             .accessibilityRepresentation {
                 Toggle(isOn: configuration.$isOn) { configuration.label }.toggleStyle(.switch)
             }
@@ -226,8 +244,272 @@ private struct CompanionCardModifier: ViewModifier {
         let padding: CGFloat = inset ?? (workspace ? WorkspaceMetrics.cardInset : !glass ? 22 : 16)
         let sized = content.frame(maxWidth: .infinity, alignment: .topLeading)
             .frame(height: height.map { max(0, $0 - padding * 2) }, alignment: .topLeading).padding(padding)
-        if workspace { sized.modifier(WorkspaceSurface()) }
+        if workspace {
+            // Workspace pages use the iPhone app's cards: contained, rounded, quiet.
+            content.frame(maxWidth: .infinity, alignment: .topLeading)
+                .frame(height: height.map { max(0, $0 - (inset ?? 16) * 2) }, alignment: .topLeading)
+                .padding(inset ?? 16)
+                .background(HeyCardSurface(radius: 18))
+        }
         else if glass { sized.modifier(IslandControlSurface()) }
         else { sized.background(CompanionStyle.surface, in: RoundedRectangle(cornerRadius: WorkspaceMetrics.cardRadius)) }
+    }
+}
+
+/// A character on a quiet neutral plate with a 1 pt rim, so near-black bodies keep a
+/// silhouette on dark surfaces. The agent-colored ring is drawn outside the plate with
+/// a gap, and only while that agent is speaking (spec §3.4). The slot for the ring is
+/// always reserved, so nothing shifts when it appears.
+struct AvatarView: View {
+    let persona: LocalChatPersona
+    var size: CGFloat = 28
+    var speaking = false
+    var animates = false
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorSchemeContrast) private var contrast
+    private var plate: Color { scheme == .dark ? Color(red: 48 / 255, green: 48 / 255, blue: 48 / 255) : Color(red: 237 / 255, green: 237 / 255, blue: 240 / 255) }
+    private var rim: Color { scheme == .dark ? Color.white.opacity(0.45) : Color.black.opacity(0.5) }
+    private var ringWidth: CGFloat { contrast == .increased ? 3.5 : 2.5 }
+    var body: some View {
+        let slot: CGFloat = 6
+        ZStack {
+            Circle().strokeBorder(CompanionStyle.agent(persona), lineWidth: ringWidth)
+                .opacity(speaking ? 1 : 0)
+                .frame(width: size + 3 + ringWidth * 2, height: size + 3 + ringWidth * 2)
+            Circle().fill(plate).frame(width: size, height: size)
+                .overlay { Circle().strokeBorder(rim, lineWidth: 1) }
+                .overlay { CompanionCharacter(size: size * 0.92, avatar: persona.avatar, animates: animates) }
+        }
+        .frame(width: size + slot * 2, height: size + slot * 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(persona.title)
+        .help(persona.title)
+    }
+}
+
+extension View {
+    /// The agent who owns a card peeks over its top edge: head and eyes above the line,
+    /// two little hands gripping the border, a few motion ticks in their colour.
+    /// One component for the app, the menu bar widget and the island (a HeyChomp signature).
+    func perched(_ persona: LocalChatPersona, animates: Bool = false, size: CGFloat = 48, enabled: Bool = true) -> some View {
+        overlay(alignment: .topTrailing) {
+            if enabled {
+                PeekingCharacter(persona: persona, animates: animates, size: size)
+                    // The peek's bottom (the hands' line) sits on the card's top edge.
+                    .offset(x: -16, y: -PeekingCharacter.edge(size))
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+}
+
+/// A teammate peeking over an edge (illustrated assets `Peek-<persona>`).
+/// Every asset shares one geometry: 480×340 at 2x, the edge at row 250, body width 330.
+struct PeekingCharacter: View {
+    let persona: LocalChatPersona
+    var animates = false
+    /// Roughly the width of the head, in points.
+    var size: CGFloat = 48
+    @State private var popped: Bool
+    init(persona: LocalChatPersona, animates: Bool = false, size: CGFloat = 48) {
+        self.persona = persona; self.animates = animates; self.size = size
+        // Without motion the peek is simply there; only an animated one pops in.
+        _popped = State(initialValue: !animates)
+    }
+    static func width(_ size: CGFloat) -> CGFloat { size * 1.6 }
+    static func height(_ size: CGFloat) -> CGFloat { width(size) * 340 / 480 }
+    /// Distance from the view's top to the edge the hands hold on to.
+    static func edge(_ size: CGFloat) -> CGFloat { height(size) * 250 / 340 }
+    var body: some View {
+        Image("Peek-\(persona.rawValue)")
+            .resizable().interpolation(.high)
+            .frame(width: Self.width(size), height: Self.height(size))
+            .offset(y: popped ? 0 : size * 0.18)
+            .opacity(popped ? 1 : 0)
+            .onAppear {
+                guard animates else { popped = true; return }
+                withAnimation(.spring(duration: 0.45, bounce: 0.35)) { popped = true }
+            }
+    }
+}
+
+/// A teammate says something in a speech bubble: used for empty states and hints, so
+/// quiet screens still feel like the team is there.
+struct OwnerSays: View {
+    let persona: LocalChatPersona
+    let text: LocalizedStringKey
+    var compact = false
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            CompanionCharacter(size: compact ? 26 : 34, avatar: persona.avatar, animates: false)
+                .frame(width: compact ? 30 : 40, height: compact ? 26 : 34)
+                .accessibilityHidden(true)
+            Text(text).font(.system(size: compact ? 11 : 12.5)).foregroundStyle(CompanionStyle.ink.opacity(0.85))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12).padding(.vertical, compact ? 6 : 9)
+                .background { ChompSpeechBubble().fill(CompanionStyle.agent(persona).opacity(0.10)) }
+                .overlay { ChompSpeechBubble().stroke(CompanionStyle.agent(persona).opacity(0.22), lineWidth: 0.75) }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+/// A titled group on a tool page: quiet card, generous spacing (Things-like), our neutrals.
+struct ToolGroup<Content: View>: View {
+    let title: LocalizedStringKey
+    var detail: LocalizedStringKey? = nil
+    @ViewBuilder var content: Content
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title).font(.system(size: 13, weight: .semibold))
+                Spacer(minLength: 8)
+                if let detail { Text(detail).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted) }
+            }
+            VStack(alignment: .leading, spacing: 10) { content }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(CompanionStyle.edge.opacity(0.035), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(CompanionStyle.edge.opacity(0.08), lineWidth: 0.75) }
+        }
+    }
+}
+
+/// A switch row with its status line underneath, for tool settings.
+struct ToolToggleRow: View {
+    let title: LocalizedStringKey
+    var status: LocalizedStringKey? = nil
+    @Binding var isOn: Bool
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.system(size: 13, weight: .medium))
+                if let status { Text(status).font(WorkspaceTypography.caption).foregroundStyle(CompanionStyle.muted).fixedSize(horizontal: false, vertical: true) }
+            }
+            Spacer(minLength: 8)
+            Toggle(title, isOn: $isOn).labelsHidden().toggleStyle(WorkspaceSwitchStyle())
+        }
+    }
+}
+
+// MARK: - The iPhone app's language, on the Mac
+
+/// A rounded card like the iPhone app's: soft fill, hairline rim, a faint shadow only in light.
+struct HeyCardSurface: View {
+    var radius: CGFloat = 18
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+            .fill(CompanionStyle.surface)
+            .overlay { RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(CompanionStyle.edge.opacity(0.07), lineWidth: 0.5) }
+            .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.05), radius: 9, y: 4)
+    }
+}
+
+extension View {
+    func heyCard(padding: CGFloat = 16, radius: CGFloat = 18) -> some View {
+        self.padding(padding).frame(maxWidth: .infinity, alignment: .leading).background(HeyCardSurface(radius: radius))
+    }
+}
+
+/// A teammate's face in a soft disc of their own color (team cards and profile).
+struct AgentDisc: View {
+    let persona: LocalChatPersona
+    var size: CGFloat = 86
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        let tint = CompanionStyle.agent(persona)
+        Circle()
+            .fill(RadialGradient(colors: [tint.opacity(scheme == .dark ? 0.70 : 0.45), tint.opacity(scheme == .dark ? 0.22 : 0.14), tint.opacity(0.02)],
+                                 center: UnitPoint(x: 0.5, y: 0.62), startRadius: 0, endRadius: size * 0.55))
+            .overlay {
+                Image(nsImage: CompanionArtwork.portrait(for: persona.avatar)).resizable().interpolation(.high).scaledToFit()
+                    .padding(size * 0.11).offset(y: size * 0.1)
+            }
+            .clipShape(Circle())
+            .overlay { Circle().strokeBorder(tint.opacity(0.45), lineWidth: 1) }
+            .frame(width: size, height: size)
+            .accessibilityLabel(persona.title)
+    }
+}
+
+/// A round avatar with a ring in the teammate's color and a status dot.
+struct AgentRingAvatar: View {
+    let persona: LocalChatPersona
+    var size: CGFloat = 50
+    /// `nil` hides the status dot.
+    var working: Bool? = nil
+    var body: some View {
+        Circle().fill(CompanionStyle.background)
+            .overlay {
+                Image(nsImage: CompanionArtwork.portrait(for: persona.avatar)).resizable().interpolation(.high).scaledToFit()
+                    .scaleEffect(1.12).offset(y: size * 0.08)
+            }
+            .clipShape(Circle())
+            .padding(max(2, size * 0.06))
+            .overlay { Circle().strokeBorder(CompanionStyle.agent(persona), lineWidth: size > 36 ? 2 : 1.5) }
+            .frame(width: size, height: size)
+            .overlay(alignment: .bottomTrailing) {
+                if let working {
+                    Circle().fill(working ? CompanionStyle.accent : Color.gray)
+                        .frame(width: size * 0.26, height: size * 0.26)
+                        .overlay { Circle().stroke(CompanionStyle.background, lineWidth: 2.5) }
+                }
+            }
+            .accessibilityLabel(persona.title)
+    }
+}
+
+/// A small status capsule: mint while someone is on it, neutral when free.
+struct StatusPill: View {
+    let text: LocalizedStringKey
+    var on = false
+    var body: some View {
+        Text(text).font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(on ? CompanionStyle.accentOnFill : CompanionStyle.muted)
+            .padding(.horizontal, 8).frame(height: 18)
+            .background(on ? AnyShapeStyle(CompanionStyle.accent) : AnyShapeStyle(CompanionStyle.edge.opacity(0.08)), in: Capsule())
+    }
+}
+
+/// The "Ask Chomp" bar: a plus, the prompt and a mint microphone.
+struct AskChompBar: View {
+    let prompt: LocalizedStringKey
+    let type: () -> Void
+    let speak: () -> Void
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "plus").font(.system(size: 13, weight: .semibold)).foregroundStyle(CompanionStyle.muted)
+            Text(prompt).font(.system(size: 14)).foregroundStyle(CompanionStyle.muted)
+            Spacer(minLength: 8)
+            Button(action: speak) {
+                Image(systemName: "mic.fill").font(.system(size: 13, weight: .semibold)).foregroundStyle(CompanionStyle.accentOnFill)
+                    .frame(width: 30, height: 30).background(CompanionStyle.accent, in: Circle())
+            }.buttonStyle(.plain).focusEffectDisabled().help(Text("Talk to Chomp"))
+        }
+        .padding(.leading, 16).padding(.trailing, 6).frame(height: 44)
+        .background(Capsule().fill(CompanionStyle.surface))
+        .overlay { Capsule().strokeBorder(CompanionStyle.edge.opacity(0.08), lineWidth: 0.5) }
+        .contentShape(Capsule())
+        .onTapGesture(perform: type)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+/// The iPhone app's large capsule button: mint for the main step, neutral otherwise.
+struct CapsuleActionStyle: ButtonStyle {
+    var primary = true
+    @Environment(\.isEnabled) private var enabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(primary ? CompanionStyle.accentOnFill : CompanionStyle.ink)
+            .padding(.horizontal, 22).frame(minWidth: primary ? 150 : 0, minHeight: 38)
+            .background(primary ? AnyShapeStyle(CompanionStyle.accent) : AnyShapeStyle(CompanionStyle.edge.opacity(0.08)), in: Capsule())
+            .opacity(enabled ? (configuration.isPressed ? 0.8 : 1) : 0.45)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(InterfaceMotion.feedback, value: configuration.isPressed)
+            .contentShape(Capsule())
     }
 }

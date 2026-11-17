@@ -12,8 +12,8 @@ enum CompanionAvatar: String, CaseIterable, Identifiable, Sendable {
         case .sig: "Your main companion"
         case .rita: "Health & breaks"
         case .ada: "Code & GitHub"
-        case .gantt: "Calendar & routine"
-        case .elinor: "Finances & resources"
+        case .gantt: "Calendar & journal"
+        case .elinor: "Finances"
         case .toni: "Communication & files"
         }
     }
@@ -23,7 +23,7 @@ enum CompanionAvatar: String, CaseIterable, Identifiable, Sendable {
         case .rita: "A gentler rhythm, with time to rest and breathe."
         case .ada: "A curious mind for code and the next step."
         case .gantt: "One commitment at a time, with room for your day."
-        case .elinor: "A clearer view of spending and resources."
+        case .elinor: "A clearer view of your spending."
         case .toni: "From a thought to a message, with care."
         }
     }
@@ -388,9 +388,10 @@ struct CompanionCharacter: View {
                 // use the same artwork rather than a missing-view placeholder.
                 Image(decorative: pixels, scale: 2).resizable().interpolation(.high)
             } else if !moves || (motion == .idle && previewTime == nil) {
-                // Cached Retina portraits retain native lighting/depth. Core Animation
+                // Cached Retina portraits preserve the painted finish. Core Animation
                 // breathes the composited image; no SceneKit render loop is retained.
                 CompanionPortrait(image: CompanionArtwork.portrait(for: avatar, animation: motion), animates: moves)
+                    .id(replay)
             } else {
                 CompanionScene(avatar: avatar, animation: motion, time: previewTime ?? Date.timeIntervalSinceReferenceDate,
                                animates: moves, gaze: gaze == .zero ? nil : gaze, replay: replay, preview: previewTime != nil)
@@ -478,7 +479,7 @@ final class CompanionPortraitView: NSView {
         let plays = animationEnabled && window?.isVisible == true && window?.occlusionState.contains(.visible) == true && !isHiddenOrHasHiddenAncestor
         if plays && portrait.animation(forKey: "breath") == nil {
             let breath = CABasicAnimation(keyPath: "transform.scale.y")
-            breath.fromValue = 1; breath.toValue = 1.018; breath.duration = 1.8
+            breath.fromValue = 1; breath.toValue = 1.008; breath.duration = 2.3
             breath.autoreverses = true; breath.repeatCount = .infinity
             breath.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             portrait.add(breath, forKey: "breath")

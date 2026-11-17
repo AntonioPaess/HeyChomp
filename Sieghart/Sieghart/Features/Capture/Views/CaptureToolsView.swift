@@ -12,16 +12,17 @@ struct CaptureToolsView: View {
     @State private var stroke: [CGPoint] = []
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            HStack(spacing: 12) {
+            // On the workspace page the agent header already introduces Toni.
+            if compact { HStack(spacing: 12) {
                 CompanionTaskCharacter(events: model.events, avatar: .toni, size: compact ? 64 : 78,
                                        animates: !reduceMotion, working: model.isBusy && !model.isSelecting)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("TONI · CAPTURE & SHARE").font(.system(size: 9, weight: .semibold)).tracking(1).foregroundStyle(CompanionStyle.accentInk)
-                    Text("Keep what matters.").font(.system(size: compact ? 20 : 24, weight: .semibold))
+                    Text("Toni · Capture & share").font(.system(size: 11, weight: .semibold)).foregroundStyle(CompanionStyle.muted)
+                    Text("Keep what matters.").font(.system(size: compact ? 17 : 20, weight: .semibold))
                     Text("An area, a thought, a color.").font(.caption).foregroundStyle(CompanionStyle.muted)
                 }
                 Spacer(minLength: 0)
-            }
+            } }
             HStack(spacing: 10) {
                 Button("Select an area") { model.selectRegion() }.buttonStyle(CompanionButtonStyle(primary: true, compact: compact))
                     .disabled(model.accessState != .allowed || model.isBusy || model.isSamplingColor)
@@ -83,7 +84,7 @@ struct CaptureToolsView: View {
             }
             if let reading = model.reading {
                 if !reading.text.isEmpty {
-                    HStack { Text("EXTRACTED TEXT").font(.system(size: 9, weight: .semibold)).tracking(1); Spacer(); Button("Copy text") { model.copyText(reading.text) }.font(.caption).buttonStyle(.plain) }
+                    HStack { Text("Extracted text").font(.system(size: 11, weight: .semibold)); Spacer(); Button("Copy text") { model.copyText(reading.text) }.font(.caption).buttonStyle(.plain) }
                     if preview { Text(reading.text).font(.callout).frame(maxWidth: .infinity, alignment: .leading) }
                     else { ScrollView { Text(reading.text).font(.callout).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.frame(maxHeight: 130) }
                 }

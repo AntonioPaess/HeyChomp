@@ -111,7 +111,7 @@ struct TimerToolsView: View {
             }
         }
     }
-    private func digits(_ value: String) -> some View { Text(value).font(.system(size: compact ? 28 : preferences.compactTimer ? 32 : 40, weight: .light, design: .rounded)).monospacedDigit().foregroundStyle(CompanionStyle.accentInk).lineLimit(1).minimumScaleFactor(0.7) }
+    private func digits(_ value: String) -> some View { Text(value).font(.system(size: compact ? 28 : preferences.compactTimer ? 32 : 40, weight: .light)).monospacedDigit().foregroundStyle(CompanionStyle.accentInk).lineLimit(1).minimumScaleFactor(0.7) }
     private func choice(_ title: String, selection: Binding<Int>, values: [Int], suffix: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(LocalizedStringKey(title)).font(.caption2).foregroundStyle(CompanionStyle.muted)

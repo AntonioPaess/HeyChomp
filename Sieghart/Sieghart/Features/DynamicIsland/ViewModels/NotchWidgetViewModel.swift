@@ -49,6 +49,10 @@ final class NotchWidgetViewModel: ObservableObject {
     let middleClick: MiddleClickController
     let audio: AudioViewModel
     let monitor: SystemMonitorViewModel
+    /// Rita's stand-up nudge: the first real agent nudge (spec "nudge" primitive).
+    let ritaNudges = RitaStandNudges()
+    private var ritaObservation: AnyCancellable?
+    private var lastSurfacedNudge: Date?
     let keepAwake: KeepAwakeViewModel
     let displayPower: DisplayPowerViewModel
     private var weatherObservationCancellable: AnyCancellable?
@@ -84,6 +88,8 @@ final class NotchWidgetViewModel: ObservableObject {
     private var pomodoroObservation: AnyCancellable?
     private var clockObservation: AnyCancellable?
     private var preferencesObservation: AnyCancellable?
+    let cursorCompanion = CursorCompanion()
+    private var cursorCompanionObservation: AnyCancellable?
     private var speechPreferencesObservation: AnyCancellable?
     private var screenChangeObserver: AnyCancellable?
     private var workspaceObservation: AnyCancellable?
@@ -369,6 +375,10 @@ final class NotchWidgetViewModel: ObservableObject {
         reveal()
     }
 
+    /// Design previews and QA only: show the closed island even when nothing is running,
+    /// so every compact state can be inspected side by side.
+    func presentCompactForPreview() { presentation = .island }
+
     func restoreSessionPresence() { if assistant.hasTimerActivity || !(aiUsage?.analytics.work.isEmpty ?? true) { showIsland() } }
 
     func observeAIActivity() {
@@ -480,6 +490,28 @@ final class NotchWidgetViewModel: ObservableObject {
         displayPower.startLifecycle()
         audio.startLifecycle()
         files.startLifecycle()
+        ritaObservation = ritaNudges.$nudge.removeDuplicates().sink { [weak self] nudge in
+            guard let self else { return }
+            self.objectWillChange.send()
+            // Surface a nudge once, when it first appears; minute updates never reopen the island.
+            if let nudge, nudge.minutes == self.ritaNudges.thresholdMinutes || self.lastSurfacedNudge != nudge.since {
+                defer { self.lastSurfacedNudge = nudge.since }
+                if self.lastSurfacedNudge != nudge.since, self.managesWindows, !self.isVisible { self.showIsland() }
+            }
+        }
+        if managesWindows { ritaNudges.start(); followPointerPreference() }
+    }
+
+    /// Keeps Chomp's sparkle beside the pointer in step with its setting and with motion preferences.
+    func followPointerPreference() {
+        cursorCompanion.phase = { [weak self] in self?.activation?.companionVoicePhase ?? .inactive }
+        cursorCompanionObservation = preferences.objectWillChange.receive(on: RunLoop.main).prepend(())
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let animates = self.preferences.characterMotion && !self.preferences.usesReducedMotion
+                if self.preferences.cursorCompanion && self.preferences.onboardingComplete { self.cursorCompanion.start(animates: animates) }
+                else { self.cursorCompanion.stop() }
+            }
     }
 
     private func removeCameraMonitor() {
@@ -488,6 +520,8 @@ final class NotchWidgetViewModel: ObservableObject {
     }
 
     func stopUtilities() {
+        ritaNudges.stop(); ritaObservation?.cancel(); ritaObservation = nil
+        cursorCompanionObservation?.cancel(); cursorCompanionObservation = nil; cursorCompanion.stop()
         removeCameraMonitor()
         pointerPresenceTask?.cancel()
         pointerPresenceTask = nil
@@ -663,6 +697,10 @@ final class NotchWidgetViewModel: ObservableObject {
         hideTask?.cancel()
         hideTask = nil
         revealGraceDeadline = nil
+        if managesWindows, followsPointerScreen, !isVisible {
+            let pointer = NSEvent.mouseLocation
+            presentationScreen = NSScreen.screens.first { $0.frame.contains(pointer) }
+        }
         isVisible = true
         screenDidChange()
         if approachGrace && !pointerInsideInteractiveArea && presentation != .island && presentation != .celebration {
@@ -831,7 +869,17 @@ final class NotchWidgetViewModel: ObservableObject {
         }) ?? NSScreen.main ?? NSScreen.screens.first
     }
 
-    private var notchScreen: NSScreen? { Self.selectedScreen() }
+    /// The display the companion opens on: where the pointer is when it is called (so it works
+    /// on external monitors without a notch), or the notch screen when that option is off.
+    private var presentationScreen: NSScreen?
+    var followsPointerScreen: Bool {
+        get { preferences.featureDefaults.object(forKey: "companion.followsPointerScreen") as? Bool ?? true }
+        set { objectWillChange.send(); preferences.featureDefaults.set(newValue, forKey: "companion.followsPointerScreen"); presentationScreen = nil }
+    }
+    private var notchScreen: NSScreen? {
+        if let presentationScreen, NSScreen.screens.contains(presentationScreen) { return presentationScreen }
+        return Self.selectedScreen()
+    }
 
     private func configureOverlay(_ panel: NSPanel) {
         panel.isFloatingPanel = true
@@ -957,4 +1005,54 @@ final class NotchWidgetViewModel: ObservableObject {
             self.spatialAssistant.dismissWeather(keepingReceipt: true)
         }
     }
+}
+
+/// Watches for long stretches of continuous use (no 5-minute pause in keyboard or mouse
+/// input) and raises Rita's "stand up" nudge. Local only: reads the system idle time.
+@MainActor final class RitaStandNudges: ObservableObject {
+    struct Nudge: Equatable { let minutes: Int; let since: Date }
+    @Published private(set) var nudge: Nudge?
+    @Published var enabled: Bool { didSet { defaults.set(enabled, forKey: "rita.standNudge.enabled"); if !enabled { nudge = nil } } }
+    @Published var thresholdMinutes: Int { didSet { defaults.set(thresholdMinutes, forKey: "rita.standNudge.minutes") } }
+    static let pauseSeconds: TimeInterval = 300
+    var idleSeconds: () -> TimeInterval = {
+        CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: UInt32.max)!)
+    }
+    private let defaults: UserDefaults
+    private var activeSince: Date?
+    private var snoozedUntil: Date?
+    private var task: Task<Void, Never>?
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        enabled = defaults.object(forKey: "rita.standNudge.enabled") as? Bool ?? true
+        let saved = defaults.integer(forKey: "rita.standNudge.minutes")
+        thresholdMinutes = saved > 0 ? saved : 50
+    }
+    func start() {
+        guard task == nil else { return }
+        task = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                self?.evaluate(now: Date())
+                try? await Task.sleep(for: .seconds(30))
+            }
+        }
+    }
+    func stop() { task?.cancel(); task = nil }
+    func evaluate(now: Date) {
+        guard enabled else { return }
+        let idle = idleSeconds()
+        if idle >= Self.pauseSeconds { activeSince = nil; nudge = nil; return }
+        let since = activeSince ?? now.addingTimeInterval(-idle)
+        activeSince = since
+        if let snoozedUntil, now < snoozedUntil { return }
+        let minutes = Int(now.timeIntervalSince(since) / 60)
+        if minutes >= thresholdMinutes { nudge = Nudge(minutes: minutes, since: since) }
+    }
+    /// "Levantar": the stretch starts over after a short grace period.
+    func standUp() { nudge = nil; activeSince = nil; snoozedUntil = Date().addingTimeInterval(Self.pauseSeconds) }
+    /// "Depois": ask again in 20 minutes.
+    func later() { nudge = nil; snoozedUntil = Date().addingTimeInterval(20 * 60) }
+    /// Design previews only.
+    func preview(minutes: Int) { nudge = Nudge(minutes: minutes, since: Date().addingTimeInterval(Double(-minutes * 60))) }
 }

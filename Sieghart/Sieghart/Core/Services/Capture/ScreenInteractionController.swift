@@ -205,7 +205,7 @@ private struct ListeningPointerView: View {
                 HStack(spacing: 8) {
                     CompanionWeatherCharacter(mood: .resolve(weather), animates: !reduceMotion).frame(width: 65, height: 66)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(Int(weather.temperature.rounded()))°").font(.system(size: 26, weight: .medium, design: .rounded)).monospacedDigit()
+                        Text("\(Int(weather.temperature.rounded()))°").font(.system(size: 26, weight: .medium)).monospacedDigit()
                         Text(weather.location.components(separatedBy: ",").first ?? weather.location).font(.system(size: 10)).lineLimit(1)
                     }
                     Image(systemName: "arrow.up.right").font(.system(size: 9)).foregroundStyle(.secondary)
@@ -221,7 +221,7 @@ private struct ListeningPointerView: View {
             Image(systemName: model.phase == .thinking ? "sparkle" : "waveform")
                 .symbolEffect(.variableColor, options: .repeating, isActive: !reduceMotion && model.phase != .idle)
                 .foregroundStyle(Color(red: 0.76, green: 0.69, blue: 1))
-            Text(title).font(.system(size: 11, weight: .semibold, design: .rounded)).fixedSize()
+            Text(title).font(.system(size: 11, weight: .semibold)).fixedSize()
         }.foregroundStyle(.white).padding(10).background(.black.opacity(0.86), in: Capsule())
             .overlay(Capsule().stroke(.purple.opacity(0.65), lineWidth: 1))
             .accessibilityLabel(title)

@@ -42,9 +42,9 @@ struct AIUsageView: View {
                 HStack(spacing: 3) {
                     ForEach(UsagePeriod.allCases, id: \.self) { choice in
                         Button(choice == .today ? "Today" : choice == .week ? "Week" : "Month") { period = choice }
-                            .buttonStyle(.plain).font(.caption.weight(.medium)).padding(.horizontal, 10).padding(.vertical, 7)
-                            .foregroundStyle(period == choice ? CompanionStyle.ink : CompanionStyle.muted)
-                            .background(period == choice ? CompanionStyle.separator : .clear, in: RoundedRectangle(cornerRadius: 8))
+                            .buttonStyle(.plain).font(.caption.weight(.semibold)).padding(.horizontal, 11).frame(height: 26)
+                            .foregroundStyle(period == choice ? CompanionStyle.accentInk : CompanionStyle.muted)
+                            .background(period == choice ? CompanionStyle.accent.opacity(0.14) : .clear, in: Capsule())
                             .accessibilityValue(period == choice ? "Selected" : "")
                     }
                 }
@@ -55,10 +55,16 @@ struct AIUsageView: View {
             }
             if let onOpenRoom { Button(action: onOpenRoom) { Label("Open Ada’s room", systemImage: "bubble.left.and.bubble.right") }.buttonStyle(CompanionButtonStyle()) }
             currentWork
-            trend
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: dense ? 10 : 16) { ranking("Models", symbol: "cpu", key: \.model).frame(minWidth: 240, maxWidth: .infinity); ranking("Projects", symbol: "folder", key: \.project).frame(minWidth: 240, maxWidth: .infinity) }
-                VStack(spacing: 16) { ranking("Models", symbol: "cpu", key: \.model); ranking("Projects", symbol: "folder", key: \.project) }
+            if points.isEmpty && !dense && !preview {
+                // Nothing recorded yet: Ada says so once, instead of a page of empty charts.
+                OwnerSays(persona: .ada, text: "Nothing recorded in this period. When you use Codex, Claude Code or Antigravity on this Mac, the hours, models and projects show up here.")
+                    .padding(.vertical, 8)
+            } else {
+                trend
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: dense ? 10 : 16) { ranking("Models", symbol: "cpu", key: \.model).frame(minWidth: 240, maxWidth: .infinity); ranking("Projects", symbol: "folder", key: \.project).frame(minWidth: 240, maxWidth: .infinity) }
+                    VStack(spacing: 16) { ranking("Models", symbol: "cpu", key: \.model); ranking("Projects", symbol: "folder", key: \.project) }
+                }
             }
             activity
             HStack {
@@ -212,8 +218,8 @@ struct AIUsageView: View {
             HStack { Text("00"); Spacer(); Text("12"); Spacer(); Text("23") }.font(.caption2).foregroundStyle(CompanionStyle.muted)
             let selection = selectedHour.map { hour in today.filter { Calendar.current.component(.hour, from: $0.date) == hour } } ?? []
             VStack(alignment: .leading, spacing: dense ? 2 : 5) {
-                Text(selectedHour.map { String(format: "%02d:00–%02d:00 · %@ tokens", $0, $0 + 1, hours[$0].formatted()) } ?? "Hover or select an hour to see its tokens and value.").font(dense ? .system(size: 9, weight: .semibold) : .caption.weight(.semibold))
-                Text(selectedHour == nil ? "Input · Output · Cache read · API equivalent" : "Input \(selection.reduce(0) { $0 + $1.input }.formatted()) · Output \(selection.reduce(0) { $0 + $1.output }.formatted()) · Cache \(selection.reduce(0) { $0 + $1.cached }.formatted()) · \(selection.isEmpty ? "$0.00" : usage.estimate(selection, provider: provider).label)")
+                Text(selectedHour.map { String(format: "%02d:00–%02d:00 · %@ tokens", $0, $0 + 1, hours[$0].formatted()) } ?? String(localized: "Hover or select an hour to see its tokens and value.")).font(dense ? .system(size: 9, weight: .semibold) : .caption.weight(.semibold))
+                Text(selectedHour == nil ? String(localized: "Input · Output · Cache read · API equivalent") : String(localized: "Input \(selection.reduce(0) { $0 + $1.input }.formatted()) · Output \(selection.reduce(0) { $0 + $1.output }.formatted()) · Cache \(selection.reduce(0) { $0 + $1.cached }.formatted()) · \(selection.isEmpty ? "$0.00" : usage.estimate(selection, provider: provider).label)"))
                     .font(dense ? .system(size: 8) : .caption2).foregroundStyle(CompanionStyle.muted)
             }.frame(height: dense ? 25 : 42, alignment: .topLeading).accessibilityElement(children: .combine)
         }.companionCard(height: dense ? 144 : nil, padding: cardPadding)
@@ -226,8 +232,8 @@ struct AIUsageView: View {
         }
         let groups: [(String, Int64)] = grouped.map { name, values in (name, values.reduce(Int64(0)) { $0 + $1.total }) }.sorted { $0.1 > $1.1 }
         return VStack(alignment: .leading, spacing: dense ? 6 : 12) {
-            Label(title, systemImage: symbol).font(heading)
-            if groups.isEmpty { Text("No records for this period").font(detail).foregroundStyle(CompanionStyle.muted) }
+            Label(LocalizedStringKey(title), systemImage: symbol).font(heading)
+            if groups.isEmpty { OwnerSays(persona: .ada, text: "No records for this period", compact: dense) }
             ForEach(Array(groups.prefix(3).enumerated()), id: \.offset) { _, item in
                 HStack(spacing: 8) {
                     Text(item.0).font(dense ? .system(size: 10.5, weight: .medium) : .callout.weight(.medium)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)

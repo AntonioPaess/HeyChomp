@@ -18,7 +18,8 @@ struct CalendarView: View {
             if model.accessState != .fullAccess {
                 permissionCard
             } else {
-                ganttHeader
+                // On the workspace page the agent header already introduces Gantt.
+                if compact { ganttHeader }
                 if !island { periodControls }
                 if island || model.span == .month {
                     if compact && !island {
@@ -34,7 +35,7 @@ struct CalendarView: View {
                 calendarSelection
                 reminders
                 notificationPreferences
-                Text(model.status).font(.caption).foregroundStyle(CompanionStyle.muted)
+                calendarStatusText(model.status).font(.caption).foregroundStyle(CompanionStyle.muted)
                 if let events { TaskCardsView(events: events, module: .calendar) }
             }
         }
@@ -50,11 +51,11 @@ struct CalendarView: View {
         HStack(spacing: 12) {
             gantt(size: compact ? 64 : 78)
             VStack(alignment: .leading, spacing: 5) {
-                Text("GANTT · CALENDAR & ROUTINE")
-                    .font(.system(size: 9, weight: .semibold)).tracking(1.1)
-                    .foregroundStyle(CompanionStyle.accentInk)
+                Text("Gantt · Calendar & routine")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(CompanionStyle.muted)
                 Text("One commitment at a time.")
-                    .font(.system(size: compact ? 18 : 23, weight: .semibold))
+                    .font(.system(size: compact ? 17 : 20, weight: .semibold))
                 if let next = model.nextEvent {
                     Text("Next: \(next.title)").font(.caption).foregroundStyle(CompanionStyle.muted).lineLimit(2)
                     HStack(spacing: 10) {
@@ -334,9 +335,9 @@ struct CalendarView: View {
                         .frame(width: 200, height: 150)
                 }
             VStack(spacing: 8) {
-                Text("GANTT · CALENDAR & ROUTINE").font(.system(size: 9, weight: .semibold)).tracking(1.1)
-                    .foregroundStyle(CompanionStyle.accentInk)
-                Text("Let's make room for your day.").font(.system(size: compact ? 22 : 27, weight: .semibold))
+                Text("Gantt · Calendar & routine").font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(CompanionStyle.muted)
+                Text("Let's make room for your day.").font(.system(size: compact ? 18 : 22, weight: .semibold))
                 Text(denied
                      ? "Allow Calendar access in System Settings. I'll keep your next commitment close."
                      : "Your next commitment and a gentler reminder, together. You choose which calendars appear.")
@@ -352,7 +353,7 @@ struct CalendarView: View {
                     .font(.system(size: 10)).foregroundStyle(CompanionStyle.muted)
             }
             if model.status.hasPrefix("Calendar permission request failed") {
-                Text(model.status).font(.caption).foregroundStyle(.orange).multilineTextAlignment(.center)
+                calendarStatusText(model.status).font(.caption).foregroundStyle(.orange).multilineTextAlignment(.center)
             }
         }
         .frame(maxWidth: 430)
@@ -381,4 +382,14 @@ private struct CalendarGantt: View {
             greeting = false
         }
     }
+}
+
+
+/// Calendar status is kept in English by the view model; translate it here, where the app locale is known.
+func calendarStatusText(_ status: String) -> Text {
+    let failed = "Calendar permission request failed: ", openFailed = "Could not open Calendar: "
+    if status.hasPrefix(failed) { return Text("Calendar permission request failed: \(String(status.dropFirst(failed.count)))") }
+    if status.hasPrefix(openFailed) { return Text("Could not open Calendar: \(String(status.dropFirst(openFailed.count)))") }
+    if status.hasSuffix(" events"), let count = Int(status.dropLast(" events".count)) { return Text("\(count) events") }
+    return Text(LocalizedStringKey(status))
 }

@@ -3,11 +3,13 @@ import SwiftUI
 enum AppSection: String, CaseIterable, Identifiable {
     case overview = "Overview", calendar = "Calendar", focus = "Timers", activation = "Activation", appearance = "Appearance", dynamicIsland = "Dynamic Island", aiLimits = "AI agents", audio = "Audio", clipboard = "Clipboard", system = "System", keepAwake = "Keep awake", displayPower = "Display & power"
     var id: String { rawValue }
-    case desktop = "Windows", files = "Files", capture = "Capture", agentRoom = "Ada’s room"
+    case desktop = "Windows", files = "Files", capture = "Capture", agentRoom = "Ada’s room", team = "Team", settings = "Settings"
     func title(english: Bool) -> String {
-        if english { return self == .overview ? "Home" : self == .agentRoom ? "Conversations" : rawValue }
+        if english { return self == .overview ? "Today" : self == .agentRoom ? "Conversations" : self == .files ? "Library" : rawValue }
         switch self {
-        case .overview: return "Início"
+        case .overview: return "Hoje"
+        case .team: return "Equipe"
+        case .settings: return "Ajustes"
         case .agentRoom: return "Conversas"
         case .calendar: return "Agenda"
         case .focus: return "Timers"
@@ -21,15 +23,20 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .keepAwake: return "Keep Awake"
         case .displayPower: return "Tela e energia"
         case .desktop: return "Janelas"
-        case .files: return "Biblioteca e arquivos"
+        case .files: return "Biblioteca"
         case .capture: return "Captura"
         }
     }
-    static let workspaceSections: [Self] = [.overview, .agentRoom, .calendar, .focus, .files, .capture, .clipboard]
-    static let preferenceSections: [Self] = [.activation, .appearance, .dynamicIsland, .audio, .aiLimits, .system, .keepAwake, .displayPower, .desktop]
+    /// The four places that always stay in the sidebar (⌘1 to ⌘4).
+    static let places: [Self] = [.overview, .agentRoom, .team, .files]
+    /// Everything else lives under a collapsed "Ferramentas" group. Settings pages
+    /// will merge into a single "Ajustes" page in a later step.
+    static let tools: [Self] = [.calendar, .focus, .capture, .clipboard, .desktop, .displayPower, .keepAwake, .audio, .aiLimits, .system, .settings]
     func subtitle(english: Bool) -> String {
         switch self {
-        case .overview: english ? "Your people, conversations and next steps, together." : "Sua equipe, suas conversas e seus próximos passos, juntos."
+        case .overview: english ? "What happened and what needs you." : "O que aconteceu e o que precisa de você."
+        case .team: english ? "Chomp and the specialists, and what each one can notice." : "O Chomp e os especialistas, e o que cada um pode notar."
+        case .settings: english ? "How to call Chomp, how it looks and where the widget sits." : "Como chamar o Chomp, a aparência e onde fica o widget."
         case .agentRoom: english ? "Start with Chomp. Bring a specialist into the conversation when you need one." : "Comece com o Chomp e conte com um especialista quando precisar."
         case .calendar: english ? "A clear view of your commitments and reminders." : "Seus compromissos e lembretes, em uma visão clara."
         case .focus: english ? "One thing at a time. Choose your pace." : "Uma coisa de cada vez. Escolha seu ritmo."
@@ -47,10 +54,25 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .desktop: english ? "Make room for your work. Arrange windows and spaces." : "Dê espaço ao seu trabalho. Organize janelas e áreas de trabalho."
         }
     }
+    /// The team member who looks after this tool (shown in the tool's page header).
+    var owner: LocalChatPersona? {
+        switch self {
+        case .focus: .rita
+        case .clipboard, .audio, .files, .capture: .toni
+        // Mac utilities belong to Chomp, the orchestrator; Elinor is finances only.
+        case .desktop, .displayPower, .keepAwake, .system: .sig
+        case .aiLimits: .ada
+        case .calendar: .gantt
+        case .settings: .sig
+        case .overview, .team, .agentRoom, .activation, .appearance, .dynamicIsland: nil
+        }
+    }
     var symbol: String {
         switch self {
         case .desktop: "macwindow.on.rectangle"
-        case .overview: "square.grid.2x2"
+        case .overview: "sun.max"
+        case .team: "person.2"
+        case .settings: "gearshape"
         case .calendar: "calendar"
         case .focus: "timer"
         case .activation: "keyboard"
@@ -73,4 +95,9 @@ enum AppSection: String, CaseIterable, Identifiable {
 final class WorkspaceViewModel: ObservableObject {
     @Published var section: AppSection
     init(section: AppSection = .overview) { self.section = section }
+}
+
+extension Notification.Name {
+    /// Posted by ⌘, so the main window shows Ferramentas > Ajustes.
+    static let openWorkspaceSettings = Notification.Name("HeyChomp.openWorkspaceSettings")
 }

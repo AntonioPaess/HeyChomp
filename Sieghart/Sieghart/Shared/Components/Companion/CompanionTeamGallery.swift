@@ -18,7 +18,7 @@ struct CompanionTeamGallery: View {
                         CompanionCharacter(size: compact ? 52 : 78, avatar: member, animates: animates)
                         Text(member.name).font(.callout.weight(.semibold))
                         Text(LocalizedStringKey(member.subtitle)).font(.system(size: compact ? 9 : 11)).foregroundStyle(CompanionStyle.muted).lineLimit(1).minimumScaleFactor(0.7)
-                        if !compact { Text(LocalizedStringKey(member == .sig ? "Main companion" : "Specialist")).font(.caption2).foregroundStyle(member.tint) }
+                        if !compact { Text(LocalizedStringKey(member == .sig ? "Main companion" : "Specialist")).font(.caption2).foregroundStyle(CompanionStyle.muted) }
                     }.frame(maxWidth: .infinity).padding(compact ? 9 : 16).modifier(WorkspaceSurface(radius: 18))
                 }.accessibilityLabel(member == .ada && onAda != nil ? "Ada. Open her room." : "\(member.name). \(member.subtitle). Explore movements.")
             }
@@ -29,11 +29,15 @@ struct CompanionTeamGallery: View {
 struct CompanionTeamDock: View {
     var animates: Bool
     var events: CompanionEventCenter? = nil
+    /// A teammate who stepped out of the row to talk (e.g. Rita peeking over her nudge).
+    var away: CompanionAvatar? = nil
+    /// A live one-liner under each name: what that teammate is doing right now.
+    var caption: ((CompanionAvatar) -> AnyView)? = nil
     var onAda: (() -> Void)?
     var onSelect: ((CompanionAvatar) -> Void)? = nil
     var body: some View {
         HStack(spacing: CompanionHomeLayout.dockSpacing) {
-            ForEach(CompanionAvatar.specialists) { member in
+            ForEach(CompanionAvatar.specialists.filter { $0 != away }) { member in
                 Group {
                     if let onSelect {
                         Button { onSelect(member) } label: { portrait(member) }.buttonStyle(.plain).help(member.subtitle)
@@ -44,14 +48,21 @@ struct CompanionTeamDock: View {
                 }.frame(maxWidth: .infinity).padding(.vertical, 4)
             }
         }.padding(.horizontal, 4).frame(height: CompanionHomeLayout.dockHeight)
-            .background(CompanionStyle.edge.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
     }
     private func portrait(_ member: CompanionAvatar) -> some View {
         VStack(spacing: 2) {
-                    if let events {
-                        CompanionTaskCharacter(events: events, avatar: member, size: CompanionHomeLayout.dockAvatarSize, animates: animates, supporting: true)
-                    } else { CompanionCharacter(size: CompanionHomeLayout.dockAvatarSize, avatar: member, animates: animates) }
-                    Text(member.name).font(.system(size: 9, weight: .medium)).foregroundStyle(CompanionStyle.muted)
+                    ZStack(alignment: .bottom) {
+                        // A soft floor so the team stands on the island's lit lip.
+                        Ellipse().fill(Color.black.opacity(0.35)).frame(width: 30, height: 6).blur(radius: 2).offset(y: 2)
+                        if let events {
+                            CompanionTaskCharacter(events: events, avatar: member, size: CompanionHomeLayout.dockAvatarSize, animates: animates, supporting: true)
+                        } else { CompanionCharacter(size: CompanionHomeLayout.dockAvatarSize, avatar: member, animates: animates) }
+                    }
+                    HStack(spacing: 4) {
+                        Text(member.name).font(.system(size: caption == nil ? 9 : 10, weight: caption == nil ? .medium : .semibold))
+                            .foregroundStyle(caption == nil ? CompanionStyle.muted : CompanionStyle.ink)
+                        if let caption { caption(member).font(.system(size: 9.5)).foregroundStyle(CompanionStyle.muted) }
+                    }.lineLimit(1).frame(maxWidth: 130)
         }.frame(maxWidth: .infinity)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(member.name), \(member.subtitle). Specialist introduction.")

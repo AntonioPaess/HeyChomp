@@ -16,7 +16,7 @@ struct GeneratedCanvasView: View {
             } else {
                 ForEach(Array(document.elements.enumerated()), id: \.offset) { _, element in
                     if element.kind == .text, let point = element.points.first {
-                        Text(element.text).font(.system(size: 17, weight: .semibold, design: .rounded))
+                        Text(element.text).font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(color(element.ink)).padding(5)
                             .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 7))
                             .frame(maxWidth: bounds.width * 0.42).fixedSize(horizontal: false, vertical: true)
