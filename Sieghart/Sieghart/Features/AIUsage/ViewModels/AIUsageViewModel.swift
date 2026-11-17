@@ -132,9 +132,22 @@ import Foundation
                 let providers = AIProvider.allCases.filter { self.isEnabled($0, codexEnabled: codex.enabled) }
                 let result = await self.analyticsReader.read(providers: providers)
                 let allowed = AIProvider.allCases.filter { self.isEnabled($0, codexEnabled: codex.enabled) }
-                self.analytics = AIAnalytics(points: result.points.filter { allowed.contains($0.provider) }, work: result.work.filter { allowed.contains($0.provider) }, scannedFiles: result.scannedFiles)
-                self.activityUpdatedAt = .now
-                if !codex.enabled { self.tokens[.codex] = nil; self.accountActivity = nil; self.accountUpdatedAt = nil; self.accountRefreshFailed = false }
+                // A ilha observa este objeto: cada atribuição a um @Published a redesenha.
+                // O ciclo roda a cada 5 s, então só publica o que mudou de fato.
+                let fresh = AIAnalytics(points: result.points.filter { allowed.contains($0.provider) }, work: result.work.filter { allowed.contains($0.provider) }, scannedFiles: result.scannedFiles)
+                let changed = fresh != self.analytics
+                if changed { self.analytics = fresh }
+                // "Atualizado às HH:mm": basta mudar quando a leitura ou o minuto mudam.
+                let now = Date()
+                if changed || !(self.activityUpdatedAt.map { Calendar.current.isDate($0, equalTo: now, toGranularity: .minute) } ?? false) {
+                    self.activityUpdatedAt = now
+                }
+                if !codex.enabled {
+                    if self.tokens[.codex] != nil { self.tokens[.codex] = nil }
+                    if self.accountActivity != nil { self.accountActivity = nil }
+                    if self.accountUpdatedAt != nil { self.accountUpdatedAt = nil }
+                    if self.accountRefreshFailed { self.accountRefreshFailed = false }
+                }
                 if Date().timeIntervalSince(lastCounters) >= 60 {
                     await self.refresh(codexEnabled: codex.enabled)
                     await self.refreshPricing(providers: allowed)

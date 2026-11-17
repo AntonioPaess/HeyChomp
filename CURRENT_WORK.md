@@ -2,6 +2,18 @@
 
 Atualizado em 17/11/2026 (lote mobile); antes, 03/11/2026, horário de Recife. Leia também `HANDOFF.md` e `KNOWN_ISSUES.md`.
 
+## Lote — revisão e correções de performance do app macOS, 17/11/2026
+
+Revisão pedida pelo usuário (compressão de JSON, escrita em lote, gargalo de dependência, UI otimista, esqueletos, telas vazias e cache, animações e haptics, offline). Conclusões: não há envio relevante de JSON e o `URLSession` já descomprime gzip/br; não há dependências de terceiros; o app é local-first (UI otimista por natureza, IA e voz do sistema funcionam offline); não há haptics nem esqueletos. Três correções feitas nesta branch, **sem commit**:
+
+1. **Área de transferência** (`Core/Services/Clipboard/ClipboardHistory.swift`): o histórico (até 200 itens e 40 MB, com imagens em base64 dentro do JSON) era regravado inteiro a cada cópia, fixação ou remoção. Agora o `history.json` é um índice leve (versão 2) e cada imagem fica em `media/<sha256>.png`, gravada uma única vez; imagens sem referência são apagadas depois que o índice é gravado. O formato antigo continua sendo lido e migra na gravação seguinte. Permissões 0700/0600 mantidas.
+2. **Monitor de uso de IA** (`Features/AIUsage/ViewModels/AIUsageViewModel.swift`, `Core/Services/AI/AIActivity.swift`): não pode ser desligado (a ilha mostra quando o Claude ou o Codex estão trabalhando). O ciclo de 5 s agora só publica `analytics` quando a leitura muda (`AIAnalytics` e `AIUsagePoint` ficaram `Equatable`), só atualiza `activityUpdatedAt` quando muda o minuto e não reatribui valores nulos. Antes, cada ciclo redesenhava a ilha e as telas que observam esse objeto.
+3. **Tela vazia falsa** (`Features/Clipboard/Views/ClipboardHistoryView.swift`): com o histórico ativo e ainda não carregado, mostra "Carregando suas cópias…" em vez de "Ainda sem cópias". Tradução em `pt-BR.lproj`.
+
+Testes novos em `Tests/SwiftTesting/Core/ClipboardStorageTests.swift`: imagem fora do índice, gravada uma vez, fixar não regrava a imagem, remoção apaga o arquivo, e leitura e migração do formato antigo. Build do Mac: BUILD SUCCEEDED. Testes: 26 testes (área de transferência, leitura de uso de IA, tokens e preços), todos passaram, incluindo os novos G12.08 e G12.09 (`xcodebuild -scheme HeyChomp-Checks -testPlan HeyChomp-Complete -only-testing:...`, log em `/tmp/heychomp-perf-xctest.log`). O `Tools/run-swift-tests.py` não rodou: o indexador recusa um teste já existente sem código de contrato, `Tests/SwiftTesting/Presentation/CompanionNativeTests.swift:37` ("Ada faces the notebook…"), que veio do commit `bd218da` do redesign. A correção é colocar um código Gxx.yy no nome desse teste.
+
+Pendências sugeridas: haptics (iPhone em tudo; Mac no editor da ilha e nos timers), esqueletos nas esperas de rede (pesquisa, GitHub, preços), cache do clima, carregamento da tela de arquivos e conexão reaproveitada no GitHub.
+
 ## Lote — ícone final "Espiando" e escolha de avatar, 17/11/2026
 
 - **Commit autorizado pelo usuário (17/11/2026):** todo o trabalho mobile (conceitos, protótipo iOS, ícones e AppIcon compartilhado) foi commitado na branch `claude/heychomp-mobile-design-b7c10c` (`b40dbd9`). Push autorizado e feito no mesmo dia, em dois PRs empilhados: #12 (`design/heychomp-redesign-2026-11-11` → `main`, redesign do Mac) e #13 (esta branch → `design/heychomp-redesign-2026-11-11`, iPhone e ícone). O PR #13 deve ser mesclado depois do #12.

@@ -60,31 +60,105 @@ protocol ClipboardStorage: Sendable {
     func load() async throws -> [ClipboardEntry]
     func save(_ entries: [ClipboardEntry], revision: UInt64) async throws
 }
+/// Histórico em disco: um índice JSON leve e uma pasta `media/` com as imagens.
+///
+/// Antes, o histórico inteiro (até 200 itens e 40 MB, com as imagens em base64
+/// dentro do JSON) era recodificado e regravado a cada cópia, fixação ou remoção.
+/// Agora cada imagem vira um PNG nomeado pelo SHA-256 do conteúdo e é gravada uma
+/// única vez; o índice só guarda a referência. Imagens sem referência são apagadas
+/// na gravação seguinte. O formato antigo (um array de `ClipboardEntry`) continua
+/// sendo lido e é migrado na próxima gravação.
 actor LocalClipboardStorage: ClipboardStorage {
+    private struct StoredEntry: Codable {
+        var id: UUID
+        var kind: ClipboardKind
+        var text: String
+        var files: [URL]
+        /// Nome do PNG em `media/` (SHA-256 do conteúdo), só para imagens.
+        var image: String?
+        var copiedAt: Date
+        var sourceName: String
+        var sourceBundle: String
+        var pinned: Bool
+    }
+    private struct Index: Codable { var version: Int; var entries: [StoredEntry] }
+    static let indexVersion = 2
+
     private let url: URL
     private var lastRevision: UInt64 = 0
     init(url: URL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Sieghart/Clipboard/history.json")) { self.url = url }
+    private var mediaDirectory: URL { url.deletingLastPathComponent().appendingPathComponent("media", isDirectory: true) }
+
     func load() throws -> [ClipboardEntry] {
         guard FileManager.default.fileExists(atPath: url.path) else { return [] }
         let size = (try FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue ?? 0
         guard size <= 60 * 1024 * 1024 else { throw CocoaError(.fileReadTooLarge) }
-        return try JSONDecoder().decode([ClipboardEntry].self, from: Data(contentsOf: url))
+        let data = try Data(contentsOf: url)
+        guard let index = try? JSONDecoder().decode(Index.self, from: data) else {
+            // Formato antigo (até 17/11/2026): as imagens vêm dentro do próprio JSON.
+            return try JSONDecoder().decode([ClipboardEntry].self, from: data)
+        }
+        guard index.version == Self.indexVersion else { throw CocoaError(.fileReadCorruptFile) }
+        return index.entries.compactMap { stored in
+            var payload = ClipboardPayload(kind: stored.kind, text: stored.text, files: stored.files)
+            if let name = stored.image {
+                // Uma imagem que sumiu do disco descarta só aquele item.
+                guard Self.isMediaName(name), let image = try? Data(contentsOf: mediaDirectory.appendingPathComponent(name)) else { return nil }
+                payload.image = image
+            }
+            guard payload.valid else { return nil }
+            return ClipboardEntry(id: stored.id, payload: payload, copiedAt: stored.copiedAt,
+                                  sourceName: stored.sourceName, sourceBundle: stored.sourceBundle, pinned: stored.pinned)
+        }
     }
+
     func save(_ entries: [ClipboardEntry], revision: UInt64) throws {
         guard revision >= lastRevision else { return }
-        let data = try JSONEncoder().encode(entries)
-        let parent = url.deletingLastPathComponent()
+        let parent = url.deletingLastPathComponent(), media = mediaDirectory
         try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: parent.path)
+        try FileManager.default.createDirectory(at: media, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+
+        var referenced = Set<String>()
+        let stored = try entries.map { entry -> StoredEntry in
+            var name: String?
+            if entry.payload.kind == .image, !entry.payload.image.isEmpty {
+                let fileName = SHA256.hash(data: entry.payload.image).map { String(format: "%02x", $0) }.joined() + ".png"
+                let file = media.appendingPathComponent(fileName)
+                // Endereçado pelo conteúdo: se já existe, é a mesma imagem; não regrava.
+                if !FileManager.default.fileExists(atPath: file.path) {
+                    try write(entry.payload.image, to: file)
+                }
+                referenced.insert(fileName); name = fileName
+            }
+            return StoredEntry(id: entry.id, kind: entry.payload.kind, text: entry.payload.text, files: entry.payload.files,
+                               image: name, copiedAt: entry.copiedAt, sourceName: entry.sourceName,
+                               sourceBundle: entry.sourceBundle, pinned: entry.pinned)
+        }
+        try write(JSONEncoder().encode(Index(version: Self.indexVersion, entries: stored)), to: url)
+        lastRevision = revision
+
+        // Só depois do índice gravado: apaga imagens que nenhum item usa mais.
+        let existing = (try? FileManager.default.contentsOfDirectory(atPath: media.path)) ?? []
+        for name in existing where Self.isMediaName(name) && !referenced.contains(name) {
+            try? FileManager.default.removeItem(at: media.appendingPathComponent(name))
+        }
+    }
+
+    private func write(_ data: Data, to file: URL) throws {
         // The mobile file-protection option creates an owner-unreadable file
         // on the tested macOS filesystem. Keep macOS storage atomic/private.
         #if os(macOS)
-        try data.write(to: url, options: .atomic)
+        try data.write(to: file, options: .atomic)
         #else
-        try data.write(to: url, options: [.atomic, .completeFileProtectionUnlessOpen])
+        try data.write(to: file, options: [.atomic, .completeFileProtectionUnlessOpen])
         #endif
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
-        lastRevision = revision
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+    }
+
+    /// Nomes aceitos em `media/`: 64 dígitos hexadecimais + ".png" (nada de caminhos).
+    private static func isMediaName(_ name: String) -> Bool {
+        name.count == 68 && name.hasSuffix(".png") && name.dropLast(4).allSatisfy(\.isHexDigit)
     }
 }
 
