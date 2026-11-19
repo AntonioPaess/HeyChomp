@@ -32,7 +32,7 @@ A organização é **Features / Core / Shared**. Consulte [ARCHITECTURE.md](ARCH
 
 ## Instalar e abrir
 
-A cópia canônica é `/Applications/HeyChomp.app`, bundle `com.sieghart.app`. Antes de encerrar uma versão com Keep Awake ativo, prepare a proteção temporária; só prossiga depois de confirmar o sucesso do guard:
+A cópia canônica é `/Applications/HeyChomp.app`, bundle `com.heychomp.mac` (até 17/11/2026, `com.sieghart.app`; a primeira instalação com o identificador novo copia as preferências, move o token do GitHub no Keychain e exige conceder de novo as permissões do macOS). Antes de encerrar uma versão com Keep Awake ativo, prepare a proteção temporária; só prossiga depois de confirmar o sucesso do guard:
 
 ```sh
 python3 Tools/hold-awake-during-update.py prepare

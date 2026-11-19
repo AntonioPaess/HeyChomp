@@ -4,7 +4,7 @@ source_bundle="${1:?Pass a verified HeyChomp.app build path}"
 tool_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 destination="/Applications/HeyChomp.app"
 info="$source_bundle/Contents/Info.plist"
-[[ "$(/usr/bin/plutil -extract CFBundleIdentifier raw "$info")" == com.sieghart.app ]]
+[[ "$(/usr/bin/plutil -extract CFBundleIdentifier raw "$info")" == com.heychomp.mac ]]
 /usr/bin/codesign --verify --deep --strict "$source_bundle"
 /bin/bash "$tool_root/Tests/verify-built-app.sh" "$source_bundle"
 installed=''
@@ -57,7 +57,8 @@ for old_bundle in \
     /private/tmp/sieghart-*/Build/Products/Debug/Sieghart.app; do
     [[ -d "$old_bundle" ]] || continue
     identifier="$(/usr/bin/plutil -extract CFBundleIdentifier raw "$old_bundle/Contents/Info.plist" 2>/dev/null || true)"
-    if [[ "$identifier" == com.sieghart.app ]]; then
+    # com.sieghart.app é o identificador anterior a 17/11/2026.
+    if [[ "$identifier" == com.heychomp.mac || "$identifier" == com.sieghart.app ]]; then
         "$register" -u "$old_bundle" || true
     fi
 done

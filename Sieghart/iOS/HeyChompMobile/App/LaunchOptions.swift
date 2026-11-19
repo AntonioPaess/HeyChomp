@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Os argumentos `-chave valor` caem em `UserDefaults` automaticamente:
 ///
-///     xcrun simctl launch booted com.sieghart.heychomp.mobile.prototype -startScreen rita -appearance dark
+///     xcrun simctl launch booted com.heychomp.ios -startScreen rita -appearance dark
 ///
 /// `-startScreen`: onboarding (padrão), home, chat, conversations, voice, team,
 /// chomp, rita, ada, gantt, elinor, toni, settings, widgets, pair, icon.

@@ -17,7 +17,18 @@ import tempfile
 import time
 
 STATE = Path(tempfile.gettempdir()) / f"sieghart-update-awake-{os.getuid()}.json"
-PREFERENCES = Path.home() / "Library/Preferences/com.sieghart.app.plist"
+# com.heychomp.mac desde 17/11/2026; com.sieghart.app antes disso. Durante a
+# primeira atualização, quem está rodando ainda é o app antigo: vale o arquivo
+# de preferências mais recente.
+PREFERENCE_FILES = (
+    Path.home() / "Library/Preferences/com.heychomp.mac.plist",
+    Path.home() / "Library/Preferences/com.sieghart.app.plist",
+)
+
+
+def preferences_file():
+    existing = [path for path in PREFERENCE_FILES if path.exists()]
+    return max(existing, key=lambda path: path.stat().st_mtime) if existing else PREFERENCE_FILES[0]
 APP_EXECUTABLES = {
     "/Applications/HeyChomp.app/Contents/MacOS/HeyChomp",
     "/Applications/Chomp.app/Contents/MacOS/Chomp",
@@ -27,7 +38,8 @@ APPLE_EPOCH = 978307200
 
 
 def snapshot():
-    data = plistlib.loads(PREFERENCES.read_bytes()) if PREFERENCES.exists() else {}
+    preferences = preferences_file()
+    data = plistlib.loads(preferences.read_bytes()) if preferences.exists() else {}
     request = json.loads(data.get("awake.request", b"{}"))
     return {"active": bool(data.get("awake.active")), "request": request}
 

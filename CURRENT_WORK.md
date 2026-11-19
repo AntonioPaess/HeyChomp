@@ -2,6 +2,18 @@
 
 Atualizado em 17/11/2026 (lote mobile); antes, 03/11/2026, horário de Recife. Leia também `HANDOFF.md` e `KNOWN_ISSUES.md`.
 
+## Lote — identificadores padronizados (com.heychomp.*), 18/11/2026
+
+Pedido do usuário: padronizar com o mesmo prefixo e aceitar conceder as permissões de novo. **Sem commit.**
+
+- **Mac:** `com.sieghart.app` → `com.heychomp.mac`; testes → `com.heychomp.mac.tests` (pbxproj e `Tools/update-project-sources.py`). Os apps auxiliares de render também mudaram para `com.heychomp.*`.
+- **iOS:** `com.heychomp.ios` (antes `com.heychomp.mobile.prototype`). Reservados: `com.heychomp.ios.widgets` e `group.com.heychomp` (tabela em `Sieghart/iOS/ARCHITECTURE.md`).
+- **Migração no app:** `LegacyIdentifierMigration` (em `CompanionPreferences.swift`, chamada no início de `HeyChompApp.init`) copia uma única vez as chaves do domínio `com.sieghart.app` que ainda não existem no novo. O token do GitHub passa de `com.sieghart.app.github` para `com.heychomp.mac.github` na primeira leitura (o macOS pode pedir para liberar o acesso ao item antigo). Os arquivos em Application Support/Sieghart não mudam.
+- **Scripts:** a instalação e o lançamento exigem `com.heychomp.mac`. `check-update-identity.sh` aceita uma única migração a partir de `com.sieghart.app` com o mesmo time, comparando a exigência de assinatura com o identificador trocado. `hold-awake-during-update.py` lê o arquivo de preferências mais recente entre o novo e o antigo (o Keep Awake continua protegido na primeira atualização). `DockSpacesController.protectedBundles` usa o identificador novo.
+- **Verificação:** build do Mac assinado com o time JZ8TU3BZ38 e `com.heychomp.mac` (BUILD SUCCEEDED, sem registrar App ID: build sem `-allowProvisioningUpdates`). `check-update-identity.sh /Applications/HeyChomp.app <build novo>` passou com o aviso de migração. Testes: G08.08 (migração de preferências), DockSpaces e área de transferência passaram; os 8 testes Python do guard do Keep Awake passaram. Build do iOS com `com.heychomp.ios`, aberto no simulador. **O app instalado (124, `com.sieghart.app`) não foi atualizado.**
+- **Depois da primeira instalação com o identificador novo:** conceder de novo microfone, reconhecimento de fala, Acessibilidade, gravação de tela e Calendário; o item de login (se houver) e as preferências do Sistema aparecem como "HeyChomp" novo. O App ID `com.heychomp.mac` ainda não está registrado no portal (K18).
+- Durante o lote, o disco chegou a 100%; foram apagadas só as pastas de build descartáveis criadas nesta sessão em /tmp.
+
 ## Lote — revisão e correções de performance do app macOS, 17/11/2026
 
 Revisão pedida pelo usuário (compressão de JSON, escrita em lote, gargalo de dependência, UI otimista, esqueletos, telas vazias e cache, animações e haptics, offline). Conclusões: não há envio relevante de JSON e o `URLSession` já descomprime gzip/br; não há dependências de terceiros; o app é local-first (UI otimista por natureza, IA e voz do sistema funcionam offline); não há haptics nem esqueletos. Três correções feitas nesta branch, **sem commit**:

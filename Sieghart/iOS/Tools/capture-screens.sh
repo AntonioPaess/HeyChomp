@@ -5,7 +5,7 @@
 set -e
 cd "$(dirname "$0")/.."
 DEVICE="${1:-iPhone 17}"
-BUNDLE=com.sieghart.heychomp.mobile.prototype
+BUNDLE=com.heychomp.ios
 DD=/tmp/heychomp-ios-dd
 OUT=$(mktemp -d /tmp/heychomp-shots.XXXXXX)
 

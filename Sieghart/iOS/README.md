@@ -37,7 +37,7 @@ cd Sieghart/iOS && xcodebuild -project HeyChompMobile.xcodeproj -scheme HeyChomp
 Para revisar sem passar pelo primeiro uso, use os argumentos de lançamento. No Xcode, eles já estão no esquema, desligados (Edit Scheme → Run → Arguments).
 
 ```bash
-xcrun simctl launch booted com.sieghart.heychomp.mobile.prototype -startScreen rita -appearance dark
+xcrun simctl launch booted com.heychomp.ios -startScreen rita -appearance dark
 ```
 
 | Argumento | Valores |

@@ -98,3 +98,29 @@ final class CompanionPreferences: ObservableObject {
     var usesReducedMotion: Bool { reduceMotion || NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
     private func save(_ value: Bool, _ name: String) { defaults.set(value, forKey: "appearance.\(name)") }
 }
+
+/// Migração única de `com.sieghart.app` para `com.heychomp.mac` (17/11/2026).
+///
+/// O UserDefaults é separado por identificador: sem isto, o app com o
+/// identificador novo abriria como na primeira vez (primeiro uso, ajustes,
+/// Keep Awake, ferramentas da ilha). Copia só as chaves que ainda não existem no
+/// domínio novo e marca a migração como feita. Os arquivos em
+/// Application Support/Sieghart não dependem do identificador e não mudam.
+/// As permissões do macOS (microfone, Acessibilidade, gravação de tela,
+/// Calendário) ficam presas ao identificador antigo e precisam ser concedidas
+/// de novo; isso não tem como ser migrado pelo app.
+enum LegacyIdentifierMigration {
+    static let legacyIdentifier = "com.sieghart.app"
+    static let doneKey = "migration.legacyIdentifier.done"
+
+    static func run(defaults: UserDefaults = .standard, legacy: String = legacyIdentifier,
+                    current: String? = Bundle.main.bundleIdentifier) {
+        guard current != legacy, !defaults.bool(forKey: doneKey) else { return }
+        if let old = defaults.persistentDomain(forName: legacy) {
+            for (key, value) in old where defaults.object(forKey: key) == nil {
+                defaults.set(value, forKey: key)
+            }
+        }
+        defaults.set(true, forKey: doneKey)
+    }
+}

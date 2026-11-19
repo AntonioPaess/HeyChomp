@@ -85,7 +85,16 @@ Regra visual da mistura v1 + v2: **quem fala ou trabalha aparece de rosto** (`Ag
 - O projeto é separado do `HeyChomp.xcodeproj` do Mac, que não foi alterado.
 - `HeyChompMobile/` é uma **pasta sincronizada**: arquivos novos entram no alvo sem editar o `project.pbxproj`.
 - Recursos: `Resources/Assets.xcassets` (ícones alternativos, miniaturas e cor de destaque) e o catálogo compartilhado do Mac, por referência, que traz o `AppIcon` principal.
-- Bundle `com.sieghart.heychomp.mobile.prototype`, versão 0.1, só iPhone, só retrato.
+- Bundle `com.heychomp.ios`, versão 0.1, só iPhone, só retrato.
+- **Identificadores da família HeyChomp** (padronizados em 17/11/2026), todos com o mesmo prefixo para facilitar App Groups e Keychain compartilhado:
+
+  | Produto | Identificador |
+  |---|---|
+  | App do Mac | `com.heychomp.mac` (antes `com.sieghart.app`) |
+  | App do iPhone | `com.heychomp.ios` |
+  | Extensão de widgets do iPhone (futura) | `com.heychomp.ios.widgets` |
+  | Testes do Mac | `com.heychomp.mac.tests` |
+  | App Group (quando houver) | `group.com.heychomp` |
 - Os textos são literais em pt-BR (`developmentRegion = pt-BR`, `SWIFT_EMIT_LOC_STRINGS = YES`). Quando houver outro idioma, gere o String Catalog a partir deles.
 
 ## Como adicionar uma tela

@@ -63,7 +63,7 @@ put(product_id, {"isa": "PBXFileReference", "explicitFileType": "wrapper.cfbundl
 configs = []
 for config in ("Debug", "Release"):
     settings = {
-        "PRODUCT_NAME": "$(TARGET_NAME)", "PRODUCT_BUNDLE_IDENTIFIER": "com.sieghart.tests",
+        "PRODUCT_NAME": "$(TARGET_NAME)", "PRODUCT_BUNDLE_IDENTIFIER": "com.heychomp.mac.tests",
         "SDKROOT": "macosx", "SUPPORTED_PLATFORMS": "macosx",
         "MACOSX_DEPLOYMENT_TARGET": "14.6", "SWIFT_VERSION": "6.0",
         "GENERATE_INFOPLIST_FILE": "YES", "INFOPLIST_FILE": "",

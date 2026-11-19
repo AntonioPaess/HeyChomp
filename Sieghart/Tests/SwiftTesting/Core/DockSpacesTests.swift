@@ -28,7 +28,7 @@ extension LogicTests {
             #expect(tall.aspectRatio == 0.5)
             #expect(empty.aspectRatio == 1.6)
             #expect(DockSpacesController.protectedBundles.contains("com.apple.finder"))
-            #expect(DockSpacesController.protectedBundles.contains("com.sieghart.app"))
+            #expect(DockSpacesController.protectedBundles.contains("com.heychomp.mac"))
         }
     }
 }

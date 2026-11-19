@@ -13,6 +13,8 @@ struct HeyChompApp: App {
     @StateObject private var aiUsage: AIUsageViewModel
 
     init() {
+        // Antes de qualquer ViewModel ler o UserDefaults.
+        LegacyIdentifierMigration.run()
         let preferences = CompanionPreferences()
         let codexUsage = CodexUsageViewModel()
         let aiUsage = AIUsageViewModel()
