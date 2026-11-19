@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>HeyChomp iPhone</title>
+<!--
+  Conceito visual do HeyChomp para iPhone (17/11/2026). Apenas design: nada aqui
+  é funcionalidade ou integração real. Renderize com render.sh.
+  Parâmetros: ?board=app|widgets|lock&theme=light|dark
+  Os personagens vêm direto de Sieghart/Shared/Resources/ProviderAssets.xcassets.
+-->
+<style>
+:root { --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; --round: "SF Pro Rounded", ui-rounded, -apple-system, sans-serif; }
+body.light {
+  --canvas: #EDEDF0; --page: #F7F7F7; --card: #FFFFFF; --sep: #E6E6E6; --ink: #1D1D1F; --muted: #595959;
+  --edge: 0, 0, 0; --accent: #00945F; --onAccent: #00150C; --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(0,0,0,.05);
+  --chomp: #00945F; --rita: #61216D; --ada: #0B6A87; --gantt: #775113; --elinor: #CC5F01; --toni: #2806BF;
+  --wall: radial-gradient(120% 70% at 15% 10%, #DCEFE6 0%, transparent 60%), radial-gradient(120% 80% at 90% 85%, #E4DDF5 0%, transparent 60%), linear-gradient(160deg, #F3F1EC, #E9E7F2);
+  --lockwall: radial-gradient(90% 60% at 20% 15%, #5FA98C 0%, transparent 65%), radial-gradient(100% 70% at 85% 80%, #7C6FB8 0%, transparent 65%), linear-gradient(170deg, #4E8F7C, #5B5492);
+  --wtext: #1D1D1F;
+}
+body.dark {
+  --canvas: #0E0E10; --page: #1E1E1E; --card: #252525; --sep: #343434; --ink: #EDEDED; --muted: #A0A0A0;
+  --edge: 255, 255, 255; --accent: #3EDC9A; --onAccent: #04170F; --shadow: 0 1px 0 rgba(255,255,255,.03) inset;
+  --chomp: #3EDC9A; --rita: #DB9CF6; --ada: #1497A5; --gantt: #F3E334; --elinor: #CF7B03; --toni: #A96EFC;
+  --wall: radial-gradient(120% 70% at 15% 10%, #14352A 0%, transparent 60%), radial-gradient(120% 80% at 90% 85%, #2A2141 0%, transparent 60%), linear-gradient(160deg, #111214, #17151D);
+  --lockwall: radial-gradient(90% 60% at 20% 15%, #123B2E 0%, transparent 65%), radial-gradient(100% 70% at 85% 80%, #2B2350 0%, transparent 65%), linear-gradient(170deg, #0B1714, #120F1F);
+  --wtext: #EDEDED;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--canvas); color: var(--ink); -webkit-font-smoothing: antialiased; }
+svg { display: block; }
+
+/* Board */
+.board { padding: 64px 72px 56px; }
+.board-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; }
+.board-head h1 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
+.board-head p { font-size: 15px; color: var(--muted); margin-top: 6px; max-width: 760px; line-height: 1.45; }
+.board-tag { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.board-row { display: flex; gap: 56px; align-items: flex-start; }
+.col { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.caption { font-size: 14px; color: var(--muted); text-align: center; max-width: 380px; line-height: 1.4; }
+.caption b { color: var(--ink); font-weight: 600; display: block; font-size: 15px; margin-bottom: 2px; }
+
+/* Phone */
+.phone { width: 393px; height: 852px; border-radius: 56px; position: relative; overflow: hidden; background: var(--page);
+  box-shadow: 0 0 0 11px #0A0A0B, 0 0 0 12.5px #3A3A3D, 0 40px 80px rgba(0,0,0,.18); flex: none; margin: 12px; }
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 126px; height: 37px; border-radius: 20px; background: #000; z-index: 50; }
+.island.live { width: 168px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 6px; }
+.island.live img { width: 34px; margin-top: 2px; }
+.island.live span { color: #DB9CF6; font: 600 14px var(--round); font-variant-numeric: tabular-nums; }
+.sb { position: absolute; top: 0; left: 0; right: 0; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 6px 34px 0 46px; z-index: 40; font-weight: 600; font-size: 16.5px; color: var(--ink); }
+.sb.white { color: #fff; }
+.sbi { display: flex; gap: 6px; align-items: center; }
+.home-ind { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 136px; height: 5px; border-radius: 3px; background: var(--ink); opacity: .85; z-index: 60; }
+.home-ind.white { background: #fff; }
+
+/* Shared atoms */
+.card { background: var(--card); border-radius: 22px; box-shadow: var(--shadow); border: .5px solid rgba(var(--edge), .06); position: relative; }
+.perch { position: absolute; width: 88px; top: -44px; left: 12px; pointer-events: none; z-index: 2; }
+.pill { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 15px; border-radius: 17px; font: 600 14px var(--font); border: 0; color: var(--ink); background: rgba(var(--edge), .06); white-space: nowrap; }
+.pill.primary { background: var(--accent); color: var(--onAccent); }
+.pill.big { height: 54px; border-radius: 27px; font-size: 17px; width: 100%; justify-content: center; }
+.pill.soon { height: 22px; padding: 0 9px; font-size: 11px; font-weight: 600; color: var(--muted); background: rgba(var(--edge), .06); }
+.label { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .01em; }
+.mark { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+.muted { color: var(--muted); }
+
+/* Onboarding */
+.ob { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 64px 24px 40px; }
+.steps { display: flex; gap: 6px; justify-content: center; margin-top: 6px; }
+.steps i { width: 6px; height: 6px; border-radius: 3px; background: rgba(var(--edge), .15); }
+.steps i.on { width: 20px; background: var(--accent); }
+.hero { position: relative; height: 330px; margin-top: 18px; }
+.hero img { position: absolute; width: 220px; left: 50%; bottom: 0; transform: translateX(-46%); }
+.bubble { background: var(--card); color: var(--ink); border-radius: 20px; padding: 13px 16px; font-size: 16px; line-height: 1.38; box-shadow: var(--shadow); border: .5px solid rgba(var(--edge), .07); position: relative; }
+.bubble.down { position: absolute; top: 4px; left: 6px; right: 26px; }
+.bubble.down::after { content: ""; position: absolute; bottom: -9px; left: 96px; width: 18px; height: 18px; background: var(--card); transform: rotate(45deg); border-radius: 3px; border-right: .5px solid rgba(var(--edge), .07); border-bottom: .5px solid rgba(var(--edge), .07); }
+.ob h2 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.12; margin-top: 26px; }
+.ob .sub { font-size: 16px; color: var(--muted); margin-top: 8px; line-height: 1.4; }
+.field { margin-top: 20px; height: 56px; border-radius: 16px; background: var(--card); border: 1.5px solid var(--accent); display: flex; align-items: center; padding: 0 18px; font-size: 19px; font-weight: 500; }
+.caret { width: 2px; height: 24px; background: var(--accent); margin-left: 2px; border-radius: 1px; }
+.hint { font-size: 13px; color: var(--muted); margin-top: 10px; padding-left: 4px; }
+.spacer { flex: 1; }
+.link { display: flex; gap: 8px; align-items: center; justify-content: center; font: 600 15px var(--font); color: var(--ink); background: none; border: 0; margin-top: 16px; height: 34px; }
+.team-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; row-gap: 48px; margin-top: 54px; }
+.team-card { padding: 26px 14px 14px; text-align: center; min-height: 112px; display: flex; flex-direction: column; align-items: center; }
+.team-card .perch { left: 50%; transform: translateX(-50%); width: 84px; top: -42px; }
+.team-card .nm { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.team-card .rl { font-size: 13px; color: var(--muted); margin-top: 3px; line-height: 1.3; }
+.team-card .pill.soon { margin-top: 8px; }
+
+/* Home */
+.home { position: absolute; inset: 0; padding: 60px 18px 0; }
+.home-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 0 4px; }
+.home-head .date { font-size: 14px; color: var(--muted); font-weight: 500; }
+.home-head h2 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; margin-top: 2px; }
+.icon-btn { width: 38px; height: 38px; border-radius: 19px; background: rgba(var(--edge), .06); display: grid; place-items: center; color: var(--ink); }
+.team-row { display: flex; justify-content: space-between; margin: 12px 2px 0; }
+.av { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 54px; }
+.av .ring { width: 50px; height: 50px; border-radius: 25px; border: 2px solid var(--c); padding: 2px; position: relative; }
+.av .ring div { width: 100%; height: 100%; border-radius: 50%; background: var(--card); overflow: hidden; display: grid; place-items: center; }
+.av .ring img { width: 112%; margin-top: 6px; }
+.av .dot { position: absolute; right: -1px; bottom: -1px; width: 13px; height: 13px; border-radius: 7px; border: 2.5px solid var(--page); background: var(--accent); }
+.av .dot.idle { background: #9A9A9A; }
+.av span { font-size: 11px; font-weight: 600; color: var(--muted); }
+.chomp-card { margin-top: 52px; padding: 22px 16px 14px; }
+.chomp-card p { font-size: 15.5px; line-height: 1.4; }
+.chomp-card .who { font-size: 12px; font-weight: 600; color: var(--muted); position: absolute; top: 10px; left: 106px; }
+.row-pills { display: flex; gap: 8px; margin-top: 12px; }
+.sec { display: flex; justify-content: space-between; align-items: baseline; margin: 20px 4px 0; }
+.sec a { font-size: 13px; font-weight: 600; color: var(--accent); }
+.gantt-card { margin-top: 48px; padding: 20px 16px 14px; }
+.ev { display: flex; align-items: center; gap: 10px; font-size: 14px; padding: 5px 0; }
+.ev time { width: 44px; font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 500; }
+.ev .bar { width: 3px; height: 18px; border-radius: 2px; background: var(--c); flex: none; }
+.ev.now { font-weight: 600; }
+.ev.now time { color: var(--ink); }
+.ev .in { margin-left: auto; font-size: 12px; color: var(--muted); font-weight: 500; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 42px; }
+.mini { padding: 22px 14px 14px; min-height: 120px; }
+.mini .perch { width: 72px; top: -36px; left: 8px; }
+.mini .k { font-size: 12px; font-weight: 600; color: var(--muted); }
+.mini .v { font: 700 26px var(--round); letter-spacing: -.01em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.mini .s { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.track { height: 5px; border-radius: 3px; background: rgba(var(--edge), .08); margin-top: 10px; overflow: hidden; }
+.track i { display: block; height: 100%; border-radius: 3px; background: var(--c); }
+.composer-wrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 30px; background: linear-gradient(to bottom, transparent, var(--page) 34%); }
+.composer { height: 56px; border-radius: 28px; background: var(--card); box-shadow: 0 6px 24px rgba(0,0,0,.08); border: .5px solid rgba(var(--edge), .08); display: flex; align-items: center; padding: 0 7px 0 8px; gap: 8px; }
+.composer .cbtn { width: 40px; height: 40px; border-radius: 20px; display: grid; place-items: center; color: var(--muted); background: rgba(var(--edge), .05); }
+.composer .ph { flex: 1; font-size: 16px; color: var(--muted); }
+.mic { width: 42px; height: 42px; border-radius: 21px; background: var(--accent); color: var(--onAccent); display: grid; place-items: center; flex: none; }
+
+/* Chat */
+.chat-head { position: absolute; top: 54px; left: 0; right: 0; height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: .5px solid var(--sep); }
+.chat-head .t { display: flex; flex-direction: column; align-items: center; }
+.chat-head .t b { font-size: 16px; }
+.chat-head .t span { font-size: 12px; color: var(--muted); display: flex; gap: 5px; align-items: center; }
+.msgs { position: absolute; top: 118px; left: 0; right: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 12px; }
+.day { text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; margin: 4px 0; }
+.me { align-self: flex-end; max-width: 78%; background: var(--accent); color: var(--onAccent); border-radius: 20px 20px 6px 20px; padding: 11px 15px; font-size: 16px; line-height: 1.35; }
+.them { display: flex; gap: 8px; align-items: flex-end; max-width: 88%; }
+.them .face { width: 30px; height: 30px; border-radius: 15px; background: var(--card); overflow: hidden; display: grid; place-items: center; flex: none; border: .5px solid rgba(var(--edge), .1); }
+.them .face img { width: 150%; margin-top: 2px; }
+.them .b { background: var(--card); border: .5px solid rgba(var(--edge), .07); box-shadow: var(--shadow); border-radius: 20px 20px 20px 6px; padding: 11px 15px; font-size: 16px; line-height: 1.38; }
+.handoff { margin: 30px 0 0 38px; padding: 16px 14px 12px 14px; }
+.handoff .perch { width: 66px; top: -33px; left: 8px; }
+.handoff .h1 { font-size: 12px; font-weight: 600; color: var(--muted); }
+.handoff .h2 { font-size: 15px; font-weight: 600; margin-top: 3px; }
+.handoff .h3 { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.typing { display: flex; gap: 4px; padding: 14px 16px; }
+.typing i { width: 7px; height: 7px; border-radius: 4px; background: var(--muted); opacity: .5; }
+.typing i:nth-child(2) { opacity: .75; }
+.suggest { display: flex; gap: 8px; flex-wrap: nowrap; margin-bottom: 10px; overflow: hidden; }
+
+/* Home screen (springboard) */
+.wall { position: absolute; inset: 0; background: var(--wall); }
+.lockwall { position: absolute; inset: 0; background: var(--lockwall); }
+.sp { position: absolute; }
+.wlabel { position: absolute; font-size: 11.5px; font-weight: 500; color: var(--wtext); opacity: .82; text-align: center; width: 100%; bottom: -19px; }
+.w { position: absolute; background: var(--card); border-radius: 23px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+body.dark .w { box-shadow: none; border: .5px solid rgba(255,255,255,.06); }
+.w.s { width: 170px; height: 170px; }
+.w.m { width: 364px; height: 170px; }
+.w.l { width: 364px; height: 382px; }
+.w .top { position: absolute; top: 13px; right: 14px; font-size: 11px; font-weight: 600; color: var(--muted); }
+.inner { position: absolute; background: var(--page); border-radius: 15px; }
+body.dark .inner { background: #303030; }
+.inner .perch { width: 64px; top: -32px; left: 8px; }
+.appicons { position: absolute; left: 0; right: 0; display: grid; grid-template-columns: repeat(4, 62px); justify-content: space-between; padding: 0 28px; row-gap: 26px; }
+.appicons i { width: 62px; height: 62px; border-radius: 14px; background: rgba(255,255,255,.55); display: block; position: relative; }
+body.dark .appicons i { background: rgba(255,255,255,.10); }
+.appicons i::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -14px; height: 5px; border-radius: 3px; background: var(--wtext); opacity: .2; }
+.dock { position: absolute; left: 12px; right: 12px; bottom: 12px; height: 92px; border-radius: 34px; background: rgba(255,255,255,.35); backdrop-filter: blur(20px); display: flex; align-items: center; justify-content: space-around; padding: 0 12px; }
+body.dark .dock { background: rgba(255,255,255,.08); }
+.dock i { width: 62px; height: 62px; border-radius: 14px; background: rgba(255,255,255,.6); }
+body.dark .dock i { background: rgba(255,255,255,.12); }
+.searchpill { position: absolute; left: 50%; transform: translateX(-50%); height: 30px; padding: 0 14px; border-radius: 15px; background: rgba(255,255,255,.4); font-size: 13px; font-weight: 600; color: var(--wtext); display: flex; align-items: center; gap: 6px; }
+body.dark .searchpill { background: rgba(255,255,255,.1); }
+
+/* Lock screen */
+.lk-date { position: absolute; top: 76px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,.92); font-size: 20px; font-weight: 600; display: flex; justify-content: center; gap: 10px; align-items: center; }
+.lk-date .inl { display: flex; align-items: center; gap: 5px; opacity: .92; }
+.lk-clock { position: absolute; top: 96px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,.95); font: 600 104px/1 var(--round); letter-spacing: -.02em; }
+.acc-row { position: absolute; top: 222px; left: 0; right: 0; display: flex; justify-content: center; gap: 14px; }
+.acc { color: #fff; }
+.acc.c { width: 72px; height: 72px; border-radius: 36px; background: rgba(255,255,255,.16); backdrop-filter: blur(12px); display: grid; place-items: center; position: relative; }
+.acc.r { width: 158px; height: 72px; border-radius: 16px; background: rgba(255,255,255,.16); backdrop-filter: blur(12px); padding: 9px 11px; position: relative; overflow: hidden; }
+.acc .t1 { font-size: 12px; font-weight: 600; opacity: .8; display: flex; align-items: center; gap: 5px; }
+.acc .t2 { font-size: 15px; font-weight: 700; margin-top: 2px; line-height: 1.15; }
+.acc .t3 { font-size: 12.5px; opacity: .8; margin-top: 1px; }
+.sil { filter: grayscale(1) invert(1) brightness(1.35) contrast(1.05); }
+.gauge { position: absolute; inset: 0; }
+.gauge-v { font: 700 18px var(--round); line-height: 1; text-align: center; }
+.gauge-l { font-size: 10px; font-weight: 600; opacity: .8; text-align: center; margin-top: 2px; }
+.notif { position: absolute; left: 10px; right: 10px; border-radius: 24px; background: rgba(255,255,255,.72); backdrop-filter: blur(24px); padding: 13px 14px; display: flex; gap: 11px; color: #111; }
+body.dark .notif { background: rgba(40,40,44,.78); color: #eee; }
+.notif .ico { width: 38px; height: 38px; border-radius: 9px; background: #111; display: grid; place-items: center; overflow: hidden; flex: none; }
+.notif .ico img { width: 46px; margin-top: 8px; }
+.notif .nt { flex: 1; font-size: 14.5px; line-height: 1.3; }
+.notif .nt b { display: flex; justify-content: space-between; font-size: 14.5px; }
+.notif .nt b span { font-weight: 400; opacity: .55; font-size: 13px; }
+.la { position: absolute; left: 10px; right: 10px; border-radius: 26px; background: rgba(18,18,20,.82); backdrop-filter: blur(24px); padding: 16px 16px 14px; color: #fff; }
+.la .row { display: flex; align-items: center; gap: 12px; }
+.la img.p { width: 70px; margin: -10px 0 -4px -4px; }
+.la .k { font-size: 13px; font-weight: 600; color: #DB9CF6; }
+.la .v { font: 700 34px var(--round); font-variant-numeric: tabular-nums; letter-spacing: -.01em; line-height: 1.05; }
+.la .btns { margin-left: auto; display: flex; gap: 8px; }
+.la .rb { width: 44px; height: 44px; border-radius: 22px; background: rgba(255,255,255,.14); display: grid; place-items: center; }
+.la .track { background: rgba(255,255,255,.14); margin-top: 12px; }
+.lk-bottom { position: absolute; bottom: 46px; left: 46px; right: 46px; display: flex; justify-content: space-between; }
+.lk-bottom i { width: 50px; height: 50px; border-radius: 25px; background: rgba(0,0,0,.22); backdrop-filter: blur(10px); display: grid; place-items: center; color: #fff; }
+
+/* Notes column */
+.notes { width: 420px; padding: 28px 28px 24px; margin-top: 12px; }
+.notes h3 { font-size: 17px; font-weight: 700; }
+.notes ul { list-style: none; margin-top: 12px; display: flex; flex-direction: column; gap: 11px; }
+.notes li { font-size: 14px; line-height: 1.45; color: var(--muted); padding-left: 16px; position: relative; }
+.notes li::before { content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 3px; background: var(--accent); }
+.notes li b { color: var(--ink); font-weight: 600; }
+.notes .sz { margin-top: 18px; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; }
+.notes .sz span:nth-child(odd) { font-weight: 600; }
+.notes .sz span:nth-child(even) { color: var(--muted); }
+.notes hr { border: 0; border-top: .5px solid var(--sep); margin: 18px 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const theme = q.get('theme') || 'light';
+const board = q.get('board') || 'app';
+document.body.className = theme;
+const A = '../../../Sieghart/Shared/Resources/ProviderAssets.xcassets/';
+const peek = n => A + `Peek-${n}.imageset/peek@2x.png`;
+const face = n => A + `Companion-${n}.imageset/portrait@2x.png`;
+const dark = theme === 'dark';
+
+// Glyphs drawn here (not SF Symbols) so the board renders anywhere.
+const I = {
+  mic: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5" fill="currentColor"/><path d="M5 11.5a7 7 0 0 0 14 0M12 18.5v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  plus: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`,
+  spark: (s, c = 'currentColor') => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 2c.8 6 4 9.2 10 10-6 .8-9.2 4-10 10-.8-6-4-9.2-10-10 6-.8 9.2-4 10-10z" fill="${c}"/></svg>`,
+  back: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M15 4l-8 8 8 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  person: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4" fill="currentColor"/><path d="M4.5 20.5c1-4 4-6 7.5-6s6.5 2 7.5 6z" fill="currentColor"/></svg>`,
+  chats: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M4 5.5h16v10H9l-4.5 3.5V15.5H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`,
+  laptop: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="4.5" y="5" width="15" height="10.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 19h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  more: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="18.5" cy="12" r="2" fill="currentColor"/></svg>`,
+  pause: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></svg>`,
+  stop: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor"/></svg>`,
+  cal: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  keyb: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.5 10h1M10.5 10h1M14.5 10h1M8 14h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  clip: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="5.5" y="4.5" width="13" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="9" y="2.5" width="6" height="4" rx="1.2" fill="currentColor"/></svg>`,
+  torch: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M8 3h8v4l-2 3v11h-4V10L8 7z" fill="currentColor"/></svg>`,
+  cam: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M4 8h3.5L9 5.5h6L16.5 8H20v11H4z" fill="currentColor"/><circle cx="12" cy="13" r="3.3" fill="#555"/></svg>`,
+  search: s => `<svg width="${s}" height="${s}" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>`,
+};
+const statusIcons = `<span class="sbi">
+  <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="currentColor"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="currentColor"/><rect x="10" y="3" width="3" height="9" rx="1" fill="currentColor"/><rect x="15" y="0" width="3" height="12" rx="1" fill="currentColor"/></svg>
+  <svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.5 11.5l2.4-2.9a3.6 3.6 0 0 0-4.8 0zM3.6 6.6a7 7 0 0 1 9.8 0l1.5-1.8a9.5 9.5 0 0 0-12.8 0zM.4 3.1a11.8 11.8 0 0 1 16.2 0L17 2.6A12.6 12.6 0 0 0 0 2.6z" fill="currentColor"/></svg>
+  <svg width="28" height="13" viewBox="0 0 28 13"><rect x=".5" y=".5" width="24" height="12" rx="3.8" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="17" height="8" rx="2.2" fill="currentColor"/><path d="M26 4.5v4a2 2 0 0 0 0-4z" fill="currentColor" opacity=".4"/></svg></span>`;
+const sb = (white, time = '9:41') => `<div class="sb ${white ? 'white' : ''}"><span>${time}</span>${statusIcons}</div>`;
+const phone = (inner, o = {}) => `<div class="phone">${o.island ?? '<div class="island"></div>'}${inner}<div class="home-ind ${o.white ? 'white' : ''}"></div></div>`;
+const col = (ph, title, text) => `<div class="col">${ph}<div class="caption"><b>${title}</b>${text}</div></div>`;
+const C = n => `var(--${n})`;
+
+// ---------- App ----------
+function onboardingName() {
+  return phone(`${sb()}<div class="ob">
+    <div class="steps"><i class="on"></i><i></i><i></i></div>
+    <div class="hero">
+      <div class="bubble down">Oi! Eu sou o Chomp. Eu e a equipe também cuidamos do seu dia pelo iPhone.</div>
+      <img src="${face('sig')}">
+    </div>
+    <h2>Como posso te chamar?</h2>
+    <div class="field">Lia<i class="caret"></i></div>
+    <p class="hint">Dá para mudar depois em Ajustes.</p>
+    <div class="spacer"></div>
+    <button class="pill primary big">Continuar</button>
+    <button class="link">${I.laptop(20)} Já uso o HeyChomp no Mac</button>
+  </div>`);
+}
+function onboardingTeam() {
+  const t = [
+    ['sig', 'Chomp', 'chomp', 'Organiza a equipe e responde você'],
+    ['rita', 'Rita', 'rita', 'Foco e saúde', 'Saúde · em breve'],
+    ['ada', 'Ada', 'ada', 'Código'],
+    ['gantt', 'Gantt', 'gantt', 'Agenda e diário'],
+    ['elinor', 'Elinor', 'elinor', 'Finanças', 'Apple Pay · em breve'],
+    ['toni', 'Toni', 'toni', 'Arquivos, áudio e captura'],
+  ];
+  return phone(`${sb()}<div class="ob">
+    <div class="steps"><i></i><i class="on"></i><i></i></div>
+    <h2 style="margin-top:22px">Prazer, Lia.<br>Esta é a sua equipe.</h2>
+    <p class="sub">Cada um cuida de uma parte do dia. Fale com o Chomp e ele chama quem precisa.</p>
+    <div class="team-grid">${t.map(([a, n, c, r, soon]) => `
+      <div class="card team-card"><img class="perch" src="${peek(a)}">
+        <div class="nm"><span class="mark" style="background:${C(c)}"></span>${n}</div>
+        <div class="rl">${r}</div>${soon ? `<span class="pill soon">${soon}</span>` : ''}
+      </div>`).join('')}</div>
+    <div class="spacer"></div>
+    <button class="pill primary big">Continuar</button>
+  </div>`);
+}
+function homeScreen() {
+  const av = [['sig', 'Chomp', 'chomp', 1], ['rita', 'Rita', 'rita', 1], ['ada', 'Ada', 'ada', 0], ['gantt', 'Gantt', 'gantt', 1], ['elinor', 'Elinor', 'elinor', 0], ['toni', 'Toni', 'toni', 0]];
+  return phone(`${sb()}<div class="home">
+    <div class="home-head">
+      <div><div class="date">Terça, 17 de novembro</div><h2>Boa tarde, Lia</h2></div>
+      <div style="display:flex;gap:8px;margin-top:6px"><span class="icon-btn">${I.chats(19)}</span><span class="icon-btn">${I.person(19)}</span></div>
+    </div>
+    <div class="team-row">${av.map(([a, n, c, on]) => `<div class="av"><div class="ring" style="--c:${C(c)}"><div><img src="${face(a)}"></div><i class="dot ${on ? '' : 'idle'}"></i></div><span>${n}</span></div>`).join('')}</div>
+    <div class="card chomp-card"><img class="perch" src="${peek('sig')}"><span class="who">Chomp · agora</span>
+      <p>Você tem 1h20 livre antes da revisão das 16h. Quer que a Rita segure o foco até lá?</p>
+      <div class="row-pills"><span class="pill primary">Iniciar foco</span><span class="pill">Agora não</span></div>
+    </div>
+    <div class="sec"><span class="label">Hoje</span><a>Ver agenda</a></div>
+    <div class="card gantt-card"><img class="perch" src="${peek('gantt')}"><span class="who" style="position:absolute;top:10px;left:106px;font-size:12px;font-weight:600;color:var(--muted)">Gantt</span>
+      <div class="ev"><time>13:30</time><span class="bar" style="--c:rgba(var(--edge),.15)"></span><span class="muted">Almoço com a Bia</span></div>
+      <div class="ev now"><time>16:00</time><span class="bar" style="--c:var(--gantt)"></span>Revisão do design<span class="in">em 1h20</span></div>
+      <div class="ev"><time>21:00</time><span class="bar" style="--c:rgba(var(--edge),.15)"></span><span class="muted">Diário · 2 tarefas abertas</span></div>
+    </div>
+    <div class="duo">
+      <div class="card mini"><img class="perch" src="${peek('rita')}">
+        <div class="k">Foco</div><div class="v">25:00</div><div class="s">Pronta quando você quiser</div>
+        <div style="margin-top:8px"><span class="pill soon">Saúde · em breve</span></div>
+      </div>
+      <div class="card mini"><img class="perch" src="${peek('elinor')}">
+        <div class="k">Novembro</div><div class="v">R$ 1.240</div><div class="s">62% do orçamento</div>
+        <div class="track" style="--c:var(--elinor)"><i style="width:62%"></i></div>
+      </div>
+    </div>
+    </div>
+    <div class="composer-wrap"><div class="composer"><span class="cbtn">${I.plus(20)}</span><span class="ph">Pergunte ao Chomp</span><span class="mic">${I.mic(21)}</span></div></div>`);
+}
+function chatScreen() {
+  return phone(`${sb()}
+    <div class="chat-head"><span class="icon-btn">${I.back(18)}</span>
+      <div class="t"><b>Chomp</b><span><i class="mark" style="background:var(--accent);width:6px;height:6px"></i>Com a equipe</span></div>
+      <span class="icon-btn">${I.more(18)}</span></div>
+    <div class="msgs">
+      <div class="day">Hoje, 14:38</div>
+      <div class="me">Me lembra de revisar o orçamento antes da reunião de amanhã</div>
+      <div class="them"><div class="face"><img src="${peek('sig')}"></div><div class="b">Combinado! Pedi para o Gantt e para a Elinor. Amanhã às 9h você recebe o resumo.</div></div>
+      <div class="card handoff"><img class="perch" src="${peek('gantt')}">
+        <div style="padding-left:62px"><div class="h1">Gantt · lembrete criado</div><div class="h2">Revisar orçamento</div><div class="h3">Quarta, 18 de nov. · 9:00</div></div>
+      </div>
+      <div class="card handoff" style="margin-top:34px"><img class="perch" src="${peek('elinor')}">
+        <div style="padding-left:62px"><div class="h1">Elinor · vai preparar</div><div class="h2">Resumo de novembro</div><div class="h3">Gastos, metas e próximas contas</div></div>
+      </div>
+      <div class="me" style="margin-top:6px">E agora, o que eu faço primeiro?</div>
+      <div class="them"><div class="face"><img src="${peek('sig')}"></div><div class="b typing"><i></i><i></i><i></i></div></div>
+    </div>
+    <div class="composer-wrap">
+      <div class="suggest"><span class="pill">${I.spark(13, 'var(--accent)')} Resumo do dia</span><span class="pill">Iniciar foco</span><span class="pill">Próximo evento</span></div>
+      <div class="composer"><span class="cbtn">${I.plus(20)}</span><span class="ph">Mensagem</span><span class="mic">${I.mic(21)}</span></div></div>`);
+}
+
+// ---------- Home screen widgets ----------
+const wl = t => `<div class="wlabel">${t}</div>`;
+function wChompMedium(x, y) {
+  return `<div class="w m" style="left:${x}px;top:${y}px">
+    <div style="position:absolute;left:96px;right:14px;top:14px" class="bubble" >Boa tarde, Lia! O que vamos resolver agora?</div>
+    <div class="inner" style="left:12px;right:12px;bottom:12px;height:52px;border-radius:26px;display:flex;align-items:center;padding:0 6px 0 18px">
+      <img class="perch" src="${peek('sig')}" style="width:80px;top:-40px;left:6px">
+      <span style="flex:1;font-size:15px;color:var(--muted)">Pergunte ao Chomp</span>
+      <span class="cbtn" style="width:40px;height:40px;border-radius:20px;display:grid;place-items:center;color:var(--muted);margin-right:6px">${I.keyb(20)}</span>
+      <span class="mic" style="width:40px;height:40px">${I.mic(20)}</span>
+    </div>${wl('HeyChomp')}</div>`;
+}
+function wChompSmall(x, y) {
+  return `<div class="w s" style="left:${x}px;top:${y}px">
+    <div style="position:absolute;top:14px;left:14px;font-size:13px;font-weight:600">Chomp</div>
+    <div style="position:absolute;top:31px;left:14px;font-size:12px;color:var(--muted)">Toque para falar</div>
+    <div class="inner" style="left:10px;right:10px;bottom:10px;height:64px;background:var(--accent);display:flex;align-items:center;justify-content:center;gap:8px;color:var(--onAccent);font-weight:700;font-size:16px">
+      <img class="perch" src="${peek('sig')}" style="width:76px;top:-38px;left:auto;right:4px">
+      ${I.mic(22)} Falar</div>${wl('HeyChomp')}</div>`;
+}
+function wRitaSmall(x, y) {
+  const r = 30, c = 2 * Math.PI * r, p = .26;
+  return `<div class="w s" style="left:${x}px;top:${y}px">
+    <span class="top">Rita</span>
+    <div class="inner" style="left:10px;right:10px;bottom:10px;height:96px;padding:12px 12px">
+      <img class="perch" src="${peek('rita')}" style="width:68px;top:-34px;left:4px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg width="70" height="70" viewBox="0 0 70 70" style="flex:none"><circle cx="35" cy="35" r="${r}" fill="none" stroke="rgba(${dark ? '255,255,255' : '0,0,0'},.09)" stroke-width="7"/><circle cx="35" cy="35" r="${r}" fill="none" stroke="var(--rita)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c * p} ${c}" transform="rotate(-90 35 35)"/>
+          <text x="35" y="41" text-anchor="middle" font-family="SF Pro Rounded, -apple-system" font-weight="700" font-size="17" fill="currentColor">18:42</text></svg>
+        <div><div style="font-size:13px;font-weight:700">Foco</div><div style="font-size:11.5px;color:var(--muted);line-height:1.3;margin-top:2px">Pomodoro 2 de 4</div></div>
+      </div>
+    </div>${wl('HeyChomp')}</div>`;
+}
+function wGanttSmall(x, y) {
+  return `<div class="w s" style="left:${x}px;top:${y}px">
+    <span class="top" style="color:var(--gantt)">TER 17</span>
+    <div class="inner" style="left:10px;right:10px;bottom:10px;height:96px;padding:12px 13px">
+      <img class="perch" src="${peek('gantt')}" style="width:68px;top:-34px;left:4px">
+      <div style="font-size:11.5px;font-weight:600;color:var(--muted)">Próximo · em 1h20</div>
+      <div style="font:700 26px var(--round);margin-top:2px">16:00</div>
+      <div style="font-size:13px;font-weight:600;display:flex;gap:6px;align-items:center;margin-top:1px"><span class="mark" style="background:var(--gantt);width:6px;height:6px"></span>Revisão do design</div>
+    </div>${wl('HeyChomp')}</div>`;
+}
+function wToniSmall(x, y) {
+  return `<div class="w s" style="left:${x}px;top:${y}px">
+    <span class="top">Toni</span>
+    <div class="inner" style="left:10px;right:10px;bottom:10px;height:96px;padding:12px 13px">
+      <img class="perch" src="${peek('toni')}" style="width:68px;top:-34px;left:4px">
+      <div style="font-size:11.5px;font-weight:600;color:var(--muted);display:flex;gap:5px;align-items:center">${I.clip(13)} Copiado agora</div>
+      <div style="font-size:14px;font-weight:600;margin-top:6px;line-height:1.25">“Pauta da revisão — versão final”</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:3px">+ 2 itens recentes</div>
+    </div>${wl('HeyChomp')}</div>`;
+}
+function wGanttMedium(x, y) {
+  const ev = [['13:30', 'Almoço com a Bia', 0], ['16:00', 'Revisão do design', 1], ['21:00', 'Diário · 2 tarefas abertas', 0]];
+  return `<div class="w m" style="left:${x}px;top:${y}px">
+    <div style="position:absolute;left:16px;top:14px;width:84px">
+      <div style="font-size:13px;font-weight:700;color:var(--gantt)">TERÇA</div>
+      <div style="font:700 44px/1 var(--round);margin-top:2px">17</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.3">3 eventos<br>1 lembrete</div>
+    </div>
+    <div class="inner" style="left:110px;right:10px;top:40px;bottom:10px;padding:12px 12px 8px">
+      <img class="perch" src="${peek('gantt')}" style="width:62px;top:-31px;left:auto;right:6px">
+      ${ev.map(([t, n, now]) => `<div class="ev ${now ? 'now' : ''}" style="padding:3px 0;font-size:13px"><time style="width:40px">${t}</time><span class="bar" style="--c:${now ? 'var(--gantt)' : 'rgba(var(--edge),.15)'};height:15px"></span><span class="${now ? '' : 'muted'}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n}</span></div>`).join('')}
+    </div>${wl('HeyChomp')}</div>`;
+}
+function wTeamLarge(x, y) {
+  const rows = [
+    ['rita', 'Rita', 'rita', 'Foco · 18 min restantes', 'Em foco', 1],
+    ['gantt', 'Gantt', 'gantt', 'Revisão do design às 16:00', '1h20', 1],
+    ['ada', 'Ada', 'ada', 'Nenhuma tarefa de código', 'Livre', 0],
+    ['elinor', 'Elinor', 'elinor', 'Novembro: 62% do orçamento', 'Livre', 0],
+    ['toni', 'Toni', 'toni', '3 itens copiados hoje', 'Livre', 0],
+  ];
+  return `<div class="w l" style="left:${x}px;top:${y}px">
+    <div style="position:absolute;top:14px;left:16px;font-size:15px;font-weight:700">Equipe</div>
+    <span class="top" style="top:16px;display:flex;align-items:center;gap:5px"><i class="mark" style="background:var(--accent);width:7px;height:7px"></i>2 trabalhando</span>
+    <div class="inner" style="left:12px;right:12px;top:72px;height:62px;padding:10px 12px 10px 92px;font-size:13.5px;line-height:1.35">
+      <img class="perch" src="${peek('sig')}" style="width:80px;top:-40px;left:6px">
+      Tudo em dia. A Rita segura seu foco e o Gantt avisa quando faltar 15 min.
+    </div>
+    <div style="position:absolute;top:140px;left:14px;right:14px">
+      ${rows.map(([a, n, c, s, st, on]) => `<div style="display:flex;align-items:center;gap:10px;height:35px;border-top:${a === 'rita' ? '0' : '.5px solid var(--sep)'}">
+        <div style="width:28px;height:28px;border-radius:14px;border:1.5px solid ${C(c)};padding:1.5px;flex:none"><div style="width:100%;height:100%;border-radius:50%;overflow:hidden;background:var(--page);display:grid;place-items:center"><img src="${face(a)}" style="width:125%;margin-top:4px"></div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${n}</div><div style="font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s}</div></div>
+        <span class="pill" style="height:22px;padding:0 9px;font-size:11px;${on ? 'background:var(--accent);color:var(--onAccent)' : 'color:var(--muted)'}">${st}</span></div>`).join('')}
+    </div>
+    <div class="inner" style="left:12px;right:12px;bottom:12px;height:42px;border-radius:21px;display:flex;align-items:center;padding:0 4px 0 14px;font-size:14px;color:var(--muted)">
+      <span style="flex:1">Pergunte ao Chomp</span><span class="mic" style="width:34px;height:34px">${I.mic(17)}</span></div>
+  </div>`;
+}
+function homeA() {
+  return phone(`<div class="wall"></div>${sb(false)}
+    ${wChompMedium(14.5, 72)}
+    ${wRitaSmall(14.5, 270)}${wChompSmall(208.5, 270)}
+    ${wGanttMedium(14.5, 468)}
+    <div class="searchpill" style="top:694px">${I.search(13)} Buscar</div>
+    <div class="dock"><i></i><i></i><i></i><i></i></div>`, { island: `<div class="island live"><img src="${peek('rita')}"><span>18:42</span></div>` });
+}
+function homeB() {
+  return phone(`<div class="wall"></div>${sb(false)}
+    ${wTeamLarge(14.5, 72)}
+    ${wGanttSmall(14.5, 482)}${wToniSmall(208.5, 482)}
+    <div class="searchpill" style="top:694px">${I.search(13)} Buscar</div>
+    <div class="dock"><i></i><i></i><i></i><i></i></div>`);
+}
+
+// ---------- Lock screen ----------
+function gauge(p, inner, sub) {
+  const r = 31, c = 2 * Math.PI * r;
+  return `<svg class="gauge" viewBox="0 0 72 72"><circle cx="36" cy="36" r="${r}" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="5"/><circle cx="36" cy="36" r="${r}" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c * p} ${c}" transform="rotate(-90 36 36)"/></svg><div style="position:relative"><div class="gauge-v">${inner}</div><div class="gauge-l">${sub}</div></div>`;
+}
+function lockA() {
+  return phone(`<div class="lockwall"></div>${sb(true)}
+    <div class="lk-date">Terça, 17 de nov. <span class="inl">${I.spark(15, '#fff')} Revisão às 16h</span></div>
+    <div class="lk-clock">14:40</div>
+    <div class="acc-row">
+      <div class="acc c"><img class="sil" src="${peek('sig')}" style="width:60px;margin-top:-8px"><div style="position:absolute;bottom:9px;font-size:10px;font-weight:700;display:flex;gap:2px;align-items:center">${I.mic(10)}Falar</div></div>
+      <div class="acc c">${gauge(.26, '18', 'Foco')}</div>
+      <div class="acc c">${gauge(.55, '16h', 'Gantt')}</div>
+      <div class="acc c"><img class="sil" src="${peek('sig')}" style="width:44px;position:absolute;top:8px"><div style="position:absolute;bottom:12px;text-align:center"><div class="gauge-v" style="font-size:16px">2/6</div><div class="gauge-l" style="margin-top:0">ativos</div></div></div>
+    </div>
+    <div class="notif" style="top:560px"><div class="ico"><img src="${peek('sig')}"></div><div class="nt"><b>Chomp<span>agora</span></b>A revisão do design começa em 15 min. Quer que eu pause o foco da Rita?</div></div>
+    <div class="notif" style="top:648px;transform:scale(.95);opacity:.75;z-index:-0"><div class="ico"><img src="${peek('gantt')}"></div><div class="nt"><b>Gantt<span>13:02</span></b>Diário: 2 tarefas abertas para hoje.</div></div>
+    <div class="lk-bottom"><i>${I.torch(22)}</i><i>${I.cam(22)}</i></div>`, { white: true });
+}
+function lockB() {
+  return phone(`<div class="lockwall"></div>${sb(true)}
+    <div class="lk-date">Terça, 17 de nov. <span class="inl">${I.cal(15)} 16:00 Revisão</span></div>
+    <div class="lk-clock">14:40</div>
+    <div class="acc-row">
+      <div class="acc r">
+        <img class="sil" src="${peek('sig')}" style="position:absolute;width:58px;right:-4px;bottom:-6px;opacity:.95">
+        <div class="t1">${I.spark(11, '#fff')} Chomp</div>
+        <div class="t2">Pergunte algo</div>
+        <div class="t3" style="display:flex;gap:4px;align-items:center">${I.mic(11)} voz ou texto</div>
+      </div>
+      <div class="acc r">
+        <div class="t1">${I.cal(11)} Gantt · em 1h20</div>
+        <div class="t2">Revisão do design</div>
+        <div class="t3">16:00 – 17:00 · Sala 2</div>
+      </div>
+    </div>
+    <div class="la" style="top:568px">
+      <div class="row"><img class="p" src="${peek('rita')}">
+        <div><div class="k">Rita · Foco</div><div class="v">18:42</div></div>
+        <div class="btns"><span class="rb">${I.pause(18)}</span><span class="rb">${I.stop(16)}</span></div></div>
+      <div class="track" style="--c:#DB9CF6"><i style="width:26%"></i></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.65;margin-top:8px"><span>Pomodoro 2 de 4</span><span>Pausa às 15:00</span></div>
+    </div>
+    <div class="lk-bottom"><i>${I.torch(22)}</i><i>${I.cam(22)}</i></div>`, { white: true });
+}
+
+// ---------- v2: personagem em destaque (referência de estrutura: Grok Bot / OpenBot.run) ----------
+const tint = (c, p) => `color-mix(in srgb, var(--${c}) ${p}%, transparent)`;
+const glowBg = (c, p = 38) => dark
+  ? `radial-gradient(120% 75% at 50% 105%, ${tint(c, p)} 0%, transparent 70%), #0C0C0D`
+  : `radial-gradient(120% 75% at 50% 105%, ${tint(c, p - 14)} 0%, transparent 70%), #FFFFFF`;
+const gwText = dark ? '#F2F2F2' : '#1D1D1F';
+const badge = (s = 26) => `<span style="position:absolute;width:${s}px;height:${s}px;border-radius:${s / 2}px;background:var(--accent);display:flex;gap:2.5px;align-items:center;justify-content:center;box-shadow:0 0 0 3px ${dark ? '#0C0C0D' : '#fff'}"><i style="width:4px;height:4px;border-radius:2px;background:var(--onAccent)"></i><i style="width:4px;height:4px;border-radius:2px;background:var(--onAccent)"></i><i style="width:4px;height:4px;border-radius:2px;background:var(--onAccent)"></i></span>`;
+const ticker = (lines, size = 13) => `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;color:${gwText}">
+  ${lines.map((l, i) => { const last = i === lines.length - 1; const o = last ? 1 : (i === lines.length - 2 ? .55 : .28);
+    return `<div style="opacity:${o};font-size:${last ? size : size - 2.5}px;font-weight:${last ? 600 : 500};display:flex;gap:5px;align-items:center;white-space:nowrap">${l}</div>`; }).join('')}</div>`;
+const disc = (a, c, s, ring = true) => `<div style="width:${s}px;height:${s}px;border-radius:50%;position:relative;flex:none;
+  background:radial-gradient(circle at 50% 62%, ${tint(c, dark ? 70 : 45)} 0%, ${tint(c, dark ? 22 : 14)} 58%, ${dark ? 'rgba(255,255,255,.03)' : 'rgba(0,0,0,.02)'} 72%);
+  ${ring ? `box-shadow:inset 0 0 0 1px ${tint(c, 45)};` : ''}display:grid;place-items:center;overflow:hidden">
+  <img src="${face(a)}" style="width:78%;margin-top:${s * .1}px"></div>`;
+const chompMark = (w = 58, h = 36) => `<span style="width:${w}px;height:${h}px;border-radius:${h / 2}px;background:var(--accent);display:flex;align-items:center;justify-content:center;gap:${w * .1}px;flex:none">
+  <i style="width:${h * .2}px;height:${h * .36}px;border-radius:50%;background:#FFF6E6;box-shadow:0 0 0 .5px rgba(0,0,0,.2)"></i><i style="width:${h * .2}px;height:${h * .36}px;border-radius:50%;background:#FFF6E6;box-shadow:0 0 0 .5px rgba(0,0,0,.2)"></i></span>`;
+
+function gChompSmall(x, y) {
+  return `<div class="w s" style="left:${x}px;top:${y}px;background:${glowBg('chomp')}">
+    <div style="position:absolute;top:11px;left:0;right:0;text-align:center;font-size:11px;font-weight:600;color:${gwText};opacity:.5">Chomp</div>
+    <div style="position:absolute;left:39px;top:22px;width:92px;height:84px"><img src="${face('sig')}" style="width:92px">
+      <div style="position:absolute;left:-4px;top:16px">${badge(24)}</div></div>
+    <div style="position:absolute;left:0;right:0;bottom:11px">${ticker(['✓ Agenda conferida', '✓ Foco marcado', `${I.spark(11, 'var(--accent)')} Montando seu resumo`], 12.5)}</div>
+    ${wl('HeyChomp')}</div>`;
+}
+function gTeamSmall(x, y) {
+  const t = [['sig', 'chomp'], ['rita', 'rita'], ['gantt', 'gantt'], ['toni', 'toni']];
+  return `<div class="w s" style="left:${x}px;top:${y}px;background:${dark ? '#0C0C0D' : '#FFFFFF'};padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;place-items:center">
+    ${t.map(([a, c]) => disc(a, c, 64)).join('')}${wl('Equipe')}</div>`;
+}
+function gBoardMedium(x, y) {
+  const chips = [['rita', 'rita', 'Rita no foco'], ['gantt', 'gantt', 'Gantt na agenda'], ['ada', 'ada', 'Ada no código'], ['toni', 'toni', 'Toni salvando clipe']];
+  return `<div class="w m" style="left:${x}px;top:${y}px;background:${dark ? '#0C0C0D' : '#FFFFFF'}">
+    <div style="position:absolute;left:10px;top:10px;bottom:10px;width:150px;border-radius:16px;background:${glowBg('chomp', 34)};overflow:hidden">
+      <div style="position:absolute;left:30px;top:6px;width:90px"><img src="${face('sig')}" style="width:90px"><div style="position:absolute;left:-6px;top:12px">${badge(22)}</div></div>
+      <div style="position:absolute;left:0;right:0;bottom:9px">${ticker(['✓ Agenda conferida', `${I.spark(10, 'var(--accent)')} Resumo do dia`], 12)}</div>
+    </div>
+    <div style="position:absolute;left:170px;right:10px;top:10px;bottom:10px;display:grid;grid-template-rows:repeat(4,1fr);gap:6px">
+      ${chips.map(([a, c, t]) => `<div style="border-radius:17px;background:${tint(c, dark ? 16 : 9)};box-shadow:inset 0 0 0 1px ${tint(c, 30)};display:flex;align-items:center;gap:7px;padding:0 10px 0 4px;min-width:0">
+        ${disc(a, c, 26, false)}<span style="font-size:12px;font-weight:600;color:${gwText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t}</span></div>`).join('')}
+    </div>${wl('HeyChomp')}</div>`;
+}
+function gTeamLarge(x, y) {
+  const t = [['sig', 'chomp', 'Chomp', 'Montando resumo', 1], ['rita', 'rita', 'Rita', 'Foco · 18 min', 1], ['ada', 'ada', 'Ada', 'Livre', 0],
+             ['gantt', 'gantt', 'Gantt', '16:00 Revisão', 1], ['elinor', 'elinor', 'Elinor', 'Livre', 0], ['toni', 'toni', 'Toni', '3 clipes', 0]];
+  return `<div class="w l" style="left:${x}px;top:${y}px;background:${dark ? '#0C0C0D' : '#FFFFFF'};padding:16px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;color:${gwText}"><b style="font-size:15px">Equipe</b><span style="font-size:11.5px;font-weight:600;opacity:.55">3 trabalhando</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);row-gap:16px;margin-top:14px;justify-items:center">
+      ${t.map(([a, c, n, s, on]) => `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;position:relative">
+        ${disc(a, c, 86)}${on ? `<div style="position:absolute;left:2px;top:2px">${badge(22)}</div>` : ''}
+        <div style="text-align:center;color:${gwText}"><div style="font-size:13px;font-weight:700">${n}</div><div style="font-size:11px;opacity:.55;margin-top:1px">${s}</div></div></div>`).join('')}
+    </div>
+    <div class="inner" style="left:12px;right:12px;bottom:12px;height:44px;border-radius:22px;display:flex;align-items:center;padding:0 5px 0 16px;font-size:14px;color:var(--muted);background:${dark ? '#1C1C1E' : '#F2F2F4'}">
+      <span style="flex:1">Pergunte ao Chomp</span><span class="mic" style="width:34px;height:34px">${I.mic(17)}</span></div>${wl('HeyChomp')}</div>`;
+}
+const appIcon = (x, y) => `<div style="position:absolute;left:${x}px;top:${y}px;width:62px;text-align:center">
+  <div style="width:62px;height:62px;border-radius:14px;overflow:hidden;background:radial-gradient(90% 80% at 50% 100%, ${tint('chomp', 55)}, transparent 70%), #111;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.15)"><img src="${face('sig')}" style="width:58px;margin-top:6px"></div>
+  <div style="font-size:11.5px;font-weight:500;color:var(--wtext);margin-top:5px">HeyChomp</div></div>`;
+const blankIcon = (x, y) => `<div class="appicons" style="position:absolute;left:${x}px;top:${y}px;padding:0;display:block"><i></i></div>`;
+const voiceIsland = `<div class="island" style="width:371px;height:78px;border-radius:39px;top:11px;display:flex;align-items:center;padding:0 12px 0 14px;gap:12px">
+  ${chompMark(58, 36)}<div style="flex:1;color:#fff"><div style="font:600 17px var(--round);font-variant-numeric:tabular-nums">0:42</div><div style="font-size:14px;opacity:.6">Chomp ouvindo…</div></div>
+  <span style="width:48px;height:48px;border-radius:24px;background:#3A3A3C;display:grid;place-items:center;color:#fff">${I.mic(22)}</span>
+  <span style="width:48px;height:48px;border-radius:24px;background:#E5484D;display:grid;place-items:center;color:#fff"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></svg></span></div>`;
+
+function homeC() {
+  return phone(`<div class="wall"></div>${sb(false)}
+    ${gBoardMedium(14.5, 72)}
+    ${gChompSmall(14.5, 270)}${gTeamSmall(208.5, 270)}
+    ${appIcon(28, 478)}${blankIcon(119, 478)}${blankIcon(210, 478)}${blankIcon(301, 478)}
+    ${blankIcon(28, 574)}${blankIcon(119, 574)}${blankIcon(210, 574)}${blankIcon(301, 574)}
+    <div class="searchpill" style="top:694px">${I.search(13)} Buscar</div>
+    <div class="dock"><i></i><i></i><i></i><i></i></div>`);
+}
+function homeD() {
+  return phone(`<div class="wall"></div>${sb(false)}
+    ${gTeamLarge(14.5, 110)}
+    ${appIcon(28, 528)}${blankIcon(119, 528)}${blankIcon(210, 528)}${blankIcon(301, 528)}
+    <div class="searchpill" style="top:694px">${I.search(13)} Buscar</div>
+    <div class="dock"><i></i><i></i><i></i><i></i></div>`, { island: voiceIsland });
+}
+function lockC() {
+  return phone(`<div class="lockwall"></div>${sb(true)}
+    <div class="lk-date">Terça, 17 de nov.</div>
+    <div class="lk-clock">14:40</div>
+    <div class="acc-row">
+      <div class="acc c"><span style="transform:scale(1.15)">${chompMark(46, 28).replace('var(--accent)', 'rgba(255,255,255,.95)').replaceAll('#FFF6E6', '#2A2A2A')}</span><div style="position:absolute;bottom:9px;font-size:10px;font-weight:700">Falar</div></div>
+      <div class="acc c">${gauge(.26, '18', 'Foco')}</div>
+    </div>
+    <div class="la" style="top:540px;background:rgba(12,12,13,.86);padding:14px">
+      <div class="row">
+        <div style="position:relative">${disc('sig', 'chomp', 58)}<div style="position:absolute;left:-4px;top:-2px">${badge(20)}</div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;line-height:1.3">Seu resumo do dia está pronto</div><div style="font-size:13px;opacity:.6;margin-top:2px">3 itens · Gantt e Rita ajudaram</div></div>
+        <span class="rb" style="width:40px;height:40px;border-radius:20px"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </div>
+    <div class="la" style="top:650px;background:rgba(12,12,13,.86);padding:12px 14px">
+      <div class="row">${chompMark(50, 32)}
+        <div style="flex:1"><div style="font:600 15px var(--round)">0:42 · Ouvindo</div>
+          <div style="display:flex;gap:3px;align-items:center;height:16px;margin-top:4px">${[6, 11, 16, 9, 13, 5, 10, 15, 8, 12, 6, 9, 14, 7, 4].map(h => `<i style="width:3px;height:${h}px;border-radius:2px;background:var(--accent)"></i>`).join('')}</div></div>
+        <span class="rb" style="width:40px;height:40px;border-radius:20px">${I.mic(18)}</span>
+        <span class="rb" style="width:40px;height:40px;border-radius:20px;background:#E5484D"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></span>
+      </div>
+    </div>
+    <div class="lk-bottom"><i>${I.torch(22)}</i><i>${I.cam(22)}</i></div>`, { white: true });
+}
+
+// ---------- Mistura v1 + v2: rosto para quem fala ou trabalha, espiar para conteúdo ----------
+const glowify = (html, c, p = 26) => html.replace('style="left', `style="background:${glowBg(c, p)};left`);
+function mAsk(x, y) {
+  return glowify(wChompMedium(x, y), 'chomp', 30).replace(`<img class="perch" src="${peek('sig')}" style="width:80px;top:-40px;left:6px">`,
+    `<img class="perch" src="${peek('sig')}" style="width:80px;top:-40px;left:6px"><div style="position:absolute;left:4px;top:-34px;z-index:3">${badge(20)}</div>`);
+}
+function lockM() {
+  return phone(`<div class="lockwall"></div>${sb(true)}
+    <div class="lk-date">Terça, 17 de nov. <span class="inl">${I.spark(15, '#fff')} Revisão às 16h</span></div>
+    <div class="lk-clock">14:40</div>
+    <div class="acc-row" style="gap:12px">
+      <div class="acc c"><span style="transform:scale(1.15)">${chompMark(46, 28).replace('var(--accent)', 'rgba(255,255,255,.95)').replaceAll('#FFF6E6', '#2A2A2A')}</span><div style="position:absolute;bottom:9px;font-size:10px;font-weight:700">Falar</div></div>
+      <div class="acc c">${gauge(.26, '18', 'Foco')}</div>
+      <div class="acc r" style="width:158px">
+        <div class="t1">${I.cal(11)} Gantt · em 1h20</div>
+        <div class="t2">Revisão do design</div>
+        <div class="t3">16:00 · Sala 2</div>
+      </div>
+    </div>
+    <div class="la" style="top:540px;background:rgba(12,12,13,.86);padding:14px">
+      <div class="row">
+        <div style="position:relative">${disc('sig', 'chomp', 58)}<div style="position:absolute;left:-4px;top:-2px">${badge(20)}</div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;line-height:1.3">Seu resumo do dia está pronto</div><div style="font-size:13px;opacity:.6;margin-top:2px">3 itens · Gantt e Rita ajudaram</div></div>
+        <span class="rb" style="width:40px;height:40px;border-radius:20px"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </div>
+    <div class="la" style="top:650px;padding:14px 16px 12px">
+      <div class="row"><img class="p" src="${peek('rita')}" style="width:62px">
+        <div><div class="k">Rita · Foco</div><div class="v" style="font-size:28px">18:42</div></div>
+        <div class="btns"><span class="rb" style="width:40px;height:40px">${I.pause(17)}</span><span class="rb" style="width:40px;height:40px">${I.stop(15)}</span></div></div>
+      <div class="track" style="--c:#DB9CF6;margin-top:10px"><i style="width:26%"></i></div>
+    </div>
+    <div class="lk-bottom"><i>${I.torch(22)}</i><i>${I.cam(22)}</i></div>`, { white: true });
+}
+function homeM1() {
+  return phone(`<div class="wall"></div>${sb(false)}
+    ${mAsk(14.5, 72)}
+    ${gChompSmall(14.5, 270)}${gTeamSmall(208.5, 270)}
+    ${glowify(wGanttMedium(14.5, 468), 'gantt', 22)}
+    ${appIcon(28, 664)}
+    <div class="dock"><i></i><i></i><i></i><i></i></div>`);
+}
+function homeM2() {
+  return phone(`<div class="wall"></div>${sb(false)}
+    ${gTeamLarge(14.5, 110)}
+    ${glowify(wRitaSmall(14.5, 520), 'rita', 30)}${glowify(wToniSmall(208.5, 520), 'toni', 26)}
+    <div class="dock"><i></i><i></i><i></i><i></i></div>`, { island: voiceIsland });
+}
+
+// ---------- Boards ----------
+const themeName = dark ? 'Tema escuro' : 'Tema claro';
+const head = (title, text) => `<div class="board-head"><div><h1>${title}</h1><p>${text}</p></div><div class="board-tag">${I.spark(14, 'var(--accent)')} HeyChomp para iPhone · conceito 17/11/2026 · ${themeName}</div></div>`;
+const boards = {
+  mix: () => `<div class="board">${head('Widgets: mistura da v1 com a v2', 'Regra: quem fala ou está trabalhando aparece de rosto, com brilho na própria cor (v2). Quando o widget mostra um conteúdo, como agenda, foco, clipe ou pergunta, o dono espia por cima dele (v1). O brilho da v2 vira o fundo de todos.')}
+    <div class="board-row">
+      ${col(homeM1(), 'Perguntar, Chomp, equipe e agenda', 'Médio “Pergunte ao Chomp”: o Chomp espia o campo, com o selo de digitando e o brilho menta. Pequenos: rosto do Chomp com as etapas e quatro da equipe. Médio: agenda com o Gantt espiando, no brilho dele.')}
+      ${col(homeM2(), 'Voz, equipe, foco e clipe', 'Voz na Dynamic Island. Grande: os seis de rosto com o status. Pequenos: foco da Rita e área de transferência do Toni, com o dono espiando o conteúdo.')}
+      ${col(lockM(), 'Tela bloqueada', 'Acessórios da v1 (em linha, Falar, Foco e Gantt) e Live Activities da v2: resumo com o rosto do Chomp e o foco da Rita espiando o cronômetro.')}
+      <div class="card notes" style="width:380px"><h3>Como decidir</h3><ul>
+        <li><b>Rosto (v2):</b> identidade e estado. Chomp pequeno, equipe, Live Activity de resposta e ícone do app.</li>
+        <li><b>Espiar (v1):</b> conteúdo com dono. Agenda (Gantt), foco (Rita), clipe (Toni) e o campo de pergunta (Chomp).</li>
+        <li><b>Brilho na cor do agente</b> como fundo de todo widget; a cor continua fora do texto.</li>
+        <li><b>Selo de digitando</b> só em quem está trabalhando agora.</li>
+        <li><b>Tela bloqueada:</b> acessórios monocromáticos da v1; as Live Activities podem ter cor.</li>
+      </ul><hr><h3>Conjunto final</h3><div class="sz">
+        <span>Pequeno</span><span>Chomp (rosto), Equipe 2×2, Rita Foco, Gantt Próximo, Toni Clipe</span>
+        <span>Médio</span><span>Pergunte ao Chomp, Agenda do Gantt, Quadro da equipe</span>
+        <span>Grande</span><span>Equipe com status e pergunta</span>
+        <span>Bloqueio</span><span>Em linha, Falar, Foco e Gantt (retangular)</span>
+        <span>Ao vivo</span><span>Voz, resumo do Chomp e foco da Rita</span>
+      </div></div>
+    </div></div>`,
+  chars: () => `<div class="board">${head('Widgets v2: o personagem é o widget', 'Direção pedida a partir do Grok Bot e do OpenBot.run (só estrutura, sem copiar a arte): rosto grande com brilho na cor do agente, linha do que ele está fazendo agora, equipe em círculos coloridos e sessão de voz na Dynamic Island.')}
+    <div class="board-row">
+      ${col(homeC(), 'Quadro, Chomp e equipe', 'Médio: o Chomp com o que está fazendo, ao lado dos agentes em ação. Pequeno: rosto do Chomp com as etapas passando de baixo para cima. Pequeno: quatro da equipe em círculos. Ícone do app com o Chomp.')}
+      ${col(homeD(), 'Voz na Dynamic Island + equipe', 'Sessão de voz expandida: marca do Chomp, tempo, microfone e encerrar. Grande: os seis em círculos com o status; o selo de “digitando” marca quem está trabalhando.')}
+      ${col(lockC(), 'Tela bloqueada', 'Live Activity com o rosto do Chomp e a próxima ação, e o estado de voz com a onda sonora. Circular “Falar” com a marca do Chomp.')}
+      <div class="card notes" style="width:380px"><h3>O que muda da v1</h3><ul>
+        <li><b>Rosto em vez de espiar:</b> no widget, o personagem ocupa o centro e o brilho na cor dele faz o fundo. O espiar continua nos cartões do app.</li>
+        <li><b>Linha do que está acontecendo:</b> as etapas sobem e somem (✓ feito → atual em negrito), como um pensamento em voz alta.</li>
+        <li><b>Selo menta de “digitando”</b> mostra quem está trabalhando agora.</li>
+        <li><b>Marca do Chomp:</b> cápsula menta com os dois olhos; serve para a ilha, o acessório circular e a Live Activity.</li>
+        <li><b>Encerrar em vermelho</b> é a única cor fora da paleta, como no padrão de chamada do iOS.</li>
+      </ul><hr><h3>Referências (só estrutura)</h3><ul>
+        <li>Grok Bot: widget de rosto com status, grade da equipe e voz na Dynamic Island.</li>
+        <li>OpenBot.run: quadro de agentes com tarefas em andamento.</li>
+      </ul></div>
+    </div></div>`,
+  app: () => `<div class="board">${head('App: primeiro uso, início e conversa', 'Mesma linguagem do Mac: janela quieta, personagens expressivos. O Chomp fala em balões, as ações são pílulas e cada agente espia por cima do cartão que é dele.')}
+    <div class="board-row">
+      ${col(onboardingName(), '1 · Boas-vindas', 'O Chomp se apresenta num balão e pergunta o nome. Opção para parear com o Mac.')}
+      ${col(onboardingTeam(), '2 · Conheça a equipe', 'Seis cartões com o personagem espiando. O que ainda não existe aparece como “em breve”.')}
+      ${col(homeScreen(), '3 · Início', 'Sugestão do Chomp no topo, status da equipe, agenda do Gantt, foco da Rita e o mês da Elinor. A barra de pergunta (voz ou texto) fica sempre embaixo.')}
+      ${col(chatScreen(), '4 · Conversa', 'O Chomp responde e mostra o que repassou: cada repasse vira um cartão com o agente espiando.')}
+    </div></div>`,
+  widgets: () => `<div class="board">${head('Widgets da tela de início', 'Pequeno, médio e grande. O widget corta tudo o que passa da borda, então o personagem espia por cima de um elemento interno (campo, cartão ou botão), nunca da moldura.')}
+    <div class="board-row">
+      ${col(homeA(), 'Perguntar, focar e agenda', 'Médio “Pergunte ao Chomp” (texto ou voz), pequeno de foco da Rita, pequeno “Falar” e médio da agenda do Gantt. No topo, a Live Activity do foco na Dynamic Island, como a ilha no notch do Mac.')}
+      ${col(homeB(), 'Equipe', 'Grande com o status de cada agente e a pergunta ao Chomp no rodapé. Pequenos: próximo evento (Gantt) e área de transferência (Toni).')}
+      <div class="card notes"><h3>Regras dos widgets</h3><ul>
+        <li><b>Um toque, uma ação.</b> “Falar” abre o app já ouvindo; o campo abre o teclado; os cartões abrem a tela do agente.</li>
+        <li><b>Cor do agente só em marcas:</b> anel, ponto e barra. Texto fica em tinta normal, como no Mac.</li>
+        <li><b>Menta do Chomp</b> só no botão principal (microfone, Falar) e no status “trabalhando”.</li>
+        <li><b>Personagem sempre apoiado</b> numa borda interna, nunca flutuando solto.</li>
+        <li><b>Em breve:</b> Saúde da Rita e Apple Pay da Elinor não aparecem nos widgets até existirem.</li>
+      </ul><hr><h3>Tamanhos (iPhone 6,1")</h3><div class="sz">
+        <span>Pequeno</span><span>170 × 170 pt · Chomp Falar, Rita Foco, Gantt Próximo, Toni Área</span>
+        <span>Médio</span><span>364 × 170 pt · Pergunte ao Chomp, Agenda do Gantt</span>
+        <span>Grande</span><span>364 × 382 pt · Equipe</span>
+        <span>Cantos</span><span>Raio 23 pt externo; 15 pt nos elementos internos</span>
+      </div></div>
+    </div></div>`,
+  lock: () => `<div class="board">${head('Tela bloqueada', 'Acessórios monocromáticos: o iOS pinta tudo de uma cor só, então os personagens viram silhuetas claras com os olhos vazados. Notificações e Live Activity mantêm as cores.')}
+    <div class="board-row">
+      ${col(lockA(), 'Circulares + em linha', 'Em linha acima do relógio: próximo compromisso. Circulares: Falar com o Chomp, foco da Rita (anel), próximo evento do Gantt e equipe ativa. Abaixo, notificações com o personagem no ícone.')}
+      ${col(lockB(), 'Retangulares + Live Activity', 'Retangular “Pergunte ao Chomp” (voz ou texto) e próximo evento do Gantt. Embaixo, a Live Activity do foco da Rita com pausar e encerrar.')}
+      <div class="card notes"><h3>Acessórios</h3><div class="sz" style="margin-top:12px">
+        <span>Em linha</span><span>Uma linha acima do relógio: ✦ + próximo compromisso ou o foco</span>
+        <span>Circular</span><span>72 pt · Falar (silhueta do Chomp), Foco (anel), Gantt (anel até o evento), Equipe (ativos)</span>
+        <span>Retangular</span><span>158 × 72 pt · Pergunte ao Chomp, Próximo evento, Foco da Rita</span>
+      </div><hr><h3>Por que assim</h3><ul>
+        <li><b>Voz em um toque</b>, como nos atalhos de voz dos apps de IA: o circular “Falar” abre o app já ouvindo.</li>
+        <li><b>Silhuetas reconhecíveis:</b> o brilho do Chomp, o capacete do Gantt e os óculos da Rita continuam legíveis em uma cor.</li>
+        <li><b>Live Activity = a ilha do Mac.</b> O foco da Rita aparece na Dynamic Island e na tela bloqueada.</li>
+        <li><b>Nada de dado sensível</b> na tela bloqueada por padrão: as finanças da Elinor ficam fora.</li>
+      </ul></div>
+    </div></div>`,
+};
+document.getElementById('root').innerHTML = boards[board]();
+</script>
+</body>
+</html>

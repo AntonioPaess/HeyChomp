@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Ícones HeyChomp</title>
+<!-- Prancha das 5 ideias de ícone. Renderize com render.sh. -->
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"SF Pro Text",sans-serif;background:#EDEDF0;color:#1D1D1F;-webkit-font-smoothing:antialiased;padding:60px 64px}
+h1{font-size:32px;letter-spacing:-.02em}
+.sub{color:#595959;font-size:16px;margin-top:8px;max-width:1100px;line-height:1.45}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px;margin-top:40px}
+.card{background:#fff;border-radius:26px;padding:22px 20px 22px;box-shadow:0 6px 20px rgba(0,0,0,.05);display:flex;flex-direction:column;gap:16px}
+.card.rec{box-shadow:0 0 0 2.5px #00945F,0 6px 20px rgba(0,0,0,.05)}
+.num{font-size:13px;font-weight:700;color:#00945F;display:flex;justify-content:space-between}
+.num span{background:#00945F;color:#fff;border-radius:10px;padding:2px 9px;font-size:11px}
+h2{font-size:21px;letter-spacing:-.01em;margin-top:-8px}
+.stage{border-radius:18px;height:200px;display:grid;place-items:center;position:relative;overflow:hidden}
+.ios{background:radial-gradient(90% 70% at 20% 10%,#DCEFE6,transparent 60%),radial-gradient(90% 80% at 90% 90%,#E4DDF5,transparent 60%),#F1EFEA}
+.ios img{width:132px;height:132px;border-radius:29.5px;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.mac{background:linear-gradient(160deg,#3B4A63,#1C2333)}
+.mac img{width:170px;height:170px}
+.tag{position:absolute;left:12px;top:10px;font-size:11px;font-weight:700;letter-spacing:.04em;color:rgba(0,0,0,.45)}
+.mac .tag{color:rgba(255,255,255,.6)}
+.smalls{display:flex;gap:10px}
+.sm{flex:1;min-width:0;border-radius:14px;padding:10px 6px;display:flex;align-items:center;justify-content:center;gap:8px}
+.sm.l{background:#F4F4F6}.sm.d{background:#1E1E1E}
+.sm img{border-radius:22.37%}
+p{font-size:14px;line-height:1.5;color:#3A3A3C}
+p b{color:#1D1D1F}
+.pros{font-size:13px;color:#595959;line-height:1.45}
+.pros div{margin-top:3px}
+.foot{margin-top:28px;font-size:14px;color:#595959;line-height:1.5;max-width:1500px}
+</style></head><body>
+<h1>Ícone do HeyChomp: 5 ideias</h1>
+<div class="sub">A mesma arte no iPhone (quadrado sem margem, o iOS aplica a máscara) e no Mac (squircle de 824 px com sombra, na grade do macOS). Usa a linguagem do app: menta do Chomp, preto do notch, olhos creme e o brilho de quatro pontas.</div>
+<div class="grid" id="g"></div>
+<div class="foot">Os tamanhos pequenos simulam a tela de Ajustes e o Spotlight (52 px), as notificações (34 px) e o Finder em lista (20 px). Todas as artes saem de <code>generate.py</code>, então qualquer ajuste de cor ou de proporção é rápido.</div>
+<script>
+const C=[
+ [1,'rosto','Rosto','O Chomp inteiro, de frente, saindo do escuro com brilho menta. É o mais fiel ao personagem e ao ícone atual do protótipo.','+ personagem completo, cheio de vida','− em 20 px vira só uma mancha escura'],
+ [2,'espiando','Espiando','O gesto assinatura do app: o Chomp apoiando as mãos na borda de um cartão branco, sobre a menta.','+ conta a história do design inteiro','+ fundo claro se destaca no Dock e na tela inicial','− as mãos somem nos tamanhos mínimos'],
+ [3,'olhos','Olhos','A marca mínima: a cápsula menta com os dois olhos, a mesma da Dynamic Island e do acessório "Falar".','+ a mais legível em qualquer tamanho','+ combina com o ícone do menu do Mac','− menos “fofo” que o personagem'],
+ [4,'ilha','Ilha','A pílula preta do notch com o Chomp morando dentro dela e os três pontinhos de trabalhando. Lembra que o app nasceu no notch do Mac.','+ diz o que o app faz no Mac','− no iPhone a ilha é menos óbvia'],
+ [5,'balao','Balão','O corpo do Chomp vira um balão de fala com rabinho: assistente que conversa.','+ leitura instantânea de “assistente”','− balão de fala é comum entre apps de chat'],
+];
+const REC=2;
+document.getElementById('g').innerHTML=C.map(([n,k,t,d,...pros])=>`
+ <div class="card ${n===REC?'rec':''}">
+  <div class="num">IDEIA ${n}${n===REC?'<span>Recomendada</span>':''}</div>
+  <h2>${t}</h2>
+  <div class="stage ios"><div class="tag">iOS</div><img src="icon-${n}-${k}.png"></div>
+  <div class="stage mac"><div class="tag">macOS</div><img src="mac-${n}-${k}.png"></div>
+  <div class="smalls">
+   <div class="sm l"><img src="icon-${n}-${k}.png" width="52"><img src="icon-${n}-${k}.png" width="34"><img src="icon-${n}-${k}.png" width="20"></div>
+   <div class="sm d"><img src="icon-${n}-${k}.png" width="52"><img src="icon-${n}-${k}.png" width="34"><img src="icon-${n}-${k}.png" width="20"></div>
+  </div>
+  <p>${d}</p>
+  <div class="pros">${pros.map(x=>`<div>${x}</div>`).join('')}</div>
+ </div>`).join('');
+</script></body></html>

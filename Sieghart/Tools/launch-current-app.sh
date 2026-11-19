@@ -9,7 +9,7 @@ if [[ $# -gt 1 || ( $# -eq 1 && "$1" != --resume-keep-awake-session ) ]]; then
     exit 2
 fi
 
-[[ "$(/usr/bin/plutil -extract CFBundleIdentifier raw "$app_bundle/Contents/Info.plist")" == com.sieghart.app ]]
+[[ "$(/usr/bin/plutil -extract CFBundleIdentifier raw "$app_bundle/Contents/Info.plist")" == com.heychomp.mac ]]
 /bin/bash "$tool_root/Tests/verify-built-app.sh" "$app_bundle"
 
 # LaunchServices gives this app its own privacy attribution. Running the Mach-O

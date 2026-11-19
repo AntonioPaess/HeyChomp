@@ -2526,7 +2526,7 @@
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "HeyChomp transcribes your spoken focus commands after you start listening.";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.heychomp.mac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2554,7 +2554,7 @@
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "HeyChomp transcribes your spoken focus commands after you start listening.";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.heychomp.mac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2577,7 +2577,7 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "HeyChomp listens only when you press the voice button.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "HeyChomp transcribes your spoken focus commands after you start listening.";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.heychomp.mac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 			};
@@ -2598,7 +2598,7 @@
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "HeyChomp listens only when you press the voice button.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "HeyChomp transcribes your spoken focus commands after you start listening.";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.heychomp.mac;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 6.0;
 			};
@@ -2608,7 +2608,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.heychomp.mac.tests;
 				SDKROOT = macosx;
 				SUPPORTED_PLATFORMS = macosx;
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
@@ -2650,7 +2650,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.sieghart.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.heychomp.mac.tests;
 				SDKROOT = macosx;
 				SUPPORTED_PLATFORMS = macosx;
 				MACOSX_DEPLOYMENT_TARGET = 14.6;

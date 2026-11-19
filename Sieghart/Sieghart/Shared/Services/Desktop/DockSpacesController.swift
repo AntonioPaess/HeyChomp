@@ -237,7 +237,7 @@ struct GreenZoomTarget: Equatable, Sendable {
 }
 
 @MainActor final class DockSpacesController: ObservableObject {
-    nonisolated static let protectedBundles: Set<String> = ["com.apple.finder", "com.apple.systempreferences", "com.sieghart.app"]
+    nonisolated static let protectedBundles: Set<String> = ["com.apple.finder", "com.apple.systempreferences", "com.heychomp.mac"]
     nonisolated static let autoQuitDelayRange: ClosedRange<Int> = 1...15
 
     @Published var dockPreviewEnabled: Bool {

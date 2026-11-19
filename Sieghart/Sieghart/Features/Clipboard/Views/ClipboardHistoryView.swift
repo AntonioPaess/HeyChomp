@@ -48,6 +48,9 @@ struct ClipboardHistoryView: View {
                 }
                 if !clipboard.isEnabled && items.isEmpty {
                     empty("Your next copy, kept nearby.", detail: "Enable history to save new copies on this Mac. Text, images and file references stay local.", symbol: "doc.on.clipboard")
+                } else if !clipboard.loaded && items.isEmpty {
+                    // O histórico salvo ainda está sendo lido: não mostrar "Ainda sem cópias" antes da hora.
+                    loading()
                 } else if items.isEmpty {
                     empty(query.isEmpty ? "Nothing copied yet." : "No matching copies.", detail: query.isEmpty ? "Copy something in another app. It will appear here." : "Try another word or filter.", symbol: "tray")
                 } else {
@@ -159,6 +162,13 @@ struct ClipboardHistoryView: View {
                 Button("Clear history", role: .destructive) { confirmClear = true }.buttonStyle(.plain)
             }
         }
+    }
+    private func loading() -> some View {
+        VStack(spacing: 12) {
+            ProgressView().controlSize(.small)
+            Text("Loading your copies…").font(.callout).foregroundStyle(CompanionStyle.muted)
+        }.frame(maxWidth: .infinity).frame(height: compact ? 172 : 220)
+        .accessibilityElement(children: .combine)
     }
     private func empty(_ title: String, detail: String, symbol: String) -> some View {
         VStack(spacing: 12) {

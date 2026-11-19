@@ -566,6 +566,7 @@
 "Mac stays awake; display may sleep" = "O Mac permanece acordado; a tela pode apagar";
 "Enable history to save new copies on this Mac. Text, images and file references stay local." = "Ative o histórico para salvar cópias neste Mac. Textos, imagens e referências permanecem no dispositivo.";
 "Nothing copied yet." = "Ainda sem cópias.";
+"Loading your copies…" = "Carregando suas cópias…";
 "No matching copies." = "Nenhuma cópia encontrada.";
 "Copy something in another app. It will appear here." = "Copie algo em outro app. Sua cópia aparece aqui.";
 "Try another word or filter." = "Tente outra palavra ou filtro.";

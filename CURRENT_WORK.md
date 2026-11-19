@@ -1,6 +1,71 @@
 # Trabalho atual — checkpoint vivo
 
-Atualizado em 03/11/2026, horário de Recife. Leia também `HANDOFF.md` e `KNOWN_ISSUES.md`.
+Atualizado em 17/11/2026 (lote mobile); antes, 03/11/2026, horário de Recife. Leia também `HANDOFF.md` e `KNOWN_ISSUES.md`.
+
+## Lote — identificadores padronizados (com.heychomp.*), 18/11/2026
+
+Pedido do usuário: padronizar com o mesmo prefixo e aceitar conceder as permissões de novo. **Sem commit.**
+
+- **Mac:** `com.sieghart.app` → `com.heychomp.mac`; testes → `com.heychomp.mac.tests` (pbxproj e `Tools/update-project-sources.py`). Os apps auxiliares de render também mudaram para `com.heychomp.*`.
+- **iOS:** `com.heychomp.ios` (antes `com.heychomp.mobile.prototype`). Reservados: `com.heychomp.ios.widgets` e `group.com.heychomp` (tabela em `Sieghart/iOS/ARCHITECTURE.md`).
+- **Migração no app:** `LegacyIdentifierMigration` (em `CompanionPreferences.swift`, chamada no início de `HeyChompApp.init`) copia uma única vez as chaves do domínio `com.sieghart.app` que ainda não existem no novo. O token do GitHub passa de `com.sieghart.app.github` para `com.heychomp.mac.github` na primeira leitura (o macOS pode pedir para liberar o acesso ao item antigo). Os arquivos em Application Support/Sieghart não mudam.
+- **Scripts:** a instalação e o lançamento exigem `com.heychomp.mac`. `check-update-identity.sh` aceita uma única migração a partir de `com.sieghart.app` com o mesmo time, comparando a exigência de assinatura com o identificador trocado. `hold-awake-during-update.py` lê o arquivo de preferências mais recente entre o novo e o antigo (o Keep Awake continua protegido na primeira atualização). `DockSpacesController.protectedBundles` usa o identificador novo.
+- **Verificação:** build do Mac assinado com o time JZ8TU3BZ38 e `com.heychomp.mac` (BUILD SUCCEEDED, sem registrar App ID: build sem `-allowProvisioningUpdates`). `check-update-identity.sh /Applications/HeyChomp.app <build novo>` passou com o aviso de migração. Testes: G08.08 (migração de preferências), DockSpaces e área de transferência passaram; os 8 testes Python do guard do Keep Awake passaram. Build do iOS com `com.heychomp.ios`, aberto no simulador. **O app instalado (124, `com.sieghart.app`) não foi atualizado.**
+- **Depois da primeira instalação com o identificador novo:** conceder de novo microfone, reconhecimento de fala, Acessibilidade, gravação de tela e Calendário; o item de login (se houver) e as preferências do Sistema aparecem como "HeyChomp" novo. O App ID `com.heychomp.mac` ainda não está registrado no portal (K18).
+- Durante o lote, o disco chegou a 100%; foram apagadas só as pastas de build descartáveis criadas nesta sessão em /tmp.
+
+## Lote — revisão e correções de performance do app macOS, 17/11/2026
+
+Revisão pedida pelo usuário (compressão de JSON, escrita em lote, gargalo de dependência, UI otimista, esqueletos, telas vazias e cache, animações e haptics, offline). Conclusões: não há envio relevante de JSON e o `URLSession` já descomprime gzip/br; não há dependências de terceiros; o app é local-first (UI otimista por natureza, IA e voz do sistema funcionam offline); não há haptics nem esqueletos. Três correções feitas nesta branch, **sem commit**:
+
+1. **Área de transferência** (`Core/Services/Clipboard/ClipboardHistory.swift`): o histórico (até 200 itens e 40 MB, com imagens em base64 dentro do JSON) era regravado inteiro a cada cópia, fixação ou remoção. Agora o `history.json` é um índice leve (versão 2) e cada imagem fica em `media/<sha256>.png`, gravada uma única vez; imagens sem referência são apagadas depois que o índice é gravado. O formato antigo continua sendo lido e migra na gravação seguinte. Permissões 0700/0600 mantidas.
+2. **Monitor de uso de IA** (`Features/AIUsage/ViewModels/AIUsageViewModel.swift`, `Core/Services/AI/AIActivity.swift`): não pode ser desligado (a ilha mostra quando o Claude ou o Codex estão trabalhando). O ciclo de 5 s agora só publica `analytics` quando a leitura muda (`AIAnalytics` e `AIUsagePoint` ficaram `Equatable`), só atualiza `activityUpdatedAt` quando muda o minuto e não reatribui valores nulos. Antes, cada ciclo redesenhava a ilha e as telas que observam esse objeto.
+3. **Tela vazia falsa** (`Features/Clipboard/Views/ClipboardHistoryView.swift`): com o histórico ativo e ainda não carregado, mostra "Carregando suas cópias…" em vez de "Ainda sem cópias". Tradução em `pt-BR.lproj`.
+
+Testes novos em `Tests/SwiftTesting/Core/ClipboardStorageTests.swift`: imagem fora do índice, gravada uma vez, fixar não regrava a imagem, remoção apaga o arquivo, e leitura e migração do formato antigo. Build do Mac: BUILD SUCCEEDED. Testes: 26 testes (área de transferência, leitura de uso de IA, tokens e preços), todos passaram, incluindo os novos G12.08 e G12.09 (`xcodebuild -scheme HeyChomp-Checks -testPlan HeyChomp-Complete -only-testing:...`, log em `/tmp/heychomp-perf-xctest.log`). O `Tools/run-swift-tests.py` não rodou: o indexador recusa um teste já existente sem código de contrato, `Tests/SwiftTesting/Presentation/CompanionNativeTests.swift:37` ("Ada faces the notebook…"), que veio do commit `bd218da` do redesign. A correção é colocar um código Gxx.yy no nome desse teste.
+
+Pendências sugeridas: haptics (iPhone em tudo; Mac no editor da ilha e nos timers), esqueletos nas esperas de rede (pesquisa, GitHub, preços), cache do clima, carregamento da tela de arquivos e conexão reaproveitada no GitHub.
+
+## Lote — ícone final "Espiando" e escolha de avatar, 17/11/2026
+
+- **Commit autorizado pelo usuário (17/11/2026):** todo o trabalho mobile (conceitos, protótipo iOS, ícones e AppIcon compartilhado) foi commitado na branch `claude/heychomp-mobile-design-b7c10c` (`b40dbd9`). Push autorizado e feito no mesmo dia, em dois PRs empilhados: #12 (`design/heychomp-redesign-2026-11-11` → `main`, redesign do Mac) e #13 (esta branch → `design/heychomp-redesign-2026-11-11`, iPhone e ícone). O PR #13 deve ser mesclado depois do #12.
+- Ideia 2 escolhida. A arte final, em claro, escuro e tingido, sai de `Sieghart/Tools/app-icon/generate_app_icons.py`. O fundo claro foi trocado para a estrela menta do Chomp aparecer; no escuro há brilho na cor do agente atrás da cabeça.
+- **Mac:** o `AppIcon` não existia (o pbxproj já apontava para `AppIcon`). Agora há um `AppIcon.appiconset` em `Sieghart/Shared/Resources/ProviderAssets.xcassets`, com os tamanhos do macOS e o 1024 do iOS. É o mesmo ícone (Chomp) nas duas plataformas. Sem mudança no pbxproj do Mac.
+- **iOS:** ícones alternativos por agente (`AppIcon-<Agente>`) e miniaturas (`IconPreview-*`) em `iOS/HeyChompMobile/Resources/Assets.xcassets`; a lista está em `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES`. Nova tela Ajustes → Ícone do app (`AppIconPicker*`, `Services/AppIconService.swift`) que troca o ícone de verdade.
+- Ajuste pedido pelo usuário: faltava contraste do personagem com a mesa e com o fundo. A mesa ficou menta nos dois temas, com sombra de contato sob as mãos; no escuro, o personagem ganhou um contorno de luz na cor dele. **No macOS, o ícone é só a versão escura.** Os builds do iOS e do Mac passaram (BUILD SUCCEEDED), e o `AppIcon.icns` do Mac foi conferido com a arte escura.
+- Segundo ajuste: mesa verde mais escura (o `</>` da Ada voltou a aparecer e o escuro deixou de ficar claro demais) e nova variante "borda", sem mesa, com o personagem apoiado na borda do ícone. O gerador aceita `mesa|borda`; os catálogos estão com "mesa". Pranchas: `final/icones-mesa.png` e `final/icones-borda.png`. Builds do iOS e do Mac passaram de novo.
+- Terceiro ajuste (o usuário escolheu "mesa"): a linha das mãos agora é medida em cada PNG (a Ada tinha as mãos mais altas e parecia flutuar). Claro invertido: fundo verde-claro com a luz e o contorno do personagem iguais aos do escuro, e mesa cinza média. Escuro mantido (aprovado pelo usuário). Builds do iOS e do Mac passaram.
+- O Chomp continua sendo o companheiro principal; trocar o ícone é só aparência, para respeitar a regra do README de que a equipe não é um seletor de avatares para substituir o Chomp.
+- Verificação: build do iOS com BUILD SUCCEEDED; as alternativas aparecem no Info.plist (`CFBundleAlternateIcons`). No simulador iPhone 17 (iOS 27), escolher a Rita e depois a Elinor mostrou o aviso do sistema, e a tela de início exibiu o ícone novo. Os builds do iOS e do Mac passaram com o novo AppIcon.
+- Pendências: versão Icon Composer (`.icon`) para as variantes escura e de vidro do macOS 26; testar 16 e 32 px no Mac.
+
+## Lote — 5 ideias de ícone do app, 17/11/2026
+
+`Sieghart/Design/Concepts/app-icon-2026-11-17/`: Rosto, Espiando (recomendada), Olhos, Ilha e Balão. A mesma arte vale para iOS e macOS (`icon-*` sem margem; `mac-*` na grade de 824 px). A prancha `prancha-icones.png` mostra cada uma no iOS, no macOS e em tamanhos pequenos, sobre fundo claro e escuro. Tudo sai de `generate.py` e `render.sh`. Nenhum ícone foi aplicado aos apps. Próximo passo: o usuário escolhe uma ideia; depois, gerar as variantes escura e tingida do iOS e trocar os `AppIcon` do Mac e do iOS.
+
+## Lote — protótipo navegável do app iPhone, 17/11/2026
+
+Pedido: todas as telas do app iOS, sem lógica nem conexão, em MVVM, organizado e documentado. Branch `claude/heychomp-mobile-design-b7c10c`, sem commit.
+
+- Projeto **separado** em `Sieghart/iOS/HeyChompMobile.xcodeproj`, com pasta sincronizada (`objectVersion 77`). O `HeyChomp.xcodeproj` do Mac não foi tocado. Os personagens vêm por referência ao `ProviderAssets.xcassets` do Mac, sem cópia.
+- Camadas: `App/` (AppModel, AppRouter, ScreenFactory, LaunchOptions), `DesignSystem/` (tokens e componentes do `CompanionStyle`), `Models/`, `Services/` (protocolo `DataSource` e `MockDataSource`, que concentra todos os dados fictícios) e `Features/` (View + ViewModel `@Observable` por tela).
+- Telas: primeiro uso (3 passos), início, conversa, histórico, voz, equipe, Chomp, Rita, Gantt (agenda e diário), Elinor, Ada, Toni (com folha de anexos), ajustes, parear com o Mac e galeria de widgets (início, bloqueio e ao vivo).
+- Regras respeitadas: o microfone não é aberto e nenhum áudio é tocado; enviar mensagem não gera resposta pronta, só mostra um aviso; Saúde, Apple Pay e e-mail aparecem como "em breve".
+- Verificação: `xcodebuild` para o simulador com **BUILD SUCCEEDED**, Swift 6 com concorrência estrita e sem avisos. As 15 telas rodaram no simulador iPhone 17 (iOS 27.0) nos dois temas, via `-startScreen` e `-appearance`. Pranchas em `Sieghart/iOS/Docs/telas-claro.png` e `telas-escuro.png`. A navegação por toque não foi testada de forma automatizada; as rotas foram exercitadas pelos argumentos de lançamento.
+- Documentação: `Sieghart/iOS/README.md` (como rodar, telas e organização) e `Sieghart/iOS/ARCHITECTURE.md` (MVVM, design system, como adicionar uma tela e o caminho para o app real). `Tools/capture-screens.sh` regera as pranchas.
+- Limitações: os widgets são views comuns na galeria, sem extensão WidgetKit nem ActivityKit. Datas e valores são texto fixo. No escuro, os personagens escuros têm pouco contraste sobre os cartões.
+- Próximo passo: o usuário revisa o protótipo e autoriza o commit; depois, extensão de widgets e pacote compartilhado de modelos e cores com o Mac.
+
+## Lote — design inicial do HeyChomp para iPhone, 17/11/2026
+
+Branch `claude/heychomp-mobile-design-b7c10c`, só design, sem funcionalidade nem integração. Pasta: `Sieghart/Design/Concepts/mobile-2026-11-17/`, com `concept.html`, `render.sh`, `README.md` e seis PNGs (app, widgets e tela bloqueada, em tema claro e escuro).
+
+- App: boas-vindas (o Chomp em balão pede o nome e há a opção "Já uso no Mac"), equipe com os seis personagens `Peek-*` espiando nos cartões ("em breve" em Saúde da Rita e Apple Pay da Elinor), tela inicial (sugestão do Chomp em pílulas, status da equipe, agenda do Gantt, foco da Rita, mês da Elinor e barra "Pergunte ao Chomp" com microfone) e conversa com repasses aos agentes.
+- Widgets: médio "Pergunte ao Chomp", pequeno "Falar", pequeno de foco da Rita, médio da agenda do Gantt, grande da equipe, e pequenos do Gantt e do Toni. Também a Live Activity do foco na Dynamic Island.
+- Tela bloqueada: em linha, circulares (Falar, Foco, Gantt e Equipe), retangulares, notificações e a Live Activity do foco.
+- O usuário mandou as referências: Grok Bot, OpenBot.run e Hermes Agent. A v2 (`chars-*.png`) põe o personagem como o próprio widget: rosto com brilho na cor do agente, linha de etapas, selo de "digitando", grade da equipe em círculos, sessão de voz na Dynamic Island (marca do Chomp, microfone e encerrar) e Live Activities. A v1 (`widgets-*`, `lock-*`) fica como alternativa. O usuário escolheu misturar as duas: `mix-*.png` é a direção atual. Quem fala ou trabalha aparece de rosto (Chomp pequeno, equipe, Live Activity de resposta, ícone); em agenda, foco, clipe e campo de pergunta, o dono espia (v1); o brilho na cor do agente é o fundo de todos.
+- Sem commit. Nenhum arquivo foi adicionado ao `.xcodeproj`.
+- Próximo passo: refinar a direção mista (`mix-*`) e decidir se o app iOS será um novo target neste repositório (recomendado) ou outro repositório.
 
 ## Regra de continuidade
 

@@ -1,7 +1,7 @@
 import Foundation
 import SQLite3
 
-struct AIUsagePoint: Codable, Sendable, Identifiable {
+struct AIUsagePoint: Codable, Sendable, Identifiable, Equatable {
     let id: String
     let provider: AIProvider
     let date: Date
@@ -32,7 +32,8 @@ struct AIWork: Sendable, Equatable, Identifiable {
     }
 }
 
-struct AIAnalytics: Sendable {
+/// Equatable para o monitor só publicar quando a leitura mudar (ver AIUsageViewModel.startMonitoring).
+struct AIAnalytics: Sendable, Equatable {
     var points: [AIUsagePoint] = []
     var work: [AIWork] = []
     var scannedFiles = 0
